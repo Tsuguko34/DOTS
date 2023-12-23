@@ -101,12 +101,12 @@ export const ComponentToPrint = React.forwardRef((props, componentRef) => {
     const timeFiltered = filteredData.sort((a, b) => b.time - a.time)
 
     timeFiltered.sort((a, b) => {
-        if (b.dateTime.getFullYear() !== a.dateTime.getFullYear()) {
-          return b.dateTime.getFullYear() - a.dateTime.getFullYear();
-        } else if (b.dateTime.getMonth() !== a.dateTime.getMonth()) {
-          return b.dateTime.getMonth() - a.dateTime.getMonth();
+        if (new Date(b.date_Received).getFullYear() !== new Date(a.date_Received).getFullYear()) {
+          return new Date(b.date_Received).getFullYear() - new Date(a.date_Received).getFullYear();
+        } else if (new Date(b.date_Received).getMonth() !== new Date(a.date_Received).getMonth()) {
+          return new Date(b.date_Received).getMonth() - new Date(a.date_Received).getMonth();
         } else {
-          return b.dateTime.getDate() - a.dateTime.getDate();
+          return new Date(b.date_Received).getDate() - new Date(a.date_Received).getDate();
         }
     })
 

@@ -37,8 +37,6 @@ const bytesToSize = (bytes) => {
 }
 app.use('/document_Files', express.static('../document_Files'));
 app.post("/documentFiles", upload.array('files'),(req, res) => {
-    console.log(req.body.uID);
-    console.log(req.files);
     let queriesExecuted = 0;
     try{
         for(const file of req.files){
@@ -69,6 +67,7 @@ app.post("/documentFiles", upload.array('files'),(req, res) => {
 })
 
 app.post("/documents",(req, res) => {
+    console.log(req.body);
     const q = "INSERT INTO documents (`document_Name`,`document_Type`,`date_Received`,`received_By`,`fromPer`,`fromDep`,`time_Received`,`uID`,`Status`,`Type`,`Description`,`Comment`,`forward_To`,`Remark`,`deleted_at`,`urgent`,`unread`) VALUES (?)"
     const values = [
         req.body.document_Name,
@@ -91,6 +90,7 @@ app.post("/documents",(req, res) => {
     ]
 
     db.query(q, [values], (err, data) => {
+        console.log(true);
         if(err) return res.json(err);
         return res.json({sucess: true})
     })
