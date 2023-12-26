@@ -263,36 +263,31 @@ export default function StickyHeadTable() {
           'Content-Type': 'multipart/form-data',
         },
       });
+      await axios.post(`${port}/documents`, documentsToBeAdded)  
+      setNewDateReceived("")
+      setNewDocuName("")
+      setNewComment("")
+      setNewForwardTo("")
+      setNewTimeReceived("")
+      setNewReceivedBy("")
+      setNewFromDep("")
+      setNewFromPer("")
+      setNewType("")
+      setNewDescription("")
+      setNewStatus("Pending")
+      setImageUpload("")
+      setImageDis("")
+      setOpenAdd(false)
+      getSignInMethods("add");
+      setEmptyResult(false);
+      setSumbmit(false);
+      setUrgent(false)
+      getIncoming();
+      toast.success("Successfully uploaded a file.")
     }catch(e){
       console.log(e);
     }
 
-    try{
-      await axios.post(`${port}/documents`, documentsToBeAdded)
-    }catch(e){
-      console.log(e);
-    }
-
-    setNewDateReceived("")
-    setNewDocuName("")
-    setNewComment("")
-    setNewForwardTo("")
-    setNewTimeReceived("")
-    setNewReceivedBy("")
-    setNewFromDep("")
-    setNewFromPer("")
-    setNewType("")
-    setNewDescription("")
-    setNewStatus("Pending")
-    setImageUpload("")
-    setImageDis("")
-    setOpenAdd(false)
-    getSignInMethods("add");
-    setEmptyResult(false);
-    setSumbmit(false);
-    setUrgent(false)
-    getIncoming();
-    toast.success("Successfully uploaded a file.")
   };
 
   const formatDate = (date) => {
@@ -414,6 +409,7 @@ export default function StickyHeadTable() {
   };
 
   const deleteIncoming = (id) => {
+    console.log(id);
     Swal.fire({
       title: "Archive?",
       text: "The document will be added to the archives.",
@@ -426,8 +422,13 @@ export default function StickyHeadTable() {
       focusConfirm: true,
     }).then(async (result) => {
     if(result.isConfirmed) {
-        const querySnapshot = await getDoc(doc(db, "documents", id));
-        archiveFile(id, querySnapshot.data());
+        try{
+          await axios.post(`${port}/archiveFile?id=${id}`)
+          toast.success("File has been archived")
+          getIncoming();
+        }catch(e){
+          console.log(e);
+        }
       }
     });
   };
@@ -577,7 +578,7 @@ export default function StickyHeadTable() {
           image: item.file_Name.includes('.png') || item.file_Name.includes('.jpg') || item.file_Name.includes('.jpeg') ? `${port}/document_Files/${item.file_Name}` : 
           item.file_Name.includes('.pdf') ? pdfIcon : 
           item.file_Name.includes('.doc') || item.file_Name.includes('.docx') ? docxIcon :
-          item.file_Name.includes('.xlsx') || item.file_Name.includes('.xls') && xlsIcon,
+          item.file_Name.includes('.xlsx') || item.file_Name.includes('.xls') ? xlsIcon : '',
           size: fileSize
         }]});
     }); 
@@ -632,43 +633,43 @@ export default function StickyHeadTable() {
   const updateIncoming = async (e) => {
     e.preventDefault();
     setSumbmit(true);
-    const editDoc = doc(db, "documents", formID.id);
     const editFields = {
       fromDep: editFromDep,
       fromPer: editFromPer,
       received_By: editReceivedBy,
       date_Received: formatDate(editDateReceived),
       time_Received: formatTime(editTimeReceived),
+      uID: formID.uID,
       Status: editStatus,
       Type: editType,
-      RE: editRE,
-      Transmitted: editTransmitted,
       Description: editDescription,
-      Date: formatDate(editDate),
       Comment: editComment,
       document_Name: editDocuName
     };
     if (imageUpload == null) {
-      await updateDoc(editDoc, editFields);
-      setSumbmit(false);
-    } else if (imageUpload != null) {
-      console.log(true);
-      await updateDoc(editDoc, editFields);
-      const folderRef = ref(storage, `DocumentsPic/${formID.uID}/`)
-      const items = await listAll(folderRef)
-      const deleteFilePromises = items.items.map((item) => {
-        return deleteObject(item);
-      });
-      await Promise.all(deleteFilePromises);
-      for (let i = 0; i < imageUpload.length; i++) {
-        const imageRef = ref(
-          storage,
-          `DocumentsPic/${formID.uID}/${imageUpload[i].name}`
-        );
-        uploadBytes(imageRef, imageUpload[i]);
+      try{
+        await axios.put(`${port}/update`, editFields)
+        setSumbmit(false);
+      }catch(e){
+        console.log(e);
       }
-      setSumbmit(false);
-      setImageUpload([])
+      
+    } 
+    else if (imageUpload != null) {
+      console.log(true);
+      const formData = new FormData();
+      imageUpload.forEach((file, index) => {
+        formData.append(`files`, file)
+      })
+      formData.append(`uID`, formID.uID)
+      try{
+        await axios.put(`${port}/update`, editFields)
+        await axios.put(`${port}/updateFile`, formData)
+        setSumbmit(false);
+        setImageUpload([])
+      }catch(e){
+        console.log(e);
+      }
     }
 
     getSignInMethods("edit");
@@ -915,12 +916,12 @@ export default function StickyHeadTable() {
   const handleDownload = (type) => {
       const anchor = document.createElement('a');
       if (type == "docx"){
-        anchor.href = fileDocx.url;
-        anchor.download = fileDocx.name;
+        anchor.href = `${port}/document_Files/${fileDocx}`;
+        anchor.download = fileDocx;
       }
       else if(type == "xlsx"){
-        anchor.href = fileXlsx.url;
-        anchor.download = fileXlsx.name;
+        anchor.href = `${port}/document_Files/${fileXlsx}`;
+        anchor.download = fileXlsx;
       }
       anchor.target = '_blank';
       anchor.click();
@@ -1352,7 +1353,7 @@ export default function StickyHeadTable() {
                           zIndex: "11"
                         }}
                         onClick={() => {
-                          deleteIncoming(row.id);
+                          deleteIncoming(row.uID);
                         }}
                       />
                       </Tooltip>
@@ -1821,7 +1822,7 @@ export default function StickyHeadTable() {
                                 <Worker workerUrl="https://unpkg.com/pdfjs-dist@2.4.456/build/pdf.worker.js">
                                   {imageList && (
                                     <>
-                                      <Viewer fileUrl={filePDF} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark" />
+                                      <Viewer fileUrl={`${port}/document_Files/${filePDF}`} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark" />
                                     </>
                                   )}  
                                   {!imageList && <>No PDF</>}
@@ -1836,7 +1837,7 @@ export default function StickyHeadTable() {
                                 <>
                                 <Box sx={{width: "100%", height: '300px', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
                                   <img src={docxViewIcon} style={{width: "150px", height: '150px'}}></img>
-                                  <Typography sx={{mt: "5vh"}}>{fileDocx.name}</Typography>
+                                  <Typography sx={{mt: "5vh"}}>{fileDocx}</Typography>
                                   <Button component="label" onClick={(e) => handleDownload("docx")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none"}}>
                                     Download .docx File
                                   </Button>
@@ -1851,7 +1852,7 @@ export default function StickyHeadTable() {
                                 <>
                                 <Box sx={{width: "100%", height: '300px', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
                                   <img src={xlsxViewIcon} style={{width: "150px", height: '150px'}}></img>
-                                  <Typography sx={{mt: "5vh"}}>{fileXlsx.name}</Typography>
+                                  <Typography sx={{mt: "5vh"}}>{fileXlsx}</Typography>
                                   <Button component="label" onClick={(e) => handleDownload("xlsx")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "hsl(126, 49%, 36%)", textTransform: "none"}}>
                                     Download .xlsx File
                                   </Button>
@@ -1882,7 +1883,7 @@ export default function StickyHeadTable() {
                         <Worker workerUrl="https://unpkg.com/pdfjs-dist@2.4.456/build/pdf.worker.js">
                           {imageList && (
                             <>
-                              <Viewer fileUrl={filePDF} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark" />
+                              <Viewer fileUrl={`${port}/document_Files/${filePDF}`} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark" />
                             </>
                           )}  
                           {!imageList && <>No PDF</>}
@@ -1893,7 +1894,7 @@ export default function StickyHeadTable() {
                           <>
                             <Box sx={{width: "100%", height: '300px', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
                               <img src={docxViewIcon} style={{width: "150px", height: '150px'}}></img>
-                              <Typography sx={{mt: "5vh"}}>{fileDocx.name}</Typography>
+                              <Typography sx={{mt: "5vh"}}>{fileDocx}</Typography>
                               <Button component="label" onClick={(e) => handleDownload("docx")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none"}}>
                                 Download .docx File
                               </Button>
@@ -1904,7 +1905,7 @@ export default function StickyHeadTable() {
                         <>
                           <Box sx={{width: "100%", height: '300px', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
                             <img src={xlsxViewIcon} style={{width: "150px", height: '150px'}}></img>
-                            <Typography sx={{mt: "5vh"}}>{fileXlsx.name}</Typography>
+                            <Typography sx={{mt: "5vh"}}>{fileXlsx}</Typography>
                             <Button component="label" onClick={(e) => handleDownload("xlsx")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "hsl(126, 49%, 36%)", textTransform: "none"}}>
                               Download .xlsx File
                             </Button>

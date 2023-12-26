@@ -12,7 +12,9 @@ import FilterListIcon from "@mui/icons-material/FilterList";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import toast, { Toaster } from 'react-hot-toast'
 import CircularProgress from '@mui/material/CircularProgress';
+import axios from 'axios'
 function ArchiveTable() {
+  const port = "http://localhost:3001"
    //Loading
    const [loading, setLoading] = useState(true);
    const [emptyResult, setEmptyResult] = useState(false);
@@ -43,32 +45,59 @@ function ArchiveTable() {
 
   const documentsRef = collection(db, "archive")
   const [buttonData, setButtonData] = useState([])
+  const [yearData, setYearData] = useState([])
  
 
   const getStatus = async() => {
-    const data = await getDocs(documentsRef)
+    const data = await axios.get(`${port}/getArchives`)
     const buttonSet = new Set()
-    
-    data.forEach((doc) => {
-      const whatDoc = doc.data().document_Type
+    const yearSet = new Set()
+    const updatedButtonSet = new Set()
+    data.data.forEach((doc) => {
+      const whatDoc = doc.document_Type
+      const whatYear = new Date(doc.date_Received).getFullYear()
+      const elementToCheck = {Type : whatDoc, Year : whatYear}
       if(whatDoc){
         if(users.find(item => item.UID == auth.currentUser.uid)?.role == "Faculty"){
-          if(doc.data().forwarded_By === auth.currentUser.uid || doc.data().accepted_Rejected_By === auth.currentUser.uid || users.find(item => item.UID == auth.currentUser.uid)?.full_Name.includes(doc.data().fromPer)){
-            buttonSet.add(whatDoc)
+          if(doc.forwarded_By == auth.currentUser.uid || doc.accepted_Rejected_By == auth.currentUser.uid || users.find(item => item.UID == auth.currentUser.uid)?.full_Name.includes(doc.fromPer)){
+            if (buttonSet.size === 0 || ![...buttonSet].some(button => button.Type === whatDoc)) {
+              buttonSet.add({ Type: whatDoc, Year: whatYear });
+              updatedButtonSet.add({ Type: whatDoc, Year: whatYear });
+            } else {
+              buttonSet.forEach((button) => {
+                if (button.Type === whatDoc && button.Year !== whatYear) {
+                  updatedButtonSet.add({ Type: whatDoc, Year: whatYear });
+                }
+              });
+            }
+            yearSet.add(whatYear)
           }
         }else{
-          buttonSet.add(whatDoc)
+          if (buttonSet.size === 0 || ![...buttonSet].some(button => button.Type === whatDoc)) {
+            buttonSet.add({ Type: whatDoc, Year: whatYear });
+            updatedButtonSet.add({ Type: whatDoc, Year: whatYear });
+          } else {
+            buttonSet.forEach((button) => {
+              if (button.Type === whatDoc && button.Year !== whatYear) {
+                updatedButtonSet.add({ Type: whatDoc, Year: whatYear });
+              }
+            });
+          }
+          yearSet.add(whatYear)
         }
         
       }
     })
-    const buttonArray = Array.from(buttonSet)
-    if(buttonArray.length > 0){
+    console.log(updatedButtonSet);
+    const buttonArray = Array.from(updatedButtonSet)
+    const yearArray = Array.from(yearSet)
+    if(buttonArray.length > 0 || yearArray.length > 0){
       setEmptyResult(false)
     }else{
       setEmptyResult(true)
     }
     setButtonData(buttonArray)
+    setYearData(yearArray)
     setLoading(false)
   }
 
@@ -180,24 +209,31 @@ function ArchiveTable() {
             />
           </FormControl>
         </Stack>
-        <Grid container xs={12} sx={{width: "100%", padding: "20px", zIndex: "2", position: "relative"}} > 
-          {buttonData.filter(item => item.toLowerCase().includes(search.toLowerCase())).map((buttonData) => {
-            return(
-              <Grid item xs={windowWidth >= 375 ? 6 : 12} sm={4} md={3} lg={3} sx={{mt: "50px"}}>
-                <Link to={`./pages/ArchiveMaintable/${buttonData == "IPCR/OPCR" ? "IPCR-OPCR": buttonData}`}>
-                  <Card sx={{backgroundColor: "transparent", boxShadow: "none", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", cursor: "pointer", userSelect: "none"}}>
-                    <div className="archive-image">
-                      <img alt="Folder Image" />
-                    </div>
-                    <div className="archive-title">
-                      <Typography sx={{fontWeight: "bold", fontSize: "1rem", maxWidth: "50px", display: "flex", justifyContent: 'center', alignItems: "center"}}>{buttonData}</Typography>
-                    </div>
-                  </Card>
-                </Link>
+        {yearData.map((year) => {
+          return(
+            <>
+              <Typography sx={{fontSize:'1.2rem', fontWeight:'bold'}}>{year}</Typography>
+              <Grid container xs={12} sx={{width: "100%", padding: "20px", zIndex: "2", position: "relative"}}>
+                {buttonData.filter(item => item.Type.toLowerCase().includes(search.toLowerCase())).filter(item => item.Year == year).map((buttonData) => {
+                  return(
+                      <Grid item xs={windowWidth >= 375 ? 6 : 12} sm={4} md={3} lg={3} sx={{mt: "50px"}}>
+                        <Link to={`./pages/ArchiveMaintable/${buttonData.Type == "IPCR/OPCR" ? "IPCR-OPCR": buttonData.Type}/${year}`}>
+                          <Card sx={{backgroundColor: "transparent", boxShadow: "none", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", cursor: "pointer", userSelect: "none"}}>
+                            <div className="archive-image">
+                              <img alt="Folder Image" />
+                            </div>
+                            <div className="archive-title">
+                              <Typography sx={{fontWeight: "bold", fontSize: "1rem", maxWidth: "50px", display: "flex", justifyContent: 'center', alignItems: "center"}}>{buttonData.Type}</Typography>
+                            </div>
+                          </Card>
+                        </Link>
+                      </Grid>
+                  )
+                })}
               </Grid>
-            )
-          })}
-        </Grid>
+            </>
+          )
+        })}
         {loading ? (
         <div className="load-container2">
           <span className="loader"></span>

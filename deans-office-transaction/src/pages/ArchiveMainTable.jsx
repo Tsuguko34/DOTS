@@ -31,10 +31,12 @@ import docxViewIcon from '../Images/docxView.png'
 import xlsxViewIcon from '../Images/xlsxView.png'
 import pdfIcon from '../Images/pdf.png'
 import ClearIcon from '@mui/icons-material/Clear';
+import axios from 'axios'
 function ArchiveMainTable() {
+  const port = "http://localhost:3001"
     const newPlugin = defaultLayoutPlugin();
     const pagePlugin = pageNavigationPlugin();
-    const { documentType } = useParams()
+    const { documentType, year } = useParams()
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
     const archiveRef = collection(db, "archive")
     const [archiveYears, setArchiveYears] = useState([])
@@ -55,28 +57,11 @@ function ArchiveMainTable() {
     });
 
     const getArchive = async() => {
-      console.log(documentType.replace('%20', ' '));
-        const q = query(archiveRef, where("document_Type", "==", documentType.replace('%20', ' ').replace('IPCR-OPCR', 'IPCR/OPCR')))
-        const data = await getDocs(q)
-        const years = new Set()
-        const dataArray = []
-        data.docs.forEach((doc) => {
-            if(doc.data().document_Type === documentType){
-                const dateObject = new Date(doc.data().date_Received);
-                years.add(dateObject.getFullYear());
-            }
-            listAll(ref(storage, `DocumentsPic/${doc.data().uID}/`)).then((response) => {
-                response.items.forEach((item) => {
-                  getDownloadURL(item).then((url) => {
-                    setArchiveImage((prev) => [...prev, url]);
-                  });
-                });
-            });
-            dataArray.push({...doc.data(), dateTime: doc.data().date_Received})
-        })
-       
-        setArchiveYears(Array.from(years).sort((a, b) => b - a))
-        setArchiveData(dataArray)
+        const data = await axios.get(`${port}/getFilteredArchives?documentType=${documentType.replace('%20', ' ').replace('IPCR-OPCR', 'IPCR/OPCR')}&year=${year}`)
+        const images = await axios.get(`${port}/getArchiveFiles`)
+        console.log(data.data);
+        setArchiveImage(images.data)
+        setArchiveData(data.data)
         setLoading(false)
     }
 
@@ -111,7 +96,7 @@ function ArchiveMainTable() {
     }
 
     const displayFileInfo = (type, date, received, dep, per, desc, image, uID, id) => {
-        const fileIMG = image[0].includes(".png" || ".jpg" || ".jpeg") ? image[0] : image[0].includes(".pdf") ? pdfIcon : image[0].includes(".docx") ? docxViewIcon : image[0].includes(".xlsx") && xlsxViewIcon 
+        const fileIMG = image.includes(".png" || ".jpg" || ".jpeg") ? `${port}/document_Files/${image}` : image.includes(".pdf") ? pdfIcon : image.includes(".docx") ? docxViewIcon : image.includes(".xlsx") && xlsxViewIcon 
         setFileInfo("")
         const data = {
             Type: type,
@@ -251,36 +236,23 @@ function ArchiveMainTable() {
         showFile(id);
       };
       const showFile = async (id) => {
-        let q = query(archiveRef, where("uID", "==", id));
-        const imageListRef = ref(storage, `DocumentsPic/${id}/`);
-        const data = await getDocs(q);
-        setDisplayFile(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
-        listAll(imageListRef).then((response) => {
-          response.items.forEach((item) => {
-            getMetadata(item).then((metadata) => {
-              if(metadata.contentType.startsWith('image/')){
-                getDownloadURL(item).then((url) => {
-                  setImageList((prev) => [...prev, url]);
-                });
-              }
-              else if (metadata.contentType == "application/pdf"){
-                  getDownloadURL(item).then(async(url) => {
-                     setFilePDF(url);
-                     console.log(url);
-                  })
-              }
-              else if (metadata.contentType == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"){
-                getDownloadURL(item).then(async(url) => {
-                    setFileDocx({name: metadata.name, url: url});
-                })
-              }
-              else if (metadata.contentType == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'){
-                getDownloadURL(item).then(async(url) => {
-                    setFileXlsx({name: metadata.name, url: url});
-                })
-              }
-            })
-          });
+        const imageListRef = await axios.get(`${port}/getFile?id=${id}`);
+        const data = await axios.get(`${port}/openArchiveFile?id=${id}`);
+        setDisplayFile(data.data);
+        imageListRef.data.forEach((item) => {
+          console.log(item);
+            if(item.file_Name.includes('.png') || item.file_Name.includes('.jpg') || item.file_Name.includes('.jpeg')){
+                setImageList((prev) => [...prev, item.file_Name]);
+            }
+            else if (item.file_Name.includes('.pdf')){
+                    setFilePDF(item.file_Name);
+            }
+            else if (item.file_Name.includes('.docx') || item.file_Name.includes('.doc')){
+                  setFileDocx(item.file_Name);
+            }
+            else if (item.file_Name.includes('.xlsx')){
+                  setFileXlsx(item.file_Name);
+            }
         });
         setLoading2(false);
       };
@@ -369,12 +341,12 @@ function ArchiveMainTable() {
 
    try{
     timeFiltered.sort((a, b) => {
-      if (b.dateTime.getFullYear() !== a.dateTime.getFullYear()) {
-        return b.dateTime.getFullYear() - a.dateTime.getFullYear();
-      } else if (b.dateTime.getMonth() !== a.dateTime.getMonth()) {
-        return b.dateTime.getMonth() - a.dateTime.getMonth();
+      if (new Date(b.date_Received).getFullYear() !== new Date(a.date_Received).getFullYear()) {
+        return new Date(b.date_Received).getFullYear() - new Date(a.date_Received).getFullYear();
+      } else if (new Date(b.date_Received).getMonth() !== new Date(a.date_Received).getMonth()) {
+        return new Date(b.date_Received).getMonth() - new Date(a.date_Received).getMonth();
       } else {
-        return b.dateTime.getDate() - a.dateTime.getDate();
+        return new Date(b.date_Received).getDate() - new Date(a.date_Received).getDate();
       }
    })
    }catch(e){
@@ -797,7 +769,7 @@ function ArchiveMainTable() {
                                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                                     .map((row) => (
                                       <>
-                                      <TableRow role="checkbox" tabIndex={-1} key={row.uID} sx={{ cursor: "pointer", userSelect: "none", height: "50px", background: "#F0EFF6",'& :last-child': {borderBottomRightRadius: "10px", borderTopRightRadius: "10px"} ,'& :first-child':  {borderTopLeftRadius: "10px", borderBottomLeftRadius: "10px"} }} onClick={() => displayFileInfo(row.Type == undefined ? row.document_Type: row.Type, row.date_Received, row.received_By, row.fromDep, row.fromPer, row.Description, archiveImage.filter(item => item.includes(row.uID)), row.uID, row.id)}>
+                                      <TableRow role="checkbox" tabIndex={-1} key={row.uID} sx={{ cursor: "pointer", userSelect: "none", height: "50px", background: "#F0EFF6",'& :last-child': {borderBottomRightRadius: "10px", borderTopRightRadius: "10px"} ,'& :first-child':  {borderTopLeftRadius: "10px", borderBottomLeftRadius: "10px"} }} onClick={() => displayFileInfo(row.Type == undefined ? row.document_Type: row.Type, row.date_Received, row.received_By, row.fromDep, row.fromPer, row.Description, archiveImage.find(item => item.uID == row.uID)?.file_Name, row.uID, row.id)}>
                                         <TableCell className={fileInfo.uID == row.uID ? 'table-cell active' : 'table-cell'} align="left"> {row.document_Name} </TableCell>
                                         <TableCell className={fileInfo.uID == row.uID ? 'table-cell active' : 'table-cell'} align="left"> {row.Type == undefined || row.Type == "" ? row.document_Type : row.Type} </TableCell>
                                         <TableCell className={fileInfo.uID == row.uID ? 'table-cell active' : 'table-cell'} align="left"> {row.received_By} </TableCell>
@@ -999,18 +971,6 @@ function ArchiveMainTable() {
                                 <p>{displayFile.Description}</p>
                                 </div>
                                 <div className="details">
-                                <h2>RE: </h2>
-                                <p>{displayFile.RE}</p>
-                                </div>
-                                <div className="details">
-                                <h2>Date: </h2>
-                                <p>{displayFile.Date}</p>
-                                </div>
-                                <div className="details">
-                                <h2>Transmitted to: </h2>
-                                <p>{displayFile.Transmitted}</p>
-                                </div>
-                                <div className="details">
                                 <h2>Status: </h2>
                                 <p>{displayFile.Status}</p>
                                 </div>
@@ -1028,17 +988,17 @@ function ArchiveMainTable() {
                             </TabList>
                           </Box>
                           <TabPanel value="1">
-                            <Grid container xs={12}>
-                                {imageList.some(item => item.includes(".jpg") || item.includes(".jpeg") || item.includes(".png")) &&(
-                                      <ImageList variant="masonry" cols={windowWidth <= 375 ? 1 : windowWidth <=576 && windowWidth > 375? 2 : 3} gap={8}>
-                                        {imageList.map((url, index) => (
-                                              <ImageListItem key={url}>
-                                                <img loading="eager" srcSet={`${url}?w=248&fit=crop&auto=format&dpr=2 2x`} src={`${url}?w=248&fit=crop&auto=format`} onClick={(e) => openLightbox(index)}/>
-                                              </ImageListItem>                                  
-                                        ))}
-                                    </ImageList>
-                                  )}
-                              </Grid>
+                          <Grid container xs={12}>
+                              {imageList.some(item => item.includes(".jpg") || item.includes(".jpeg") || item.includes(".png")) &&(
+                                    <ImageList variant="masonry" cols={windowWidth <= 375 ? 1 : windowWidth <=576 && windowWidth > 375? 2 : 3} gap={8}>
+                                      {imageList.map((url, index) => (
+                                            <ImageListItem key={url}>
+                                              <img loading="eager" srcSet={`${port}/document_Files/${url}?w=248&fit=crop&auto=format&dpr=2 2x`} src={`${port}/document_Files/${url}?w=248&fit=crop&auto=format`} onClick={(e) => openLightbox(index)}/>
+                                            </ImageListItem>                                  
+                                      ))}
+                                  </ImageList>
+                                )}
+                            </Grid>
                           </TabPanel>
                           <TabPanel value="2">
                             {
@@ -1047,7 +1007,7 @@ function ArchiveMainTable() {
                                 <Worker workerUrl="https://unpkg.com/pdfjs-dist@2.4.456/build/pdf.worker.js">
                                   {imageList && (
                                     <>
-                                      <Viewer fileUrl={filePDF} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark" />
+                                      <Viewer fileUrl={`${port}/document_Files/${filePDF}`} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark" />
                                     </>
                                   )}  
                                   {!imageList && <>No PDF</>}
@@ -1062,7 +1022,7 @@ function ArchiveMainTable() {
                                 <>
                                 <Box sx={{width: "100%", height: '300px', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
                                   <img src={docxViewIcon} style={{width: "150px", height: '150px'}}></img>
-                                  <Typography sx={{mt: "5vh"}}>{fileDocx.name}</Typography>
+                                  <Typography sx={{mt: "5vh"}}>{fileDocx}</Typography>
                                   <Button component="label" onClick={(e) => handleDownload("docx")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none"}}>
                                     Download .docx File
                                   </Button>
@@ -1077,7 +1037,7 @@ function ArchiveMainTable() {
                                 <>
                                 <Box sx={{width: "100%", height: '300px', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
                                   <img src={xlsxViewIcon} style={{width: "150px", height: '150px'}}></img>
-                                  <Typography sx={{mt: "5vh"}}>{fileXlsx.name}</Typography>
+                                  <Typography sx={{mt: "5vh"}}>{fileXlsx}</Typography>
                                   <Button component="label" onClick={(e) => handleDownload("xlsx")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "hsl(126, 49%, 36%)", textTransform: "none"}}>
                                     Download .xlsx File
                                   </Button>
@@ -1095,7 +1055,7 @@ function ArchiveMainTable() {
                               <ImageList variant="masonry" cols={windowWidth <= 375 ? 1 : windowWidth <=576 && windowWidth > 375? 2 : 3} gap={8}>
                                 {imageList.map((url, index) => (
                                       <ImageListItem key={url}>
-                                        <img loading="eager" srcSet={`${url}?w=248&fit=crop&auto=format&dpr=2 2x`} src={`${url}?w=248&fit=crop&auto=format`} onClick={(e) => openLightbox(index)}/>
+                                        <img loading="eager" srcSet={`${port}/document_Files/${url}?w=248&fit=crop&auto=format&dpr=2 2x`} src={`${port}/document_Files/${url}?w=248&fit=crop&auto=format`} onClick={(e) => openLightbox(index)}/>
                                       </ImageListItem>                                  
                                 ))}
                             </ImageList>
@@ -1108,7 +1068,7 @@ function ArchiveMainTable() {
                         <Worker workerUrl="https://unpkg.com/pdfjs-dist@2.4.456/build/pdf.worker.js">
                           {imageList && (
                             <>
-                              <Viewer fileUrl={filePDF} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark" />
+                              <Viewer fileUrl={`${port}/document_Files/${filePDF}`} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark" />
                             </>
                           )}  
                           {!imageList && <>No PDF</>}
@@ -1119,7 +1079,7 @@ function ArchiveMainTable() {
                           <>
                             <Box sx={{width: "100%", height: '300px', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
                               <img src={docxViewIcon} style={{width: "150px", height: '150px'}}></img>
-                              <Typography sx={{mt: "5vh"}}>{fileDocx.name}</Typography>
+                              <Typography sx={{mt: "5vh"}}>{fileDocx}</Typography>
                               <Button component="label" onClick={(e) => handleDownload("docx")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none"}}>
                                 Download .docx File
                               </Button>
@@ -1130,7 +1090,7 @@ function ArchiveMainTable() {
                         <>
                           <Box sx={{width: "100%", height: '300px', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
                             <img src={xlsxViewIcon} style={{width: "150px", height: '150px'}}></img>
-                            <Typography sx={{mt: "5vh"}}>{fileXlsx.name}</Typography>
+                            <Typography sx={{mt: "5vh"}}>{fileXlsx}</Typography>
                             <Button component="label" onClick={(e) => handleDownload("xlsx")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "hsl(126, 49%, 36%)", textTransform: "none"}}>
                               Download .xlsx File
                             </Button>
@@ -1145,7 +1105,7 @@ function ArchiveMainTable() {
                       )}
                       {isLightboxOpen && (
                         <Lightbox
-                          mainSrc={imageList[lightboxIndex]}
+                          mainSrc={`${port}/document_Files/${imageList[lightboxIndex]}`}
                           nextSrc={imageList[(lightboxIndex + 1) % imageList.length]}
                           prevSrc={imageList[(lightboxIndex + imageList.length - 1) % imageList.length]}
                           onCloseRequest={closeLightbox}

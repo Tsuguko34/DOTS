@@ -36,7 +36,7 @@ function Navpages() {
             <Route path='/pages/Settings' element={<SettingsRoute><Settings /></SettingsRoute>} />
             <Route path='/pages/IncomingMemo' element={<PrivateRoutes><RoleBasedRoutes><IncomingMemo /></RoleBasedRoutes></PrivateRoutes>} />
             <Route path='/pages/OutgoingMemo' element={<PrivateRoutes><RoleBasedRoutes><OutgoingMemo /></RoleBasedRoutes></PrivateRoutes>} />
-            <Route path='/pages/Archives/pages/ArchiveMainTable/:documentType' element={<PrivateRoutes><ArchiveMainTable /></PrivateRoutes>} />
+            <Route path='/pages/Archives/pages/ArchiveMainTable/:documentType/:year' element={<PrivateRoutes><ArchiveMainTable /></PrivateRoutes>} />
             <Route path='/pages/MOA' element={<PrivateRoutes><MOA /></PrivateRoutes>} />
             <Route path='/pages/PendingLetters' element={<PrivateRoutes><PendingLetters /></PrivateRoutes>} />
             <Route path='/pages/ApprovedLetters' element={<PrivateRoutes><ApprovedLetters /></PrivateRoutes>} />
