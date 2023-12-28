@@ -96,6 +96,7 @@ function ArchiveTable() {
     }else{
       setEmptyResult(true)
     }
+    yearArray.sort((a, b) => b - a);
     setButtonData(buttonArray)
     setYearData(yearArray)
     setLoading(false)

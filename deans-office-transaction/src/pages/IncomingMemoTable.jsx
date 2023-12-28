@@ -394,7 +394,7 @@ export default function StickyHeadTable() {
     setRows(data.data);
     setUsers(userData.docs.map((doc) => ({...doc.data(), id: doc.id})))
     setLoading(false);
-    if (data.length == 0) {
+    if (data.data.length == 0) {
       setEmptyResult(true);
     }
   };
@@ -703,7 +703,6 @@ export default function StickyHeadTable() {
       })
       setImageDis(fileData);
       setImageUpload(fileAllowed)
-      console.log(fileAllowed);
     }
     Array.from(event.target.files).map((file) => URL.revokeObjectURL(file));
   };

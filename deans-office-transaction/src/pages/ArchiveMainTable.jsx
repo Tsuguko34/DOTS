@@ -463,18 +463,18 @@ function ArchiveMainTable() {
   };
 
   const handleDownload = (type) => {
-      const anchor = document.createElement('a');
-      if (type == "docx"){
-        anchor.href = fileDocx.url;
-        anchor.download = fileDocx.name;
-      }
-      else if(type == "xlsx"){
-        anchor.href = fileXlsx.url;
-        anchor.download = fileXlsx.name;
-      }
-      anchor.target = '_blank';
-      anchor.click();
-  };
+    const anchor = document.createElement('a');
+    if (type == "docx"){
+      anchor.href = `${port}/document_Files/${fileDocx}`;
+      anchor.download = fileDocx;
+    }
+    else if(type == "xlsx"){
+      anchor.href = `${port}/document_Files/${fileXlsx}`;
+      anchor.download = fileXlsx;
+    }
+    anchor.target = '_blank';
+    anchor.click();
+};
 
   
 

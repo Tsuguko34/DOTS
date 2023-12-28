@@ -16,7 +16,13 @@ const db = mysql.createConnection({
 })
 
 app.get("/documents", (req, res) => {
-    const q = `SELECT * FROM documents WHERE Remark = '${req.query.remark}' AND document_Type = '${req.query.type}'ORDER BY date_Received DESC`
+    let q = null
+    if(req.query.type == "Other"){
+        q = `SELECT * FROM documents WHERE document_Type NOT IN ('Memorandum', 'Communication') ORDER BY date_Received DESC`
+    }else{
+        q = `SELECT * FROM documents WHERE Remark = '${req.query.remark}' AND document_Type = '${req.query.type}'ORDER BY date_Received DESC`
+    }
+    
     db.query(q, (err, data) => {
         if(err) return res.json(err)
         return res.json(data)

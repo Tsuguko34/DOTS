@@ -2585,14 +2585,14 @@
 
   .logo-Bg {
     position: relative; 
-    height: 100vh;
+    height: 100%;
     width: 100%;
     }
 
   .logo-Bg::before{
     content: "";
     width: 100%;
-    height: 100vh;
+    height: 100%;
     position: absolute;
     opacity: .10;
     z-index: 0;
