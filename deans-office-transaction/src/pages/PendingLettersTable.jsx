@@ -88,9 +88,10 @@ import { BitlyClient } from "bitly";
 import { CloudDownload } from "@mui/icons-material";
 import docxViewIcon from '../Images/docxView.png'
 import xlsxViewIcon from '../Images/xlsxView.png'
+import axios from "axios";
 
 export default function StickyHeadTable() {
-
+  const port = "http://localhost:3001"
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   useEffect(() => {
     const handleWindowResize = () => {
@@ -389,38 +390,30 @@ export default function StickyHeadTable() {
 
   const [users, setUsers] = useState([]);
   useEffect(() => {
-    const unsub = auth.onAuthStateChanged((authObj) => {
+    const unsub = auth.onAuthStateChanged(async (authObj) => {
       unsub();
       if (authObj) {
         setuserHolder(authObj);
-        
-        const q = query(collection(db, "documents"), where("Status", "==", "Pending"), where("forward_To", "==", auth.currentUser.uid))
-        onSnapshot(q, async(data) => {
-          const userq = query(collection(db, "Users"))
-          const userData = await getDocs(userq)
-          setUsers(userData.docs.map((doc) => ({...doc.data(), id: doc.id})))
-          const updatedData = data.docs.map((doc) => ({...doc.data(), id: doc.id, dateTime: new Date(doc.data().date_Received)}))
-          data.docChanges().forEach((change) => {
-            const doc = { ...change.doc.data(), id: change.doc.id, dateTime: new Date(change.doc.data().date_Received)}
-            if(change.type === 'added'){
-              if (!updatedData.some((item) => item.id === doc.id)) {
-                updatedData.push(doc);
-              }
-            }else if (change.type === 'modified'){
-              const index = updatedData.findIndex((item) => item.id === doc.id);
-              if (index !== -1){
-                updatedData[index] = doc;
-              }
+        const userq = query(collection(db, "Users"))
+        const userData = await getDocs(userq)
+        setUsers(userData.docs.map((doc) => ({...doc.data(), id: doc.id})))
+        const fetchDataInterval = setInterval( async() => {
+          try{
+            const updatedData = await axios.get(`${port}/getPending?userID=${auth.currentUser.uid}`)
+            setRows(updatedData.data)
+            setLoading(false)
+            if (updatedData.data.length == 0) {
+              setEmptyResult(true);
+            }else{
+              setEmptyResult(false);
             }
-          })
-          setRows(updatedData)
-          setLoading(false);
-          if (data.docs.length == 0) {
-          setEmptyResult(true);
-          }else{
-            setEmptyResult(false);
+          }catch(e){
+            console.log(e.message);
           }
-        }) 
+        }, 1000);
+        return () => {
+          clearInterval(fetchDataInterval);
+        };
       } else {
         setuserHolder(null);
       }
@@ -550,36 +543,23 @@ export default function StickyHeadTable() {
     showFile(id);
   };
   const showFile = async (id) => {
-    let q = query(incomingCollectionRef, where("uID", "==", id));
-    const imageListRef = ref(storage, `DocumentsPic/${id}/`);
-    const data = await getDocs(q);
-    setDisplayFile(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
-    listAll(imageListRef).then((response) => {
-      response.items.forEach((item) => {
-        getMetadata(item).then((metadata) => {
-          if(metadata.contentType.startsWith('image/')){
-            getDownloadURL(item).then((url) => {
-              setImageList((prev) => [...prev, url]);
-            });
-          }
-          else if (metadata.contentType == "application/pdf"){
-              getDownloadURL(item).then(async(url) => {
-                 setFilePDF(url);
-                 console.log(url);
-              })
-          }
-          else if (metadata.contentType == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"){
-            getDownloadURL(item).then(async(url) => {
-                setFileDocx({name: metadata.name, url: url});
-            })
-          }
-          else if (metadata.contentType == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'){
-            getDownloadURL(item).then(async(url) => {
-                setFileXlsx({name: metadata.name, url: url});
-            })
-          }
-        })
-      });
+    const imageListRef = await axios.get(`${port}/getFile?id=${id}`);
+    const data = await axios.get(`${port}/openFile?id=${id}`);
+    setDisplayFile(data.data);
+    imageListRef.data.forEach((item) => {
+      console.log(item);
+        if(item.file_Name.includes('.png') || item.file_Name.includes('.jpg') || item.file_Name.includes('.jpeg')){
+            setImageList((prev) => [...prev, item.file_Name]);
+        }
+        else if (item.file_Name.includes('.pdf')){
+                setFilePDF(item.file_Name);
+        }
+        else if (item.file_Name.includes('.docx') || item.file_Name.includes('.doc')){
+              setFileDocx(item.file_Name);
+        }
+        else if (item.file_Name.includes('.xlsx')){
+              setFileXlsx(item.file_Name);
+        }
     });
     setLoading2(false);
   };
@@ -926,17 +906,14 @@ export default function StickyHeadTable() {
    const timeFiltered = filtered.sort((a, b) => b.time - a.time)
 
    timeFiltered.sort((a, b) => {
-      if (b.dateTime.getFullYear() !== a.dateTime.getFullYear()) {
-        return b.dateTime.getFullYear() - a.dateTime.getFullYear();
-      } else if (b.dateTime.getMonth() !== a.dateTime.getMonth()) {
-        return b.dateTime.getMonth() - a.dateTime.getMonth();
-      } else {
-        return b.dateTime.getDate() - a.dateTime.getDate();
-      }
-   })
-
-
-    console.log(filter10);
+    if (new Date(b.date_Received).getFullYear() !== new Date(a.date_Received).getFullYear()) {
+      return new Date(b.date_Received).getFullYear() - new Date(a.date_Received).getFullYear();
+    } else if (new Date(b.date_Received).getMonth() !== new Date(a.date_Received).getMonth()) {
+      return new Date(b.date_Received).getMonth() - new Date(a.date_Received).getMonth();
+    } else {
+      return new Date(b.date_Received).getDate() - new Date(a.date_Received).getDate();
+    }
+ })
     setFilteredOptionsReceive(Array.from(filteredOptionReceive))
     setFilteredOptionsfromDep(Array.from(filteredOptionfromDep))
     setFilteredOptionsDocType(Array.from(filteredOptionDocType))
@@ -1058,59 +1035,63 @@ export default function StickyHeadTable() {
     e.preventDefault()
     setSumbmit(true)
     if(forward){
-      await addDoc(collection(db, "UserNotifs"),{
-        docId: actionHolder.id,
-        userUID: forward,
-        isRead: false,
-        multiple: false
-      })
-      const editDoc = doc(db, "documents", actionHolder.id);
-      const updateFields = {
-        forward_To: forward,
-        Comment: comment,
-        forwarded_By: auth.currentUser.uid,
-        forwarded_DateTime: dayjs().format('MM/DD/YYYY h:mm A').toString(),
-        accepted_Rejected_In: dayjs().format('MM/DD/YYYY h:mm A').toString(),
-        accepted_Rejected_By: auth.currentUser.uid,
-        Status: action == "accept" ? "Completed" : "Rejected",
-      }
-      await updateDoc(editDoc, updateFields).then(() => {
+      try{
+        const newNotif = {
+          docId: actionHolder.id,
+          userUID: forward,
+          isRead: 0,
+          multiple: 0
+        }
+        await axios.post(`${port}/notif`, newNotif)
+        const updateFields = {
+          forward_To: forward,
+          Comment: comment,
+          uID: actionHolder.id,
+          forwarded_By: auth.currentUser.uid,
+          forwarded_DateTime: dayjs().format('MM/DD/YYYY h:mm A').toString(),
+          accepted_Rejected_In: dayjs().format('MM/DD/YYYY h:mm A').toString(),
+          accepted_Rejected_By: auth.currentUser.uid,
+          Status: action == "accept" ? "Completed" : "Rejected",
+        }
+        await axios.put(`${port}/approveReject`, updateFields)
         closrApproveReject()
         setSumbmit(false)
         toast.success("Forwarded a Document.")
-      })
+      }catch(e){
+        console.log(e);
+      }
     }
     else if(allUsers){
       const mainDocumentRef = doc(db, 'documents', actionHolder.id);
       const subcollectionRef = collection(mainDocumentRef, "UserRead");
       for(const user of users){
           try{
-            await addDoc(collection(db, "UserNotifs"),{
+            const newNotif = {
               docId: actionHolder.id,
               userUID: user.UID,
-              isRead: false,
-              multiple: true
-            })
+              isRead: 0,
+              multiple: 1
+            }
+            await axios.post(`${port}/notif`, newNotif)
           }catch(error){
               console.log(error.message);
           }
       }
-      const editDoc = doc(db, "documents", actionHolder.id);
       const updateFields = {
         forward_To: "All " + auth.currentUser.uid,
         Comment: comment,
         forwarded_By: auth.currentUser.uid,
+        uID: actionHolder.id,
         forwarded_DateTime: dayjs().format('MM/DD/YYYY h:mm A').toString(),
         accepted_Rejected_In: dayjs().format('MM/DD/YYYY h:mm A').toString(),
         accepted_Rejected_By: auth.currentUser.uid,
         Status: action == "accept" ? "Completed" : "Rejected",
         unread: true
       }
-      await updateDoc(editDoc, updateFields).then(() => {
-        closrApproveReject()
-        setSumbmit(false)
-        toast.success("Forwarded a Document.")
-      })
+      await axios.put(`${port}/approveReject`, updateFields)
+      closrApproveReject()
+      setSumbmit(false)
+      toast.success("Forwarded a Document.")
     }
     else if(allFaculty){
       const mainDocumentRef = doc(db, 'documents', actionHolder.id);
@@ -1118,34 +1099,34 @@ export default function StickyHeadTable() {
       for(const user of users){
           try{
             if(user.role == "Faculty"){
-              await addDoc(collection(db, "UserNotifs"),{
+              const newNotif = {
                 docId: actionHolder.id,
                 userUID: user.UID,
-                isRead: false,
-                multiple: true
-              })
+                isRead: 0,
+                multiple: 1
+              }
+              await axios.post(`${port}/notif`, newNotif)
               
             }
           }catch(error){
               console.log(error.message);
           }
       }
-      const editDoc = doc(db, "documents", actionHolder.id);
       const updateFields = {
         forward_To: "Faculty " + auth.currentUser.uid,
         Comment: comment,
         forwarded_By: auth.currentUser.uid,
+        uID: actionHolder.id,
         forwarded_DateTime: dayjs().format('MM/DD/YYYY h:mm A').toString(),
         accepted_Rejected_In: dayjs().format('MM/DD/YYYY h:mm A').toString(),
         accepted_Rejected_By: auth.currentUser.uid,
         Status: action == "accept" ? "Completed" : "Rejected",
         unread: true
       }
-      await updateDoc(editDoc, updateFields).then(() => {
-        closrApproveReject()
-        setSumbmit(false)
-        toast.success("Forwarded a Document.")
-      })
+      await axios.put(`${port}/approveReject`, updateFields)
+      closrApproveReject()
+      setSumbmit(false)
+      toast.success("Forwarded a Document.")
     }
     else if(allClerks){
       const mainDocumentRef = doc(db, 'documents', actionHolder.id);
@@ -1153,12 +1134,13 @@ export default function StickyHeadTable() {
       for(const user of users){
           try{
             if(user.role == "Clerk"){
-              await addDoc(collection(db, "UserNotifs"),{
+              const newNotif = {
                 docId: actionHolder.id,
                 userUID: user.UID,
-                isRead: false,
-                multiple: true
-              })
+                isRead: 0,
+                multiple: 1
+              }
+              await axios.post(`${port}/notif`, newNotif)
               
             }
           }catch(error){
@@ -1170,16 +1152,16 @@ export default function StickyHeadTable() {
         forward_To: "Clerk " + auth.currentUser.uid,
         Comment: comment,
         forwarded_By: auth.currentUser.uid,
+        uID: actionHolder.id,
         forwarded_DateTime: dayjs().format('MM/DD/YYYY h:mm A').toString(),
         accepted_Rejected_In: dayjs().format('MM/DD/YYYY h:mm A').toString(),
         accepted_Rejected_By: auth.currentUser.uid,
         Status: action == "accept" ? "Completed" : "Rejected",
       }
-      await updateDoc(editDoc, updateFields).then(() => {
-        closrApproveReject()
-        setSumbmit(false)
-        toast.success("Forwarded a Document.")
-      })
+      await axios.put(`${port}/approveReject`, updateFields)
+      closrApproveReject()
+      setSumbmit(false)
+      toast.success("Forwarded a Document.")
       
     }
     getSignInMethods(action)
@@ -1194,11 +1176,16 @@ export default function StickyHeadTable() {
 
   //UNREAD
   const unread = async(unread, id) => {
-    if(unread){
-      const docRef = doc(db, "documents", id)
-      await updateDoc(docRef, {
-        unread: false,
-      })
+    if(unread == 1){
+      const unreadFields = {
+        unread: 0,
+        uID: id
+      }
+      try{
+        await axios.put(`${port}/unread`, unreadFields)
+      }catch(e){
+        console.log(e.message);
+      }
     }
   }
 
@@ -1571,7 +1558,7 @@ export default function StickyHeadTable() {
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
               .map((row) => (
                 <>
-                <TableRow hover onClick={() => unread(row.unread, row.id)} role="checkbox" tabIndex={-1} key={row.uID} sx={{cursor: "pointer", userSelect: "none", height: "50px", background: "#F0EFF6",'& :last-child': {borderBottomRightRadius: "10px", borderTopRightRadius: "10px"} ,'& :first-child':  {borderTopLeftRadius: "10px", borderBottomLeftRadius: "10px"} }}>
+                <TableRow hover onClick={() => unread(row.unread, row.uID)} role="checkbox" tabIndex={-1} key={row.uID} sx={{cursor: "pointer", userSelect: "none", height: "50px", background: "#F0EFF6",'& :last-child': {borderBottomRightRadius: "10px", borderTopRightRadius: "10px"} ,'& :first-child':  {borderTopLeftRadius: "10px", borderBottomLeftRadius: "10px"} }}>
                   <TableCell className={row.unread ? "table-cell unread first" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.document_Name} </TableCell>
                   <TableCell className={row.unread ? "table-cell unread" : "table-cell"}  align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.Type == undefined || row.Type == "" ? row.document_Type : row.Type} </TableCell>
                   <TableCell className={row.unread ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.received_By} </TableCell>
@@ -1607,7 +1594,7 @@ export default function StickyHeadTable() {
                           borderRadius: "5px",
                         }}
                         className="cursor-pointer"
-                        onClick={() => openApproveReject("accept", row.id)}
+                        onClick={() => openApproveReject("accept", row.uID)}
                       />
                       </Tooltip>
                       <Tooltip title={<Typography sx={{fontSize: "0.8rem"}}>Reject Document</Typography>} arrow>
@@ -1620,7 +1607,7 @@ export default function StickyHeadTable() {
                           borderRadius: "5px",
                           zIndex: "11"
                         }}
-                        onClick={() => openApproveReject("reject", row.id)}
+                        onClick={() => openApproveReject("reject", row.uID)}
                       />
                       </Tooltip>
                     </Stack>
@@ -1775,12 +1762,6 @@ export default function StickyHeadTable() {
                           <h2>Category: </h2>
                           <p>{displayFile.document_Type}</p>
                         </div>
-                        {displayFile.Type == undefined ? "" : (
-                            <div className="details">
-                                <h2>Document Type:</h2>
-                                <p>{displayFile.Type}</p>
-                            </div>
-                        )}
                         <div className="details">
                           <h2>Received By: </h2>
                           <p>{displayFile.received_By}</p>
@@ -1797,19 +1778,17 @@ export default function StickyHeadTable() {
                           <h2>Description:</h2>
                           <p>{displayFile.Description}</p>
                         </div>
-                        {displayFile.Sched_Date == undefined ? "" : (
-                            <div className="details">
-                                <h2>Office/Dept:</h2>
-                                <p>{displayFile.fromDep}</p>
-                            </div>
-                        )}
-                        {displayFile.Sched_Date == undefined ? "" : (
+                        <div className="details">
+                            <h2>Office/Dept:</h2>
+                            <p>{displayFile.fromDep}</p>
+                        </div>
+                        {displayFile.Sched_Date == null ? "" : (
                             <div className="details">
                                 <h2>Schedule Date:</h2>
                                 <p>{displayFile.Sched_Date}</p>
                             </div>
                         )}
-                        {displayFile.Sched == undefined ? "" : (
+                        {displayFile.Sched == null ? "" : (
                             <div className="details">
                                 <h2>Meeting Details:</h2>
                                 <p>{displayFile.Sched}</p>
@@ -1842,7 +1821,7 @@ export default function StickyHeadTable() {
                                     <ImageList variant="masonry" cols={windowWidth <= 375 ? 1 : windowWidth <=576 && windowWidth > 375? 2 : 3} gap={8}>
                                       {imageList.map((url, index) => (
                                             <ImageListItem key={url}>
-                                              <img loading="eager" srcSet={`${url}?w=248&fit=crop&auto=format&dpr=2 2x`} src={`${url}?w=248&fit=crop&auto=format`} onClick={(e) => openLightbox(index)}/>
+                                              <img loading="eager" srcSet={`${port}/document_Files/${url}?w=248&fit=crop&auto=format&dpr=2 2x`} src={`${port}/document_Files/${url}?w=248&fit=crop&auto=format`} onClick={(e) => openLightbox(index)}/>
                                             </ImageListItem>                                  
                                       ))}
                                   </ImageList>
@@ -1856,7 +1835,7 @@ export default function StickyHeadTable() {
                                 <Worker workerUrl="https://unpkg.com/pdfjs-dist@2.4.456/build/pdf.worker.js">
                                   {imageList && (
                                     <>
-                                      <Viewer fileUrl={filePDF} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark" />
+                                      <Viewer fileUrl={`${port}/document_Files/${filePDF}`} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark" />
                                     </>
                                   )}  
                                   {!imageList && <>No PDF</>}
@@ -1871,7 +1850,7 @@ export default function StickyHeadTable() {
                                 <>
                                 <Box sx={{width: "100%", height: '300px', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
                                   <img src={docxViewIcon} style={{width: "150px", height: '150px'}}></img>
-                                  <Typography sx={{mt: "5vh"}}>{fileDocx.name}</Typography>
+                                  <Typography sx={{mt: "5vh"}}>{fileDocx}</Typography>
                                   <Button component="label" onClick={(e) => handleDownload("docx")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none"}}>
                                     Download .docx File
                                   </Button>
@@ -1886,7 +1865,7 @@ export default function StickyHeadTable() {
                                 <>
                                 <Box sx={{width: "100%", height: '300px', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
                                   <img src={xlsxViewIcon} style={{width: "150px", height: '150px'}}></img>
-                                  <Typography sx={{mt: "5vh"}}>{fileXlsx.name}</Typography>
+                                  <Typography sx={{mt: "5vh"}}>{fileXlsx}</Typography>
                                   <Button component="label" onClick={(e) => handleDownload("xlsx")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "hsl(126, 49%, 36%)", textTransform: "none"}}>
                                     Download .xlsx File
                                   </Button>
@@ -1904,7 +1883,7 @@ export default function StickyHeadTable() {
                               <ImageList variant="masonry" cols={windowWidth <= 375 ? 1 : windowWidth <=576 && windowWidth > 375? 2 : 3} gap={8}>
                                 {imageList.map((url, index) => (
                                       <ImageListItem key={url}>
-                                        <img loading="eager" srcSet={`${url}?w=248&fit=crop&auto=format&dpr=2 2x`} src={`${url}?w=248&fit=crop&auto=format`} onClick={(e) => openLightbox(index)}/>
+                                        <img loading="eager" srcSet={`${port}/document_Files/${url}?w=248&fit=crop&auto=format&dpr=2 2x`} src={`${port}/document_Files/${url}?w=248&fit=crop&auto=format`} onClick={(e) => openLightbox(index)}/>
                                       </ImageListItem>                                  
                                 ))}
                             </ImageList>
@@ -1917,7 +1896,7 @@ export default function StickyHeadTable() {
                         <Worker workerUrl="https://unpkg.com/pdfjs-dist@2.4.456/build/pdf.worker.js">
                           {imageList && (
                             <>
-                              <Viewer fileUrl={filePDF} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark" />
+                              <Viewer fileUrl={`${port}/document_Files/${filePDF}`} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark" />
                             </>
                           )}  
                           {!imageList && <>No PDF</>}
@@ -1928,7 +1907,7 @@ export default function StickyHeadTable() {
                           <>
                             <Box sx={{width: "100%", height: '300px', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
                               <img src={docxViewIcon} style={{width: "150px", height: '150px'}}></img>
-                              <Typography sx={{mt: "5vh"}}>{fileDocx.name}</Typography>
+                              <Typography sx={{mt: "5vh"}}>{fileDocx}</Typography>
                               <Button component="label" onClick={(e) => handleDownload("docx")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none"}}>
                                 Download .docx File
                               </Button>
@@ -1939,7 +1918,7 @@ export default function StickyHeadTable() {
                         <>
                           <Box sx={{width: "100%", height: '300px', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
                             <img src={xlsxViewIcon} style={{width: "150px", height: '150px'}}></img>
-                            <Typography sx={{mt: "5vh"}}>{fileXlsx.name}</Typography>
+                            <Typography sx={{mt: "5vh"}}>{fileXlsx}</Typography>
                             <Button component="label" onClick={(e) => handleDownload("xlsx")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "hsl(126, 49%, 36%)", textTransform: "none"}}>
                               Download .xlsx File
                             </Button>
@@ -1954,7 +1933,7 @@ export default function StickyHeadTable() {
                       )}
                       {isLightboxOpen && (
                         <Lightbox
-                          mainSrc={imageList[lightboxIndex]}
+                          mainSrc={`${port}/document_Files/${imageList[lightboxIndex]}`}
                           nextSrc={imageList[(lightboxIndex + 1) % imageList.length]}
                           prevSrc={imageList[(lightboxIndex + imageList.length - 1) % imageList.length]}
                           onCloseRequest={closeLightbox}

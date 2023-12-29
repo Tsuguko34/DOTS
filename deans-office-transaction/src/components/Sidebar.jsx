@@ -23,7 +23,9 @@ import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import { collection, getDocs, onSnapshot, query, where } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import Overlay from '../pages/Overlay';
+import axios from 'axios';
 function Sidebar() {
+    const port = "http://localhost:3001"
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
         useEffect(() => {
             const handleWindowResize = () => {
@@ -82,79 +84,62 @@ function Sidebar() {
             const userq = query(collection(db, "Users"))
             const userData = await getDocs(userq)
             setUsers(userData.docs.map((doc) => ({...doc.data(), id: doc.id})))
+            
           }
         });
       }, []);
 
-      useEffect(() => {
-        onSnapshot(collection(db, "UserNotifs"), async(data) => {
-            const UpdatedSub = []
-            data.docs.forEach((doc) => [
-              UpdatedSub.push({...doc.data(), id: doc.id})
-            ])
-            data.docChanges().forEach((change) => {
-              const doc = { ...change.doc.data(), id: change.doc.id}
-              if(change.type === 'added'){
-                    UpdatedSub.push(doc)
-              }
-              else if (change.type === 'modified'){
-                const index = UpdatedSub.findIndex((item) => item.id === doc.id);
-                if (index !== -1){
-                  UpdatedSub[index] = doc;
-                }
-              }
-            })
-            setSubArrayCol(UpdatedSub)
-        })
-      }, [users])
 
       useEffect(() => {
-        const q = query(collection(db, "documents"), where("Status", "in", ["Rejected", "Cancelled", "Completed", "Pending"]))
-        onSnapshot(q, async(data) => {
-            const AllArr = []
-            const pendingArr = []
-            const approvedArr = []
-            const rejectedArr = []
-            data.docs.forEach((doc) => {
-                const forward = doc.data().forward_To
+        const fetchDataInterval = setInterval( async() => {
+            try{
+                const data = await axios.get(`${port}/getRequests`)
+                const notifData = await axios.get(`${port}/getNotifs?userID=${auth.currentUser.uid}`)
+                const AllArr = []
+                const pendingArr = []
+                const approvedArr = []
+                const rejectedArr = []
+                data.data.forEach((doc) => {
+                const forward = doc.forward_To
                 const role = users.find(item => item.UID == auth.currentUser.uid)?.role
                 if((forward.includes(role) || forward.includes("All")) && !forward.includes(auth.currentUser.uid)){
-                    if(subArrayCol.find(item => item.userUID == auth.currentUser.uid && item.docId == doc.id && item.multiple == true)?.isRead == false){
-                        AllArr.push(doc.data())
-                        if(doc.data().Status === "Pending"){
-                            pendingArr.push(doc.data())
+                    if(notifData.data.find(item => item.userUID == auth.currentUser.uid && item.docID == doc.uID && item.multiple == 1)?.isRead == 0){
+                        AllArr.push(doc)
+                        if(doc.Status === "Pending"){
+                            pendingArr.push(doc)
                         }
-                        else if(doc.data().Status === "Completed"){
-                            approvedArr.push(doc.data())
+                        else if(doc.Status === "Completed"){
+                            console.log(true);
+                            approvedArr.push(doc)
                         }
-                        else if(doc.data().Status === "Rejected" || doc.data().Status === "Cancelled"){
-                            rejectedArr.push(doc.data())
+                        else if(doc.Status === "Rejected" || doc.Status === "Cancelled"){
+                            rejectedArr.push(doc)
                         }
                     }
                 }
                 else if(forward == auth.currentUser.uid){
-                    if(subArrayCol.find(item => item.userUID == auth.currentUser.uid && item.docId == doc.id && item.multiple == false)?.isRead == false){
-                        AllArr.push(doc.data())
-                        if(doc.data().Status === "Pending"){
-                            pendingArr.push(doc.data())
+                    if(notifData.data.find(item => item.userUID == auth.currentUser.uid && item.docID == doc.uID && item.multiple == 0)?.isRead == 0){
+                        AllArr.push(doc)
+                        if(doc.Status === "Pending"){
+                            pendingArr.push(doc)
                         }
-                        else if(doc.data().Status === "Completed"){
-                            approvedArr.push(doc.data())
+                        else if(doc.Status === "Completed"){
+                            approvedArr.push(doc)
                         }
-                        else if(doc.data().Status === "Rejected" || doc.data().Status === "Cancelled"){
-                            rejectedArr.push(doc.data())
+                        else if(doc.Status === "Rejected" || doc.Status === "Cancelled"){
+                            rejectedArr.push(doc)
                         }
                     }
-                    else if(doc.data().unread){
-                        AllArr.push(doc.data())
-                        if(doc.data().Status === "Pending"){
-                            pendingArr.push(doc.data())
+                    else if(doc.unread == 1){
+                        AllArr.push(doc)
+                        if(doc.Status === "Pending"){
+                            pendingArr.push(doc)
                         }
-                        else if(doc.data().Status === "Completed"){
-                            approvedArr.push(doc.data())
+                        else if(doc.Status === "Completed"){
+                            approvedArr.push(doc)
                         }
-                        else if(doc.data().Status === "Rejected" || doc.data().Status === "Cancelled"){
-                            rejectedArr.push(doc.data())
+                        else if(doc.Status === "Rejected" || doc.Status === "Cancelled"){
+                            rejectedArr.push(doc)
                         }
                     }
                 }
@@ -162,10 +147,15 @@ function Sidebar() {
                 setPendingNotif(pendingArr.length)
                 setApprovedNotif(approvedArr.length)
                 setRejectedNotif(rejectedArr.length)
-            })
-            
-        }) 
-      }, [subArrayCol])
+                })
+            }catch(e){
+              console.log(e.message);
+            }
+          }, 1000);
+          return () => {
+            clearInterval(fetchDataInterval);
+          };
+      }, [users])
 
       
   return (

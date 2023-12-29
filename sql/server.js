@@ -71,7 +71,7 @@ app.post("/documentFiles", upload.array('files'),(req, res) => {
 })
 
 app.post("/documents",(req, res) => {
-    const q = "INSERT INTO documents (`document_Name`,`document_Type`,`date_Received`,`received_By`,`fromPer`,`fromDep`,`time_Received`,`uID`,`Status`,`Type`,`Description`,`Comment`,`forward_To`,`Remark`,`deleted_at`,`urgent`,`unread`) VALUES (?)"
+    const q = "INSERT INTO documents (`document_Name`,`document_Type`,`date_Received`,`received_By`,`fromPer`,`fromDep`,`time_Received`,`uID`,`Status`,`Type`,`Description`,`Comment`,`forward_To`,`Remark`,`deleted_at`,`urgent`,`unread`, `Sched_Date`, `Sched`) VALUES (?)"
     const values = [
         req.body.document_Name,
         req.body.document_Type,
@@ -90,6 +90,8 @@ app.post("/documents",(req, res) => {
         req.body.deleted_at,
         req.body.urgent,
         req.body.unread,
+        req.body.Sched_Date,
+        req.body.Sched,
     ]
 
     db.query(q, [values], (err, data) => {
@@ -264,6 +266,140 @@ app.get("/getArchiveFiles",(req, res) => {
       return res.json(data);
     });
 });
+
+
+app.get("/getPending", (req, res) => {
+    const q = `SELECT * FROM documents WHERE Status = 'Pending'`
+    db.query(q, (err, data) => {
+        if (err) console.log(err);
+        return res.json(data);
+    })
+})
+
+app.get("/getApproved", (req, res) => {
+    const q = `SELECT * FROM documents WHERE Status = 'Completed'`
+    db.query(q, (err, data) => {
+        if (err) console.log(err);
+        const sentData = data.filter(item => item.forward_To == req.query.userID || ((item.forward_To.includes(req.query.role) || item.forward_To.includes("All")) && !item.forward_To.includes(req.query.userID)))
+        return res.json(sentData);
+    })
+})
+
+app.get("/getRejected", (req, res) => {
+    const q = `SELECT * FROM documents WHERE Status = 'Rejected'`
+    db.query(q, (err, data) => {
+        if (err) console.log(err);
+        const sentData = data.filter(item => item.forward_To == req.query.userID || ((item.forward_To.includes(req.query.role) || item.forward_To.includes("All")) && !item.forward_To.includes(req.query.userID)))
+        return res.json(sentData);
+    })
+})
+
+app.get("/getRequests", (req, res) => {
+    const q = `SELECT * FROM documents`
+    db.query(q, (err, data) => {
+        if (err) console.log(err);
+        return res.json(data);
+    })
+})
+
+app.get("/getNotifs", (req, res) => {
+    const q = `SELECT * FROM notifications WHERE userUID = '${req.query.userID}'`
+    db.query(q, (err, data) => {
+        if (err) console.log(err);
+        return res.json(data);
+        
+    })
+})
+
+app.get("/requests", (req, res) => {
+    const q = `SELECT * FROM documents`
+    db.query(q, (err, data) => {
+        if (err) console.log(err);
+        return res.json(data);
+    })
+})
+
+app.put("/unread",(req, res) => {
+    const q = "UPDATE documents SET `unread` = ? WHERE uID = ?"
+    const values = [
+        req.body.unread,
+    ]
+
+    db.query(q, [...values, req.body.uID], (err, data) => {
+        if(err) return console.log(err);;
+        return res.json({sucess: true})
+    })
+})
+
+app.put("/updateNotif",(req, res) => {
+    const q = "UPDATE notifications SET `isRead` = ? WHERE docID = ? AND userUID = ?"
+    const values = [
+        req.body.isRead,
+    ]
+
+    db.query(q, [...values, req.body.docID, req.body.userUID], (err, data) => {
+        if(err) return console.log(err);;
+        return res.json({sucess: true})
+    })
+})
+
+app.put("/approveReject",(req, res) => {
+    const q = "UPDATE documents SET `forward_To` = ?, `Comment` = ?, `forwarded_By` = ?, `forwarded_DateTime` = ?, `accepted_Rejected_In` = ?, `accepted_Rejected_By` = ? , `Status` = ?  WHERE uID = ?"
+    const values = [
+        req.body.forward_To,
+        req.body.Comment,
+        req.body.forwarded_By,
+        req.body.forwarded_DateTime,
+        req.body.accepted_Rejected_In,
+        req.body.accepted_Rejected_By,
+        req.body.Status
+    ]
+    db.query(q, [...values, req.body.uID], (err, data) => {
+        if(err) return console.log(err);
+        return res.json({sucess: true})
+    })
+})
+
+app.put("/forwardRequest",(req, res) => {
+    const q = "UPDATE documents SET `forward_To` = ?, `Comment` = ?, `forwarded_By` = ?, `forwarded_DateTime` = ?, `accepted_Rejected_In` = ?, `accepted_Rejected_By` = ?  WHERE uID = ?"
+    const values = [
+        req.body.forward_To,
+        req.body.Comment,
+        req.body.forwarded_By,
+        req.body.forwarded_DateTime,
+        req.body.accepted_Rejected_In,
+        req.body.accepted_Rejected_By,
+    ]
+    db.query(q, [...values, req.body.uID], (err, data) => {
+        if(err) return console.log(err);
+        return res.json({sucess: true})
+    })
+})
+
+app.post("/notif",(req, res) => {
+    const selectQuery = `SELECT * FROM notifications WHERE userUID = '${req.body.userUID}' AND docID = '${req.body.docId}'`
+    db.query(selectQuery, (err, data) => {
+        if (err) console.log(err);
+        if (data.length > 0){
+            const deleteQuery = `DELETE FROM notifications WHERE userUID = '${req.body.userUID}' AND docID = '${req.body.docId}'`
+            db.query(deleteQuery, (err, deleteData) =>{
+                if (err) return console.log(err);
+            })
+        }
+        const q = "INSERT INTO notifications (`docID`,`userUID`,`isRead`,`multiple`) VALUES (?)"
+        const values = [
+            req.body.docId,
+            req.body.userUID,
+            req.body.isRead,
+            req.body.multiple,
+        ]
+        db.query(q, [values], (err, postData) => {   
+            if(err) return console.log(err);
+            return res.json({sucess: true})
+        })
+    })
+   
+})
 
 app.listen(3001, () => { 
     
