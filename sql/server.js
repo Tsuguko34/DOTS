@@ -3,11 +3,15 @@ import mysql from 'mysql2'
 import cors from 'cors'
 import fs from 'fs'
 import multer from 'multer'
-
+import jwt from 'jsonwebtoken'
+import bcrypt from 'bcrypt'
+import crypto from 'crypto'
+import cookieParser from 'cookie-parser'
+import nodemailer from 'nodemailer'
+import session from 'express-session';
+import MySQLStoreCreator from 'express-mysql-session';
+const MySQLStore = MySQLStoreCreator(session);
 const app = express()
-app.use(express.json())
-app.use(cors())
-
 const db = mysql.createConnection({
     host:"localhost",
     user:"root",
@@ -15,6 +19,177 @@ const db = mysql.createConnection({
     database:"dots"
 })
 
+db.connect(function(err){
+    if(err){
+        console.log('DB ERROR');
+        throw err;
+        return false;
+    }
+})
+
+const sessionStore = new MySQLStore({
+    expiration: (1825 * 86400 * 1000),
+    endConnectionOnClose: false
+}, db)
+
+app.use(session({
+    key: 'SessionToken',
+    secret: '192i34k1290wemfij981m239idm',
+    store: sessionStore,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        maxAge: (1825 * 86400 * 1000),
+        httpOnly: false
+    }
+}))
+app.use(cors({
+    origin: 'http://localhost:3000',
+    credentials: true,
+}))
+app.use(express.json())
+
+
+//Users
+const profileStorage = multer.diskStorage({
+    destination: "../profile_Pictures",
+    filename: function (req, file, cb) {
+        return cb(null, `${file.originalname}`)
+    }
+})
+const uploadProfile = multer({storage: profileStorage})
+app.use('/profile_Pictures', express.static('../profile_Pictures'));
+
+app.post("/register", uploadProfile.single('files'), async(req, res) => {
+    console.log(req.file);
+    const hashedPassword = await bcrypt.hash(req.body.password, 10)
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+
+    const registerQ = "INSERT INTO users (`email`, `password`, `full_Name`, `role`, `signInMethod`, `Active`, `uID`, `verified`, `profilePic`, `verification_token`) VALUES (?)"
+    const values = [
+        req.body.email,
+        hashedPassword,
+        req.body.full_Name,
+        "Faculty",
+        "Email",
+        1,
+        req.body.uID,
+        0,
+        req.body.file_Name,
+        verificationToken
+    ]
+    db.query(registerQ, [values], (err, regData) => {
+        if (err) return console.log(err);
+        sendVerificationEmail(req.body.email, verificationToken)
+        return res.json({sucess: true})
+    })
+    
+})
+
+async function sendVerificationEmail(email, verificationToken){
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: 'wp3deansofficetransaction@gmail.com',
+            pass: 'ezoc sbde vuui qgqc'
+        }
+    })
+
+    const verificationLink = `http://localhost:3000/verify/${verificationToken}`;
+    const mailOptions = {
+        from: 'wp3deansofficetransaction@gmail.com',
+        to: email,
+        subject: 'Verify Your Email',
+        text: 'Email Verification Link',
+        html: `Click <a href="${verificationLink}">here</a> to verify your email.`,
+    };
+
+    await transporter.sendMail(mailOptions)
+}
+
+app.get("/verify", (req, res) =>{
+    const q = `SELECT * FROM users WHERE verification_token = '${req.query.token}'`
+
+    db.query(q, (err, data) => {
+        if (err) return console.log(err);
+        const user = data[0]
+        if(user){
+            const q = "UPDATE users SET `verified` = ?,`verification_token` = ? WHERE uID = ?"
+            const values = [
+                1,
+                null
+            ]
+    
+            db.query(q, [...values, user.uID], (err, data) => {
+                if(err) return console.log(err);;
+                return res.json({sucess: true})
+            })
+        }
+        return res.json(data)
+    })
+})
+
+app.get("/lookEmail", (req, res) =>{
+    const q = `SELECT * FROM users WHERE email = '${req.query.email}'`
+
+    db.query(q, (err, data) => {
+        if (err) return console.log(err);
+        return res.json(data)
+    })
+})
+
+
+
+
+app.post("/logout", (req, res) => {
+    if(req.session.userID){
+        req.session.destroy()
+        return res.json({ success: true });
+    }else{
+        return res.json({ success: false });
+    }
+})
+
+app.post("/login", (req, res) =>{
+    const q = `SELECT * FROM users WHERE email = '${req.body.email}' LIMIT 1`
+    db.query(q, (err, data) => {
+        if (err) return console.log(err);
+        if (data.length == 0 || !(bcrypt.compare(req.body.password, data[0].password))){
+            return res.status(401).json({message: 'wrong pass'})
+        }else{
+            req.session.userID = data[0].uID
+            console.log(req.session);
+            return res.status(200).json(data)
+        }
+       
+    })
+})
+
+app.get("/getUser", async(req, res) => {
+    console.log(req.session.userID);
+    if(req.session.userID){
+        let cols = [req.session.userID]
+        console.log(cols);
+        const q = `SELECT * FROM users WHERE uID = '${cols}' LIMIT 1`
+        db.query(q, (err, data) => {
+            if (err) return res.json(err)
+            return res.json(data)
+        })
+    }else{
+        return res.json({ success: false });
+    }
+})
+
+
+app.get("/getUsers", (req, res) =>{
+    const q = `SELECT * FROM users`
+    db.query(q, (err, data) => {
+        if (err) return console.log(err);
+        return res.json(data)
+    })
+})
+
+//Documents
 app.get("/documents", (req, res) => {
     let q = null
     if(req.query.type == "Other"){
@@ -35,7 +210,7 @@ const storage = multer.diskStorage({
     }
 })
 
-const upload = multer({storage})
+const upload = multer({storage: storage})
 const bytesToSize = (bytes) => {
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
     if (bytes === 0) return '0 Byte';

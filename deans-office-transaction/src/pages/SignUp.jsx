@@ -52,6 +52,7 @@ export default function SignUp() {
 
     const onImageChange = (e) => {
       const file = e.target.files[0];
+      
       const allowedFileTypes = [".png", ".jpg", ".jpeg"];
       if(file){
         const extension = file.name.slice(((file.name.lastIndexOf(".") - 1) >>> 0) + 2).toLowerCase();
@@ -62,7 +63,6 @@ export default function SignUp() {
           setImageDis(reader.result);
         };
         reader.readAsDataURL(file);
-        console.log(profilePic);
         }
         else{
           Swal.fire({text: "File must be a .png, .jpg, .jpeg", confirmButtonColor: "#FF9944"})

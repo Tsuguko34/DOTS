@@ -26,6 +26,7 @@ import Overlay from '../pages/Overlay';
 import axios from 'axios';
 function Sidebar() {
     const port = "http://localhost:3001"
+    axios.defaults.withCredentials = true
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
         useEffect(() => {
             const handleWindowResize = () => {
@@ -76,17 +77,22 @@ function Sidebar() {
     const [approvedNotif, setApprovedNotif] = useState(0);
     const [rejectedNotif, setRejectedNotif] = useState(0);
     const [users, setUsers] = useState([]);
+    const [user, setUser] = useState([]);
     const [subArrayCol, setSubArrayCol] = useState([])
     useEffect(() => {
-        const unsub = auth.onAuthStateChanged(async(authObj) => {
-          unsub();
-          if (authObj) {
-            const userq = query(collection(db, "Users"))
-            const userData = await getDocs(userq)
-            setUsers(userData.docs.map((doc) => ({...doc.data(), id: doc.id})))
-            
-          }
-        });
+        const getUser = async() => {
+            try{
+                await axios.get(`${port}/getUsers`).then((data) => {
+                  setUsers(data.data)
+                })
+                await axios.get(`${port}/getUser`).then((data) => {
+                    setUser(data.data[0])
+                })
+            }catch(e){
+            console.log(e);
+            }
+        }
+        getUser()
       }, []);
 
 
@@ -94,16 +100,16 @@ function Sidebar() {
         const fetchDataInterval = setInterval( async() => {
             try{
                 const data = await axios.get(`${port}/getRequests`)
-                const notifData = await axios.get(`${port}/getNotifs?userID=${auth.currentUser.uid}`)
+                const notifData = await axios.get(`${port}/getNotifs?userID=${user.uID}`)
                 const AllArr = []
                 const pendingArr = []
                 const approvedArr = []
                 const rejectedArr = []
                 data.data.forEach((doc) => {
                 const forward = doc.forward_To
-                const role = users.find(item => item.UID == auth.currentUser.uid)?.role
-                if((forward.includes(role) || forward.includes("All")) && !forward.includes(auth.currentUser.uid)){
-                    if(notifData.data.find(item => item.userUID == auth.currentUser.uid && item.docID == doc.uID && item.multiple == 1)?.isRead == 0){
+                const role = users.find(item => item.UID == user.uID)?.role
+                if((forward.includes(role) || forward.includes("All")) && !forward.includes(user.uID)){
+                    if(notifData.data.find(item => item.userUID == user.uID && item.docID == doc.uID && item.multiple == 1)?.isRead == 0){
                         AllArr.push(doc)
                         if(doc.Status === "Pending"){
                             pendingArr.push(doc)
@@ -117,8 +123,8 @@ function Sidebar() {
                         }
                     }
                 }
-                else if(forward == auth.currentUser.uid){
-                    if(notifData.data.find(item => item.userUID == auth.currentUser.uid && item.docID == doc.uID && item.multiple == 0)?.isRead == 0){
+                else if(forward == user.uID){
+                    if(notifData.data.find(item => item.userUID == user.uID && item.docID == doc.uID && item.multiple == 0)?.isRead == 0){
                         AllArr.push(doc)
                         if(doc.Status === "Pending"){
                             pendingArr.push(doc)
@@ -160,7 +166,7 @@ function Sidebar() {
       
   return (
     <>
-    { auth.currentUser != undefined && users.find(item => item.UID === auth.currentUser.uid)?.passChanged !== false && (<>
+    { user != undefined && users.find(item => item.UID === user.uID)?.passChanged !== false && (<>
         <div className="sidebar">
             <div className='toggle-sidebar'>
                 <Link to="#" className='menu-bars'>
@@ -242,7 +248,7 @@ function Sidebar() {
                                 </ListItem>
                             </div>
                     </Collapse>
-                    { auth.currentUser != undefined && users.find(item => item.UID === auth.currentUser.uid)?.role !== "Faculty" && (
+                    { user != undefined && users.find(item => item.UID === user.uID)?.role !== "Faculty" && (
                         <>
                             <ListItem disablePadding className='nav-text' onClick={showMonitoring} end>
                                 <div className='nav-monitoring'>

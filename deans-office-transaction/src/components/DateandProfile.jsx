@@ -24,8 +24,10 @@ import { UserAuth } from "./AuthContext";
 import PersonIcon from '@mui/icons-material/Person';
 import { DarkMode } from "./Darkmode";
 import { getDownloadURL, ref } from "firebase/storage";
+import axios from "axios";
 
 function DateandProfile() {
+  const port = "http://localhost:3001"
   const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState([]);
   const [userHolder, setuserHolder] = useState(null);
@@ -109,8 +111,17 @@ function DateandProfile() {
       confirmButtonText: "Yes",
     }).then(async (result) => {
       if (result.value) {
-        await signout();
-        navigate("/pages/Login");
+        await axios.post(`${port}/logout`).then((data) => {
+          const success = data.data
+          console.log(success.success);
+          if (success.success == true){
+            navigate("/pages/Login");
+          }
+          else{
+
+          }
+        })
+        
       }
     });
   };

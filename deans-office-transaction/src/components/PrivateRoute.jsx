@@ -4,17 +4,24 @@ import { auth } from "../firebase";
 import { UserAuth } from "./AuthContext";
 import Swal from "sweetalert2";
 import toast, { Toaster } from "react-hot-toast";
+import axios from "axios";
+
 
 const PrivateRoute = ({children}) => {
-    const {user} = UserAuth()
-    const { users } = UserAuth()
-
-    if(!user){
-        return <Navigate to={'/pages/Login'}/>
-    }else if(users.find(item => item.UID === user.uid)?.passChanged == false){
-        return <Navigate to={'/pages/Settings'}/>
-    }
-    
+    const port = "http://localhost:3001"
+    axios.defaults.withCredentials = true
+    useEffect(() => {
+        const getToken = async() =>{
+            await axios.get(`${port}/getUser`).then((data) => {
+                if(data.status == 401){
+                    return <Navigate to={'/pages/Login'}/>
+                }
+            }).catch(()=> {
+                return <Navigate to={'/pages/Login'}/>
+            })
+        }
+        getToken()
+    }, []);
 
     return children
 }

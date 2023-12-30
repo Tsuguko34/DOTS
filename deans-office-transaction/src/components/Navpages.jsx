@@ -22,6 +22,7 @@ import RequestHistory from '../pages/RequestHistory';
 import OtherDocuments from '../pages/OtherDocuments';
 import RoleBasedRoutes from './RoleBasedRoutes';
 import SettingsRoute from './SettingsRoute';
+import Verification from '../pages/verification';
 
 function Navpages() {
   return (
@@ -47,6 +48,7 @@ function Navpages() {
         <Route path='/' index element={<Login />}/>
         <Route path='/pages/Login' element={<Login />}/>
         <Route path='/pages/SignUp' element={<SignUp />}/>
+        <Route path='/verify/:token' element={<Verification />}/>
       </Routes>
     </AuthContextProvider>
     

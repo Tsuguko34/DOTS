@@ -33,7 +33,7 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import bild from '../Images/BiLD.png'
 import bgImage from '../Images/Subtract.png'
 import { Typewriter } from 'react-simple-typewriter';
-  
+import axios from "axios";
   const defaultTheme = createTheme();
   const QontoStepIconRoot = styled('div')(({ theme, ownerState }) => ({
     color: theme.palette.mode === 'dark' ? theme.palette.grey[700] : '#eaeaf0',
@@ -147,6 +147,8 @@ import { Typewriter } from 'react-simple-typewriter';
   
   export default function Login() {
     const navigate = useNavigate();
+    const port = "http://localhost:3001"
+    axios.defaults.withCredentials = true
     useEffect(() => {
         Swal.fire({
             title: 'Please wait...',
@@ -155,15 +157,16 @@ import { Typewriter } from 'react-simple-typewriter';
             didOpen:async() => {
               Swal.showLoading()
               try{
-                const unsub = auth.onAuthStateChanged((authObj) => {
-                    unsub();
-                    if (authObj) {
+                  await axios.get(`${port}/getUser`).then((data) => {
+                      if(data.data.success == false){
+                        Swal.close()
+                      }else{
                         Swal.fire({title: "Logged in", text: "Logged in successfully.", icon: "success", showConfirmButton: false, timer: 1500})
                         navigate('/pages/Dashboard')
-                    }else{
-                        Swal.close()
-                    }
-                  });  
+                      }
+                  }).catch(()=> {
+                    
+                  })
               }
               catch(e){
                 

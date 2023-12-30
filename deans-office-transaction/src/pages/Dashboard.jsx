@@ -8,7 +8,7 @@ import { Link, NavLink, Navigate, useNavigate } from "react-router-dom";
 import cn from "../components/cn";
 import dayjs from "dayjs";
 import noresult from "../Images/noresults.png";
-import user from "../Images/user.png";
+import userpic from "../Images/user.png";
 import noresult2 from "../Images/noresult2.png";
 import Calendar from "../components/Calendar";
 import Welcome from '../Images/welcome2.png'
@@ -67,11 +67,14 @@ import Lightbox from "react-image-lightbox";
 import { CloudDownload } from "@mui/icons-material";
 import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
 import { pageNavigationPlugin } from "@react-pdf-viewer/page-navigation";
+import axios from "axios";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 //sample comment hahaha
 
 function Dashboard() {
+  const port = "http://localhost:3001"
+  axios.defaults.withCredentials = true
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true);
   const [data1, setData1] = useState(0);
@@ -342,54 +345,42 @@ function Dashboard() {
 
 
   const [userName, setuserName] = useState("");
-  const [profilePic, setProfilePic] = useState(user)
+  const [profilePic, setProfilePic] = useState(userpic)
   const getUserInfo = async () => {
     setLoginWith(!setLoginWith)
-    const { uid } = auth.currentUser;
-    if (!uid) return;
-    const userRef = collection(db, "Users");
-    const imageListRef = ref(storage, `/ProfilePics/${uid}`);
-    const q = query(userRef, where("UID", "==", uid));
-    const data = await getDocs(q);
-    const image = await getDownloadURL(imageListRef)
-    setProfilePic(image)
-    setUserInfo(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
-    setuserName(data.docs.map((doc) => doc.data().full_Name))
+    if (!user.uID) return;
+    setProfilePic(`${port}/profile_Pictures/${user.profilePic}`)
+    setUserInfo(user);
+    setuserName(user.full_Name)
   };
 
   const [userHolder, setuserHolder] = useState(null);
   const [googleName, setGoogleName] = useState("")
   const [googleEmail, setGoogleEmail] = useState("")
   const [users, setUsers] = useState([]);
+  const [user, setUser] = useState([]);
   useEffect(() => {
-    const unsub = auth.onAuthStateChanged(async(authObj) => {
-      unsub();
-      if (authObj) {
-        setuserHolder(authObj);
-        const userq = query(collection(db, "Users"))
-        const userData = await getDocs(userq)
-        setUsers(userData.docs.map((doc) => ({...doc.data(), id: doc.id})))
-      } else {
-        setuserHolder(null);
+    const getUser = async() => {
+      try{
+        await axios.get(`${port}/getUser`).then((data) => {
+          setUser(data.data[0])
+          console.log(data.data);
+        })
+        await axios.get(`${port}/getUsers`).then((data) => {
+          setUsers(data.data)
+        })
+      }catch(e){
+        console.log(e);
       }
-    });
+    }
+    getUser()
   }, []);
 
   const getSignInMethods = () => {
     if (userHolder) {
-      const signInMethods = userHolder.providerData.map(
-        (provider) => provider.providerId
-      );
-      if (signInMethods.includes("google.com")) {
-        setLoginWith(true)
-        setGoogleName(auth.currentUser.displayName)
-        setGoogleEmail(auth.currentUser.email)
-        setProfilePic(localStorage.getItem("profilePic"))
-      } else if (signInMethods.includes("password")) {
         getUserInfo()
-        setuserName(auth.currentUser.displayName)
-        setGoogleEmail(auth.currentUser.email)
-      }
+        setuserName(user.full_Name)
+        setGoogleEmail(user.email)
     }
   };
 
@@ -487,7 +478,7 @@ function Dashboard() {
     const filterDashData = []
     dashboard.forEach((doc) => {
       const forward = doc.forward_To
-      if(userHolder && (forward.includes("All") ||  forward.includes(users.find(item => item.UID == auth.currentUser.uid)?.role) || forward == auth.currentUser.uid)){
+      if(userHolder && (forward.includes("All") ||  forward.includes(users.find(item => item.UID == user.uID)?.role) || forward == user.uID)){
         console.log(doc);
         filterDashData.push(doc)
         setEmptyResult(false)
@@ -609,10 +600,10 @@ function Dashboard() {
                   </div>
                   <div className="welcome-msg">
                       <Typography variant="h1" className="welcome-hello" sx={{fontSize:windowWidth <= 768 && windowWidth > 425 ? "1.3rem" :windowWidth < 425 ? "1rem" : "1.5rem", display: 'flex', alignItems: 'center', justifyContent: 'start'}}>
-                        Welcome, <Typography sx={{fontSize:windowWidth <= 768 && windowWidth > 425 ? "1.3rem" :windowWidth < 425 ? "1rem" : "1.5rem", color: "#E6E4F0", fontWeight: 'bold'}}> &nbsp;{auth.currentUser != undefined && users.find(item => item.UID == auth.currentUser.uid)?.role}</Typography>
+                        Welcome, <Typography sx={{fontSize:windowWidth <= 768 && windowWidth > 425 ? "1.3rem" :windowWidth < 425 ? "1rem" : "1.5rem", color: "#E6E4F0", fontWeight: 'bold'}}> &nbsp;{user != undefined && users.find(item => item.UID == user.uID)?.role}</Typography>
                       </Typography>
                       <Typography variant="div" className="welcome-hello2" sx={{fontSize:windowWidth <= 768 && windowWidth > 425 ? "1.3rem" :windowWidth < 425 ? "1rem" : "1.5rem", fontWeight: 'bold'}}>
-                        {auth.currentUser != undefined && auth.currentUser.displayName == undefined ? userName : googleName}
+                        {user != undefined && user.full_Name}
                       </Typography>
                   </div>
                 </div>    
@@ -679,7 +670,7 @@ function Dashboard() {
             </Card>
           </Grid>
           <Grid item xs={12} sm={12} md={6} lg={6} xl= {6}>
-            {auth.currentUser != undefined && users.find(item => item.UID == auth.currentUser.uid)?.role !== "Faculty" ? (<>
+            {user != undefined && users.find(item => item.UID == user.uID)?.role !== "Faculty" ? (<>
               <Typography sx={{fontSize: "1.2rem", fontWeight: "bold"}} className="type-title"><Typewriter words={['Document Types']} typeSpeed={40}/></Typography>
               <Card sx={{height: "400px", maxHeight: "400px", maxWidth: "1000px", display:"flex", flexDirection: "column", justifyContent: "center", alignItems: "center", p: "21.6px", ml: windowWidth >= 1024 ? '11.6px' : 0}} className="dash-cards">
                   <div className="size" style={{width: "100%", maxWidth: "500px", height: "100%", display: "flex", justifyContent: "center", alignItems: "center"}}>
@@ -709,7 +700,7 @@ function Dashboard() {
             
           </Grid>
         </Grid>
-        {auth.currentUser != undefined && users.find(item => item.UID == auth.currentUser.uid)?.role !== "Faculty" && (
+        {user != undefined && users.find(item => item.UID == user.uID)?.role !== "Faculty" && (
           <Grid container xs={12} sx={{pr: "21.6px", pl: "21.6px", pb: "21.6px"}} gap={2} flexWrap={windowWidth >= 1024 ? "noWrap" : ''} overflow={"hidden"}>
           <Grid container item>
             <Grid item xs={12}>
@@ -794,7 +785,7 @@ function Dashboard() {
               <Grid container sx={12} gap={2} wrap="noWrap">
               <Grid item xs={12}>
                 <Card sx={{width: '100%',height: "100px", display:"flex", justifyContent: "center", alignItems: "center", p: "21.6px", mb: "21.8px", maxHeight: '100px', userSelect: 'none'}} className="dash-gradient">
-                {auth.currentUser != undefined && users.find(item => item.UID == auth.currentUser.uid)?.role === "Dean" && (
+                {user != undefined && users.find(item => item.UID == user.uID)?.role === "Dean" && (
                   <div className="welcome-holder2" onClick={openLogs} style={{cursor: "pointer", userSelect: "none"}}>
                     <div className="welcome-img">
                       <img src={LogsPic}/>
