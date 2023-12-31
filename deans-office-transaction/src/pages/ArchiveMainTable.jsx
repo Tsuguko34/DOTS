@@ -34,6 +34,7 @@ import ClearIcon from '@mui/icons-material/Clear';
 import axios from 'axios'
 function ArchiveMainTable() {
     const port = "http://localhost:3001"
+    axios.defaults.withCredentials = true
     const newPlugin = defaultLayoutPlugin();
     const pagePlugin = pageNavigationPlugin();
     const { documentType, year } = useParams()
@@ -76,6 +77,28 @@ function ArchiveMainTable() {
         Navigate('./pages/Archives')
       }
     }, [archiveData])
+
+    
+  useEffect(() => {
+    getUser()
+  }, [])
+
+  const [users, setUsers] = useState([]);
+  const [user, setUser] = useState([]);
+  const getUser = async() => {
+    try{
+      await axios.get(`${port}/getUser`).then((data) => {
+        if(data.status == 200){
+          setUser(data.data[0])
+        }
+      })
+      await axios.get(`${port}/getUsers`).then((data) => {
+        setUsers(data.data)
+      })
+    }catch(e){
+      console.log(e.message);
+    }
+  }
 
     const [fileInfo, setFileInfo] = useState("")
     const [fileType, setFileType] = useState("")
@@ -129,7 +152,7 @@ function ArchiveMainTable() {
   const [userInfo, setUserInfo] = useState([]);
   const [userHolder, setuserHolder] = useState(null);
     const getUserInfo = async (type, name) => {
-        const { uid } = auth.currentUser;
+        const { uid } = user;
         if (!uid) return;
         const userRef = collection(db, "Users");
         const q = query(userRef, where("UID", "==", uid));
@@ -149,17 +172,6 @@ function ArchiveMainTable() {
         }
       };
     
-      useEffect(() => {
-        const unsub = auth.onAuthStateChanged((authObj) => {
-          unsub();
-          if (authObj) {
-            setuserHolder(authObj);
-          } else {
-            setuserHolder(null);
-          }
-        });
-      }, []);
-    
       const getSignInMethods = async (type, name) => {
         if (userHolder) {
           const signInMethods = userHolder.providerData.map(
@@ -169,12 +181,12 @@ function ArchiveMainTable() {
             if (type == "restore") {
               await addDoc(logcollectionRef, {
                 date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-                log: auth.currentUser.displayName + " restored an archive document",
+                log: user.displayName + " restored an archive document",
               });
             } else if (type == "delete") {
               await addDoc(logcollectionRef, {
                 date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-                log: auth.currentUser.displayName + " deleted an archive document",
+                log: user.displayName + " deleted an archive document",
               });
             }
           } else if (signInMethods.includes("password")) {

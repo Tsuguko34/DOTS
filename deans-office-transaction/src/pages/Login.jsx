@@ -158,14 +158,15 @@ import axios from "axios";
               Swal.showLoading()
               try{
                   await axios.get(`${port}/getUser`).then((data) => {
-                      if(data.data.success == false){
+                    console.log(data);
+                      if(data.status == 401){
                         Swal.close()
                       }else{
                         Swal.fire({title: "Logged in", text: "Logged in successfully.", icon: "success", showConfirmButton: false, timer: 1500})
                         navigate('/pages/Dashboard')
                       }
                   }).catch(()=> {
-                    
+                      Swal.close()
                   })
               }
               catch(e){

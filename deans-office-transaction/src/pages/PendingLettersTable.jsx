@@ -92,6 +92,7 @@ import axios from "axios";
 
 export default function StickyHeadTable() {
   const port = "http://localhost:3001"
+  axios.defaults.withCredentials = true
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   useEffect(() => {
     const handleWindowResize = () => {
@@ -345,50 +346,86 @@ export default function StickyHeadTable() {
 
   const [userUID, setUserUID] = useState("")
   const getUserInfo = async (type) => {
-    const { uid } = auth.currentUser;
+    const { uid } = user;
     if (!uid) return;
     const userRef = collection(db, "Users");
-    const q = query(userRef, where("UID", "==", uid));
+    const q = query(userRef, where("uID", "==", uid));
     const data = await getDocs(q);
     setUserInfo(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
     console.log(userInfo);
     if (type == "add") {
       await addDoc(logcollectionRef, {
         date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-        log: data.docs.map((doc) => doc.data().full_Name) + ` added a ${category}`,
+        log: user.full_Name + ` added a ${category}`,
       });
     } else if (type == "edit") {
       await addDoc(logcollectionRef, {
         date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-        log: data.docs.map((doc) => doc.data().full_Name)  + ` edited a ${editDocType}`,
+        log: user.full_Name  + ` edited a ${editDocType}`,
       });
     } else if (type == "delete") {
       await addDoc(logcollectionRef, {
         date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-        log: data.docs.map((doc) => doc.data().full_Name)  + " deleted a student document",
+        log: user.full_Name  + " deleted a student document",
       });
     } else if (type == "archive") {
       await addDoc(logcollectionRef, {
         date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-        log: data.docs.map((doc) => doc.data().full_Name)  + " archived a student document",
+        log: user.full_Name  + " archived a student document",
       });
     }else if (type == "accept") {
       await addDoc(logcollectionRef, {
         date: dayjs().format("MMM D, YYYY h:mm A").toString(),
         log:
-          auth.currentUser.displayName + " approved a student document",
+          user.full_Name + " approved a student document",
       });
     }
     else if (type == "reject") {
       await addDoc(logcollectionRef, {
         date: dayjs().format("MMM D, YYYY h:mm A").toString(),
         log:
-          auth.currentUser.displayName + " rejected a student document",
+          user.full_Name + " rejected a student document",
       });
     }
   };
-
   const [users, setUsers] = useState([]);
+  const [user, setUser] = useState([]);
+  useEffect(() => {
+    const getUser = async() => {
+      try{
+        await axios.get(`${port}/getUser`).then((data) => {
+          if(data.status == 200){
+            setUser(data.data[0])
+            const fetchDataInterval = setInterval( async() => {
+              try{
+                const updatedData = await axios.get(`${port}/getPending?userID=${data.data[0].uID}`)
+                setRows(updatedData.data)
+                setLoading(false)
+                if (updatedData.data.length == 0) {
+                  setEmptyResult(true);
+                }else{
+                  setEmptyResult(false);
+                }
+              }catch(e){
+                console.log(e.message);
+              }
+            }, 1000);
+            return () => {
+              clearInterval(fetchDataInterval);
+            };
+          }
+         
+        })
+        await axios.get(`${port}/getUsers`).then((data) => {
+          setUsers(data.data)
+        })
+      }catch(e){
+        console.log(e);
+      }
+    }
+    getUser()
+  }, []);
+
   useEffect(() => {
     const unsub = auth.onAuthStateChanged(async (authObj) => {
       unsub();
@@ -397,23 +434,7 @@ export default function StickyHeadTable() {
         const userq = query(collection(db, "Users"))
         const userData = await getDocs(userq)
         setUsers(userData.docs.map((doc) => ({...doc.data(), id: doc.id})))
-        const fetchDataInterval = setInterval( async() => {
-          try{
-            const updatedData = await axios.get(`${port}/getPending?userID=${auth.currentUser.uid}`)
-            setRows(updatedData.data)
-            setLoading(false)
-            if (updatedData.data.length == 0) {
-              setEmptyResult(true);
-            }else{
-              setEmptyResult(false);
-            }
-          }catch(e){
-            console.log(e.message);
-          }
-        }, 1000);
-        return () => {
-          clearInterval(fetchDataInterval);
-        };
+        
       } else {
         setuserHolder(null);
       }
@@ -421,51 +442,7 @@ export default function StickyHeadTable() {
   }, []);
 
   const getSignInMethods = async (type) => {
-    if (userHolder) {
-      const signInMethods = userHolder.providerData.map(
-        (provider) => provider.providerId
-      );
-      if (signInMethods.includes("google.com")) {
-        if (type == "add") {
-          await addDoc(logcollectionRef, {
-            date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-            log: auth.currentUser.displayName + ` added a ${category}`,
-          });
-        } else if (type == "edit") {
-          await addDoc(logcollectionRef, {
-            date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-            log: auth.currentUser.displayName + ` edited a ${editDocType}`,
-          });
-        } else if (type == "delete") {
-          await addDoc(logcollectionRef, {
-            date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-            log: auth.currentUser.displayName + " deleted a student document",
-          });
-        } else if (type == "archive") {
-          await addDoc(logcollectionRef, {
-            date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-            log:
-              auth.currentUser.displayName + " archived a student document",
-          });
-        }else if (type == "accept") {
-          await addDoc(logcollectionRef, {
-            date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-            log:
-              auth.currentUser.displayName + " approved a student document",
-          });
-        }
-        else if (type == "reject") {
-          await addDoc(logcollectionRef, {
-            date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-            log:
-              auth.currentUser.displayName + " rejected a student document",
-          });
-        }
-      } else if (signInMethods.includes("password")) {
-       
-        getUserInfo(type);
-      }
-    }
+    getUserInfo(type);
     return null;
   };
 
@@ -1047,10 +1024,10 @@ export default function StickyHeadTable() {
           forward_To: forward,
           Comment: comment,
           uID: actionHolder.id,
-          forwarded_By: auth.currentUser.uid,
+          forwarded_By: user.uID,
           forwarded_DateTime: dayjs().format('MM/DD/YYYY h:mm A').toString(),
           accepted_Rejected_In: dayjs().format('MM/DD/YYYY h:mm A').toString(),
-          accepted_Rejected_By: auth.currentUser.uid,
+          accepted_Rejected_By: user.uID,
           Status: action == "accept" ? "Completed" : "Rejected",
         }
         await axios.put(`${port}/approveReject`, updateFields)
@@ -1068,7 +1045,7 @@ export default function StickyHeadTable() {
           try{
             const newNotif = {
               docId: actionHolder.id,
-              userUID: user.UID,
+              userUID: user.uID,
               isRead: 0,
               multiple: 1
             }
@@ -1078,13 +1055,13 @@ export default function StickyHeadTable() {
           }
       }
       const updateFields = {
-        forward_To: "All " + auth.currentUser.uid,
+        forward_To: "All " + user.uID,
         Comment: comment,
-        forwarded_By: auth.currentUser.uid,
+        forwarded_By: user.uID,
         uID: actionHolder.id,
         forwarded_DateTime: dayjs().format('MM/DD/YYYY h:mm A').toString(),
         accepted_Rejected_In: dayjs().format('MM/DD/YYYY h:mm A').toString(),
-        accepted_Rejected_By: auth.currentUser.uid,
+        accepted_Rejected_By: user.uID,
         Status: action == "accept" ? "Completed" : "Rejected",
         unread: true
       }
@@ -1101,7 +1078,7 @@ export default function StickyHeadTable() {
             if(user.role == "Faculty"){
               const newNotif = {
                 docId: actionHolder.id,
-                userUID: user.UID,
+                userUID: user.uID,
                 isRead: 0,
                 multiple: 1
               }
@@ -1113,13 +1090,13 @@ export default function StickyHeadTable() {
           }
       }
       const updateFields = {
-        forward_To: "Faculty " + auth.currentUser.uid,
+        forward_To: "Faculty " + user.uID,
         Comment: comment,
-        forwarded_By: auth.currentUser.uid,
+        forwarded_By: user.uID,
         uID: actionHolder.id,
         forwarded_DateTime: dayjs().format('MM/DD/YYYY h:mm A').toString(),
         accepted_Rejected_In: dayjs().format('MM/DD/YYYY h:mm A').toString(),
-        accepted_Rejected_By: auth.currentUser.uid,
+        accepted_Rejected_By: user.uID,
         Status: action == "accept" ? "Completed" : "Rejected",
         unread: true
       }
@@ -1136,7 +1113,7 @@ export default function StickyHeadTable() {
             if(user.role == "Clerk"){
               const newNotif = {
                 docId: actionHolder.id,
-                userUID: user.UID,
+                userUID: user.uID,
                 isRead: 0,
                 multiple: 1
               }
@@ -1149,13 +1126,13 @@ export default function StickyHeadTable() {
       }
       const editDoc = doc(db, "documents", actionHolder.id);
       const updateFields = {
-        forward_To: "Clerk " + auth.currentUser.uid,
+        forward_To: "Clerk " + user.uID,
         Comment: comment,
-        forwarded_By: auth.currentUser.uid,
+        forwarded_By: user.uID,
         uID: actionHolder.id,
         forwarded_DateTime: dayjs().format('MM/DD/YYYY h:mm A').toString(),
         accepted_Rejected_In: dayjs().format('MM/DD/YYYY h:mm A').toString(),
-        accepted_Rejected_By: auth.currentUser.uid,
+        accepted_Rejected_By: user.uID,
         Status: action == "accept" ? "Completed" : "Rejected",
       }
       await axios.put(`${port}/approveReject`, updateFields)
@@ -1688,11 +1665,11 @@ export default function StickyHeadTable() {
                 <Autocomplete
                 className="auto-complete"
                 onChange={(e, newValue) => {
-                  setForward(newValue ? newValue.UID : "")
+                  setForward(newValue ? newValue.uID : "")
                 }}
-                value={users.find(item => item.UID == forward) || null}
+                value={users.find(item => item.uID == forward) || null}
                 id="combo-box-demo"
-                options={users.filter(item => item.UID != auth.currentUser.uid)}
+                options={users.filter(item => item.uID != user.uID)}
                 getOptionLabel={(user) =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField className="auto-complete-text" {...params} placeholder="Forward To"/>}/>

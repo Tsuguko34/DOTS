@@ -107,7 +107,7 @@ function Sidebar() {
                 const rejectedArr = []
                 data.data.forEach((doc) => {
                 const forward = doc.forward_To
-                const role = users.find(item => item.UID == user.uID)?.role
+                const role = user.role
                 if((forward.includes(role) || forward.includes("All")) && !forward.includes(user.uID)){
                     if(notifData.data.find(item => item.userUID == user.uID && item.docID == doc.uID && item.multiple == 1)?.isRead == 0){
                         AllArr.push(doc)
@@ -161,7 +161,7 @@ function Sidebar() {
           return () => {
             clearInterval(fetchDataInterval);
           };
-      }, [users])
+      }, [user])
 
       
   return (
@@ -248,7 +248,7 @@ function Sidebar() {
                                 </ListItem>
                             </div>
                     </Collapse>
-                    { user != undefined && users.find(item => item.UID === user.uID)?.role !== "Faculty" && (
+                    { user != undefined && user.role !== "Faculty" && (
                         <>
                             <ListItem disablePadding className='nav-text' onClick={showMonitoring} end>
                                 <div className='nav-monitoring'>

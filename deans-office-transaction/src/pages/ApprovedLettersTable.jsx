@@ -91,6 +91,7 @@ import axios from "axios";
 
 export default function StickyHeadTable() {
   const port = "http://localhost:3001"
+  axios.defaults.withCredentials = true
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   useEffect(() => {
     const handleWindowResize = () => {
@@ -347,7 +348,7 @@ export default function StickyHeadTable() {
     const { uid } = auth.currentUser;
     if (!uid) return;
     const userRef = collection(db, "Users");
-    const q = query(userRef, where("UID", "==", uid));
+    const q = query(userRef, where("uID", "==", uid));
     const data = await getDocs(q);
     setUserInfo(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
     console.log(userInfo);
@@ -375,27 +376,32 @@ export default function StickyHeadTable() {
   };
 
   const [users, setUsers] = useState([]);
-  const [subArrayCol, setSubArrayCol] = useState([])
+  const [user, setUser] = useState([]);
   useEffect(() => {
-    const unsub = auth.onAuthStateChanged(async(authObj) => {
-      unsub();
-      if (authObj) {
-        setuserHolder(authObj);
-        const userq = query(collection(db, "Users"))
-        const userData = await getDocs(userq)
-        setUsers(userData.docs.map((doc) => ({...doc.data(), id: doc.id})))
-        
-      } else {
-        setuserHolder(null);
+    const getUser = async() => {
+      try{
+        await axios.get(`${port}/getUser`).then((data) => {
+          if(data.status == 200){
+            setUser(data.data[0])
+          }
+        })
+        await axios.get(`${port}/getUsers`).then((data) => {
+          setUsers(data.data)
+        })
+      }catch(e){
+        console.log(e);
       }
-    });
+    }
+    getUser()
   }, []);
 
+
+  const [subArrayCol, setSubArrayCol] = useState([])
   useEffect(() =>{
     const fetchDataInterval = setInterval( async() => {
       try{
-        const updatedData = await axios.get(`${port}/getApproved?userID=${auth.currentUser.uid}&role=${users.find(item => item.UID == auth.currentUser.uid)?.role}`)
-        const notifData = await axios.get(`${port}/getNotifs?userID=${auth.currentUser.uid}`)
+        const updatedData = await axios.get(`${port}/getApproved?userID=${user.uID}&role=${user.role}`)
+        const notifData = await axios.get(`${port}/getNotifs?userID=${user.uID}`)
         setSubArrayCol(notifData.data)
         setRows(updatedData.data)
         setLoading(false)
@@ -411,44 +417,13 @@ export default function StickyHeadTable() {
     return () => {
       clearInterval(fetchDataInterval);
     };
-  },[users])
+  },[user])
 
 
 
 
   const getSignInMethods = async (type) => {
-    if (userHolder) {
-      const signInMethods = userHolder.providerData.map(
-        (provider) => provider.providerId
-      );
-      if (signInMethods.includes("google.com")) {
-        if (type == "add") {
-          await addDoc(logcollectionRef, {
-            date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-            log: auth.currentUser.displayName + ` added a ${category}`,
-          });
-        } else if (type == "edit") {
-          await addDoc(logcollectionRef, {
-            date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-            log: auth.currentUser.displayName + ` edited a ${editDocType}`,
-          });
-        } else if (type == "delete") {
-          await addDoc(logcollectionRef, {
-            date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-            log: auth.currentUser.displayName + " deleted a student document",
-          });
-        } else if (type == "archive") {
-          await addDoc(logcollectionRef, {
-            date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-            log:
-              auth.currentUser.displayName + " archived a student document",
-          });
-        }
-      } else if (signInMethods.includes("password")) {
-       
-        getUserInfo(type);
-      }
-    }
+    getUserInfo(type);
     return null;
   };
 
@@ -1030,10 +1005,10 @@ export default function StickyHeadTable() {
           forward_To: forward,
           Comment: comment,
           uID: actionHolder.id,
-          forwarded_By: auth.currentUser.uid,
+          forwarded_By: user.uID,
           forwarded_DateTime: dayjs().format('MM/DD/YYYY h:mm A').toString(),
           accepted_Rejected_In: dayjs().format('MM/DD/YYYY h:mm A').toString(),
-          accepted_Rejected_By: auth.currentUser.uid,
+          accepted_Rejected_By: user.uID,
         }
         await axios.put(`${port}/forwardRequest`, updateFields)
         closrApproveReject()
@@ -1050,7 +1025,7 @@ export default function StickyHeadTable() {
           try{
             const newNotif = {
               docId: actionHolder.id,
-              userUID: user.UID,
+              userUID: user.uID,
               isRead: 0,
               multiple: 1
             }
@@ -1060,13 +1035,13 @@ export default function StickyHeadTable() {
           }
       }
       const updateFields = {
-        forward_To: "All " + auth.currentUser.uid,
+        forward_To: "All " + user.uID,
         Comment: comment,
-        forwarded_By: auth.currentUser.uid,
+        forwarded_By: user.uID,
         uID: actionHolder.id,
         forwarded_DateTime: dayjs().format('MM/DD/YYYY h:mm A').toString(),
         accepted_Rejected_In: dayjs().format('MM/DD/YYYY h:mm A').toString(),
-        accepted_Rejected_By: auth.currentUser.uid,
+        accepted_Rejected_By: user.uID,
         unread: true
       }
       await axios.put(`${port}/forwardRequest`, updateFields)
@@ -1082,7 +1057,7 @@ export default function StickyHeadTable() {
             if(user.role == "Faculty"){
               const newNotif = {
                 docId: actionHolder.id,
-                userUID: user.UID,
+                userUID: user.uID,
                 isRead: 0,
                 multiple: 1
               }
@@ -1094,13 +1069,13 @@ export default function StickyHeadTable() {
           }
       }
       const updateFields = {
-        forward_To: "Faculty " + auth.currentUser.uid,
+        forward_To: "Faculty " + user.uID,
         Comment: comment,
-        forwarded_By: auth.currentUser.uid,
+        forwarded_By: user.uID,
         uID: actionHolder.id,
         forwarded_DateTime: dayjs().format('MM/DD/YYYY h:mm A').toString(),
         accepted_Rejected_In: dayjs().format('MM/DD/YYYY h:mm A').toString(),
-        accepted_Rejected_By: auth.currentUser.uid,
+        accepted_Rejected_By: user.uID,
         unread: true
       }
       await axios.put(`${port}/forwardRequest`, updateFields)
@@ -1116,7 +1091,7 @@ export default function StickyHeadTable() {
             if(user.role == "Clerk"){
               const newNotif = {
                 docId: actionHolder.id,
-                userUID: user.UID,
+                userUID: user.uID,
                 isRead: 0,
                 multiple: 1
               }
@@ -1129,13 +1104,13 @@ export default function StickyHeadTable() {
       }
       const editDoc = doc(db, "documents", actionHolder.id);
       const updateFields = {
-        forward_To: "Clerk " + auth.currentUser.uid,
+        forward_To: "Clerk " + user.uID,
         Comment: comment,
-        forwarded_By: auth.currentUser.uid,
+        forwarded_By: user.uID,
         uID: actionHolder.id,
         forwarded_DateTime: dayjs().format('MM/DD/YYYY h:mm A').toString(),
         accepted_Rejected_In: dayjs().format('MM/DD/YYYY h:mm A').toString(),
-        accepted_Rejected_By: auth.currentUser.uid,
+        accepted_Rejected_By: user.uID,
       }
       await axios.put(`${port}/forwardRequest`, updateFields)
       closrApproveReject()
@@ -1167,11 +1142,11 @@ export default function StickyHeadTable() {
       }
     }
     if(!isRead){
-      if(subArrayCol.find(item => item.userUID == auth.currentUser.uid && item.docID == id)){
+      if(subArrayCol.find(item => item.userUID == user.uID && item.docID == id)){
         const unreadFields = {
           isRead: 1,
           docID: id,
-          userUID: auth.currentUser.uid
+          userUID: user.uID
         }
         try{
           await axios.put(`${port}/updateNotif`, unreadFields)
@@ -1550,18 +1525,18 @@ export default function StickyHeadTable() {
                 
                 <>
 
-                <TableRow hover onClick={() => unread(row.unread, row.uID, subArrayCol.find(item => item.docID == row.uID && item.userUID == auth.currentUser.uid)?.isRead) } role="checkbox" tabIndex={-1} key={row.uID} sx={{cursor: "pointer", userSelect: "none", height: "50px", background: "#F0EFF6",'& :last-child': {borderBottomRightRadius: "10px", borderTopRightRadius: "10px"} ,'& :first-child':  {borderTopLeftRadius: "10px", borderBottomLeftRadius: "10px"} }}>
-                  <TableCell className={userHolder && subArrayCol.find(item => item.userUID == auth.currentUser.uid && item.docID == row.uID)?.isRead == false ? "table-cell unread first" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.document_Name} </TableCell>
-                  <TableCell className={userHolder && subArrayCol.find(item => item.userUID == auth.currentUser.uid && item.docID == row.uID)?.isRead == false ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.Type == null || row.Type == "" ? row.document_Type : row.Type} </TableCell>
-                  <TableCell className={userHolder && subArrayCol.find(item => item.userUID == auth.currentUser.uid && item.docID == row.uID)?.isRead == false ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.received_By} </TableCell>
-                  <TableCell className={userHolder && subArrayCol.find(item => item.userUID == auth.currentUser.uid && item.docID == row.uID)?.isRead == false ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.fromDep == null || row.fromDep == "" ? row.fromPer : row.fromDep} </TableCell>
-                  <TableCell className={userHolder && subArrayCol.find(item => item.userUID == auth.currentUser.uid && item.docID == row.uID)?.isRead == false ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.date_Received} </TableCell>
-                  <TableCell className={userHolder && subArrayCol.find(item => item.userUID == auth.currentUser.uid && item.docID == row.uID)?.isRead == false ? "table-cell unread" : "table-cell"} align="left" > 
+                <TableRow hover onClick={() => unread(row.unread, row.uID, subArrayCol.find(item => item.docID == row.uID && item.userUID == user.uID)?.isRead) } role="checkbox" tabIndex={-1} key={row.uID} sx={{cursor: "pointer", userSelect: "none", height: "50px", background: "#F0EFF6",'& :last-child': {borderBottomRightRadius: "10px", borderTopRightRadius: "10px"} ,'& :first-child':  {borderTopLeftRadius: "10px", borderBottomLeftRadius: "10px"} }}>
+                  <TableCell className={user && subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == false ? "table-cell unread first" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.document_Name} </TableCell>
+                  <TableCell className={user && subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == false ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.Type == null || row.Type == "" ? row.document_Type : row.Type} </TableCell>
+                  <TableCell className={user && subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == false ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.received_By} </TableCell>
+                  <TableCell className={user && subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == false ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.fromDep == null || row.fromDep == "" ? row.fromPer : row.fromDep} </TableCell>
+                  <TableCell className={user && subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == false ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.date_Received} </TableCell>
+                  <TableCell className={user && subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == false ? "table-cell unread" : "table-cell"} align="left" > 
                   {row.Status === 'Completed' ? <span className='table-Done'>Completed</span>: 
                   row.Status === 'Pending' ? <span className='table-Ongoing'>Pending</span>:
                   row.Status === 'Rejected' ? <span className='table-NotDone'>Rejected</span>: <span className='table-Default'>{row.Status}</span>}
                   </TableCell>
-                  <TableCell className={userHolder && subArrayCol.find(item => item.userUID == auth.currentUser.uid && item.docID == row.uID)?.isRead == false ? "table-cell unread last" : "table-cell"} align="left">
+                  <TableCell className={user && subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == false ? "table-cell unread last" : "table-cell"} align="left">
                     <Stack spacing={1} direction="row">
                     <Tooltip title={<Typography sx={{fontSize: "0.8rem"}}>View Document</Typography>} arrow>
                       <VisibilityIcon
@@ -1666,11 +1641,11 @@ export default function StickyHeadTable() {
                 <Autocomplete
                 className="auto-complete"
                 onChange={(e, newValue) => {
-                  setForward(newValue ? newValue.UID : "")
+                  setForward(newValue ? newValue.uID : "")
                 }}
-                value={users.find(item => item.UID == forward) || null}
+                value={users.find(item => item.uID == forward) || null}
                 id="combo-box-demo"
-                options={users.filter(item => item.UID != auth.currentUser.uid)}
+                options={users.filter(item => item.uID != user.uID)}
                 getOptionLabel={(user) =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField className="auto-complete-text" {...params} placeholder="Forward To"/>}/>
@@ -1790,7 +1765,7 @@ export default function StickyHeadTable() {
                         </div>
                         <div className="details">
                           <h2>Forwarded By: </h2>
-                          <p>{users.find((item) => item.UID === displayFile.forwarded_By)?.full_Name}</p>
+                          <p>{users.find((item) => item.uID === displayFile.forwarded_By)?.full_Name}</p>
                         </div>
                         <div className="details">
                           <h2>Forwarded Date: </h2>
@@ -1798,7 +1773,7 @@ export default function StickyHeadTable() {
                         </div>
                         <div className="details">
                           <h2>Approved/Rejected By: </h2>
-                          <p>{users.find((item) => item.UID === displayFile.accepted_Rejected_By)?.full_Name}</p>
+                          <p>{users.find((item) => item.uID === displayFile.accepted_Rejected_By)?.full_Name}</p>
                         </div>
                         <div className="details">
                           <h2>Approved/Rejected Date: </h2>

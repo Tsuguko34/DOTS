@@ -108,15 +108,11 @@ function Dashboard() {
   const [travelData, setTravelData] = useState([])
   const getChartData1 = async () => {
     
-    const q = query(dashboardCollectionRef);
-    const data = await getDocs(q);
-    const TravelOrderSet = new Set()
-    const TrainingSet = new Set()
-    const LeaveSet = new Set()
+    const data = await axios.get(`${port}/requests`)
 
-    data.docs.forEach((doc) => {
-      const docType = doc.data().document_Type
-      const Type = doc.data().Type
+    data.data.forEach((doc) => {
+      const docType = doc.document_Type
+      const Type = doc.Type
 
       if(docType == "Communication"){
         setData1(prev => prev + 1)
@@ -147,21 +143,21 @@ function Dashboard() {
       else if(docType === "Faculty Document" && Type === "Application for Leave"){
         setData8(prev => prev + 1)
         setData17(prev => prev + 1)
-        const existing = leaveData.findIndex((item) => item.name === doc.data().fromPer)
+        const existing = leaveData.findIndex((item) => item.name == doc.fromPer)
         if(existing !== -1){
           leaveData[existing].count += 1
         }else{
-          leaveData.push({name: doc.data().fromPer, count: 1})
+          leaveData.push({name: doc.fromPer, count: 1})
         }
       }
       else if(docType === "Faculty Document" && Type === "Training Request Form"){
         setData9(prev => prev + 1)
         setData17(prev => prev + 1)
-        const existing = trainingData.findIndex((item) => item.name === doc.data().fromPer)
+        const existing = trainingData.findIndex((item) => item.name == doc.fromPer)
         if(existing !== -1){
           trainingData[existing].count += 1
         }else{
-          trainingData.push({name: doc.data().fromPer, count: 1})
+          trainingData.push({name: doc.fromPer, count: 1})
         }
       }
       else if(docType === "New Hire Document" && Type === "Personel Requisition Form"){
@@ -182,11 +178,11 @@ function Dashboard() {
       }
       else if(docType === "Travel Order"){
         setData14(prev => prev + 1)
-        const existing = travelOrderData.findIndex((item) => item.name === doc.data().fromPer)
+        const existing = travelOrderData.findIndex((item) => item.name == doc.fromPer)
         if(existing !== -1){
           travelOrderData[existing].count += 1
         }else{
-          travelOrderData.push({name: doc.data().fromPer, count: 1})
+          travelOrderData.push({name: doc.fromPer, count: 1})
         }
       }
       else if(docType === "Meeting Request"){
@@ -290,18 +286,17 @@ function Dashboard() {
   );
   let q2 = query(dashboardCollectionRef, orderBy("date_Received", "desc"));
   const getDashboard = async () => {
-    const data = await getDocs(q);
-    const archiveDocs = await getDocs(collection(db, "archive"))
-    archiveDocs.docs.forEach((doc) => {
-      if(doc.data().Folder == undefined){
+    const data = await axios.get(`${port}/requests`)
+    const archiveDocs = await axios.get(`${port}/getArchives`)
+    archiveDocs.data.forEach((doc) => {
         setarchiveDoc(prev => prev + 1)
-      }
     })
-    setDashboard(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
+    setDashboard(data.data);
     
-    if (data.docs.length > 0) {
+    if (data.data.length > 0) {
       setLoading(false);
-      document.getElementById("total2").innerHTML = data.docs.length;
+      document.getElementById("total2").innerHTML = data.data.length;
+      setEmptyResult(false)
     }else{
       setLoading(false);
       setEmptyResult(true)
@@ -315,10 +310,8 @@ function Dashboard() {
   
 
   const getMonthYearData = async () => {
-    const yearMonthData = await getDocs(q2);
-    setYearMonth(
-      yearMonthData.docs.map((doc) => ({ ...doc.data(), id: doc.id }))
-    );
+    const yearMonthData = await axios.get(`${port}/requests`)
+    setYearMonth(yearMonthData.data);
     let i = 0;
     let x = 0;
     let y = 0;
@@ -478,7 +471,7 @@ function Dashboard() {
     const filterDashData = []
     dashboard.forEach((doc) => {
       const forward = doc.forward_To
-      if(userHolder && (forward.includes("All") ||  forward.includes(users.find(item => item.UID == user.uID)?.role) || forward == user.uID)){
+      if(user && (forward.includes("All") ||  forward.includes(user.role) || forward == user.uID)){
         console.log(doc);
         filterDashData.push(doc)
         setEmptyResult(false)
@@ -486,7 +479,8 @@ function Dashboard() {
       }
     });
     setFilteredDash(filterDashData)
-    if (filteredDash.length == 0){
+    if (filterDashData.length == 0){
+      console.log(true);
       setEmptyResult(true)
     }
   }, [dashboard])
@@ -600,7 +594,7 @@ function Dashboard() {
                   </div>
                   <div className="welcome-msg">
                       <Typography variant="h1" className="welcome-hello" sx={{fontSize:windowWidth <= 768 && windowWidth > 425 ? "1.3rem" :windowWidth < 425 ? "1rem" : "1.5rem", display: 'flex', alignItems: 'center', justifyContent: 'start'}}>
-                        Welcome, <Typography sx={{fontSize:windowWidth <= 768 && windowWidth > 425 ? "1.3rem" :windowWidth < 425 ? "1rem" : "1.5rem", color: "#E6E4F0", fontWeight: 'bold'}}> &nbsp;{user != undefined && users.find(item => item.UID == user.uID)?.role}</Typography>
+                        Welcome, <Typography sx={{fontSize:windowWidth <= 768 && windowWidth > 425 ? "1.3rem" :windowWidth < 425 ? "1rem" : "1.5rem", color: "#E6E4F0", fontWeight: 'bold'}}> &nbsp;{user.role}</Typography>
                       </Typography>
                       <Typography variant="div" className="welcome-hello2" sx={{fontSize:windowWidth <= 768 && windowWidth > 425 ? "1.3rem" :windowWidth < 425 ? "1rem" : "1.5rem", fontWeight: 'bold'}}>
                         {user != undefined && user.full_Name}

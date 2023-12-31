@@ -166,17 +166,15 @@ app.post("/login", (req, res) =>{
 })
 
 app.get("/getUser", async(req, res) => {
-    console.log(req.session.userID);
     if(req.session.userID){
         let cols = [req.session.userID]
-        console.log(cols);
         const q = `SELECT * FROM users WHERE uID = '${cols}' LIMIT 1`
         db.query(q, (err, data) => {
             if (err) return res.json(err)
-            return res.json(data)
+            return res.status(200).json(data)
         })
     }else{
-        return res.json({ success: false });
+        return res.status(401).json({ success: false });
     }
 })
 
@@ -444,7 +442,7 @@ app.get("/getArchiveFiles",(req, res) => {
 
 
 app.get("/getPending", (req, res) => {
-    const q = `SELECT * FROM documents WHERE Status = 'Pending'`
+    const q = `SELECT * FROM documents WHERE Status = 'Pending' AND forward_To ='${req.query.userID}'`
     db.query(q, (err, data) => {
         if (err) console.log(err);
         return res.json(data);

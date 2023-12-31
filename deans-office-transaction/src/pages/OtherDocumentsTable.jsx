@@ -101,6 +101,7 @@ import axios from "axios";
 
 export default function StickyHeadTable() {
   const port = "http://localhost:3001"
+  axios.defaults.withCredentials = true
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   useEffect(() => {
     const handleWindowResize = () => {
@@ -455,10 +456,10 @@ export default function StickyHeadTable() {
 
   const getUserInfo = async (type, name) => {
     console.log("user info");
-    const { uid } = auth.currentUser;
+    const { uid } = user;
     if (!uid) return;
     const userRef = collection(db, "Users");
-    const q = query(userRef, where("UID", "==", uid));
+    const q = query(userRef, where("uID", "==", uid));
     const data = await getDocs(q);
     setUserInfo(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
     console.log(userInfo);
@@ -486,16 +487,6 @@ export default function StickyHeadTable() {
     }
   };
 
-  useEffect(() => {
-    const unsub = auth.onAuthStateChanged((authObj) => {
-      unsub();
-      if (authObj) {
-        setuserHolder(authObj);
-      } else {
-        setuserHolder(null);
-      }
-    });
-  }, []);
 
   const getSignInMethods = async (type, name) => {
     if (userHolder) {
@@ -538,6 +529,24 @@ export default function StickyHeadTable() {
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [rows, setRows] = useState([]);
   const [users, setUsers] = useState([]);
+  const [user, setUser] = useState([]);
+  useEffect(() => {
+    const getUser = async() => {
+      try{
+        await axios.get(`${port}/getUser`).then((data) => {
+          if(data.status == 200){
+            setUser(data.data[0])
+          }
+        })
+        await axios.get(`${port}/getUsers`).then((data) => {
+          setUsers(data.data)
+        })
+      }catch(e){
+        console.log(e);
+      }
+    }
+    getUser()
+  }, []);
 
   useEffect(() => {
     getIncoming();
@@ -545,11 +554,8 @@ export default function StickyHeadTable() {
 
   const [isListenerActive, setIsListenerActive] = useState(false);
   const getIncoming = async () => {
-    const userq = query(collection(db, "Users"))
-    const userData = await getDocs(userq)
     const data = await axios.get(`${port}/documents?type=Other`)
     setRows(data.data);
-    setUsers(userData.docs.map((doc) => ({...doc.data(), id: doc.id})))
     setLoading(false);
     if (data.data.length == 0) {
       setEmptyResult(true);
@@ -1819,11 +1825,11 @@ export default function StickyHeadTable() {
                 <Autocomplete
                 className="auto-complete"
                 onChange={(e, newValue) => {
-                  setNewForwardTo(newValue ? newValue.UID : "")
+                  setNewForwardTo(newValue ? newValue.uID : "")
                 }}
-                value={users.find(item => item.UID == newForwardTo) || null}
+                value={users.find(item => item.uID == newForwardTo) || null}
                 id="combo-box-demo"
-                options={users.filter(item => item.UID != auth.currentUser.uid)}
+                options={users.filter(item => item.uID != user.uID)}
                 getOptionLabel={(user) =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField className="auto-complete-text" {...params} placeholder="Forward To" label="Forward To"/>}/>
@@ -1901,11 +1907,11 @@ export default function StickyHeadTable() {
                 <Autocomplete
                 className="auto-complete"
                 onChange={(e, newValue) => {
-                  setNewForwardTo(newValue ? newValue.UID : "")
+                  setNewForwardTo(newValue ? newValue.uID : "")
                 }}
-                value={users.find(item => item.UID == newForwardTo) || null}
+                value={users.find(item => item.uID == newForwardTo) || null}
                 id="combo-box-demo"
-                options={users.filter(item => item.UID != auth.currentUser.uid)}
+                options={users.filter(item => item.uID != user.uID)}
                 getOptionLabel={(user) =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField className="auto-complete-text" {...params} placeholder="Forward To" label="Forward To"/>}/>
@@ -1981,11 +1987,11 @@ export default function StickyHeadTable() {
                 <Autocomplete
                 className="auto-complete"
                 onChange={(e, newValue) => {
-                  setNewForwardTo(newValue ? newValue.UID : "")
+                  setNewForwardTo(newValue ? newValue.uID : "")
                 }}
-                value={users.find(item => item.UID == newForwardTo) || null}
+                value={users.find(item => item.uID == newForwardTo) || null}
                 id="combo-box-demo"
-                options={users.filter(item => item.UID != auth.currentUser.uid)}
+                options={users.filter(item => item.uID != user.uID)}
                 getOptionLabel={(user) =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField className="auto-complete-text" {...params} placeholder="Forward To" label="Forward To"/>}/>
@@ -2060,11 +2066,11 @@ export default function StickyHeadTable() {
                 <Autocomplete
                 className="auto-complete"
                 onChange={(e, newValue) => {
-                  setNewForwardTo(newValue ? newValue.UID : "")
+                  setNewForwardTo(newValue ? newValue.uID : "")
                 }}
-                value={users.find(item => item.UID == newForwardTo) || null}
+                value={users.find(item => item.uID == newForwardTo) || null}
                 id="combo-box-demo"
-                options={users.filter(item => item.UID != auth.currentUser.uid)}
+                options={users.filter(item => item.uID != user.uID)}
                 getOptionLabel={(user) =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField className="auto-complete-text" {...params} placeholder="Forward To" label="Forward To"/>}/>
@@ -2130,11 +2136,11 @@ export default function StickyHeadTable() {
                 <Autocomplete
                 className="auto-complete"
                 onChange={(e, newValue) => {
-                  setNewForwardTo(newValue ? newValue.UID : "")
+                  setNewForwardTo(newValue ? newValue.uID : "")
                 }}
-                value={users.find(item => item.UID == newForwardTo) || null}
+                value={users.find(item => item.uID == newForwardTo) || null}
                 id="combo-box-demo"
-                options={users.filter(item => item.UID != auth.currentUser.uid)}
+                options={users.filter(item => item.uID != user.uID)}
                 getOptionLabel={(user) =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField className="auto-complete-text" {...params} placeholder="Forward To" label="Forward To"/>}/>
@@ -2206,11 +2212,11 @@ export default function StickyHeadTable() {
                 <Autocomplete
                 className="auto-complete"
                 onChange={(e, newValue) => {
-                  setNewForwardTo(newValue ? newValue.UID : "")
+                  setNewForwardTo(newValue ? newValue.uID : "")
                 }}
-                value={users.find(item => item.UID == newForwardTo) || null}
+                value={users.find(item => item.uID == newForwardTo) || null}
                 id="combo-box-demo"
-                options={users.filter(item => item.UID != auth.currentUser.uid)}
+                options={users.filter(item => item.uID != user.uID)}
                 getOptionLabel={(user) =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField className="auto-complete-text" {...params} placeholder="Forward To" label="Forward To"/>}/>
@@ -2277,11 +2283,11 @@ export default function StickyHeadTable() {
                   <Autocomplete
                 className="auto-complete"
                 onChange={(e, newValue) => {
-                  setNewForwardTo(newValue ? newValue.UID : "")
+                  setNewForwardTo(newValue ? newValue.uID : "")
                 }}
-                value={users.find(item => item.UID == newForwardTo) || null}
+                value={users.find(item => item.uID == newForwardTo) || null}
                 id="combo-box-demo"
-                options={users.filter(item => item.UID != auth.currentUser.uid)}
+                options={users.filter(item => item.uID != user.uID)}
                 getOptionLabel={(user) =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField className="auto-complete-text" {...params} placeholder="Forward To" label="Forward To"/>}/>
@@ -2290,8 +2296,8 @@ export default function StickyHeadTable() {
             <input style={{display: 'none'}} value={newFromPer} type="text" name="from_name" />
             <input style={{display: 'none'}} value={newDocumentName} type="text" name="document_Name" />
             <input style={{display: 'none'}} value={newComment} type="text" name="user_Comment" />
-            <input style={{display: 'none'}} value={userHolder && auth.currentUser.email} type="text" name="user_Email" />
-            <input style={{display: 'none'}} value={users.find(item => item.UID == newForwardTo)?.email || null} type="text" name="user_To" />
+            <input style={{display: 'none'}} value={user && user.email} type="text" name="user_Email" />
+            <input style={{display: 'none'}} value={users.find(item => item.uID == newForwardTo)?.email || null} type="text" name="user_To" />
             </div>
             <div className="right-holder">
               <div className="right-sticky">

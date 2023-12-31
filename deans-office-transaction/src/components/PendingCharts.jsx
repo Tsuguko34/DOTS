@@ -15,6 +15,7 @@ import { auth, db } from '../firebase';
 import { CheckBox } from '@mui/icons-material';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
+import axios from "axios";
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -25,6 +26,8 @@ ChartJS.register(
 );
 
 export default function PendingCharts() {
+  const port = "http://localhost:3001"
+  axios.defaults.withCredentials = true
   const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
   const checkedIcon = <CheckBoxIcon fontSize="small" />;
   const documentsRef = collection(db, "documents")
@@ -35,37 +38,55 @@ export default function PendingCharts() {
   const [buttonData, setButtonData] = useState([])
   const [isChecked, setIsChecked] = useState(true);
   const [statuses, setStatuses] = useState([])
+  const [users, setUsers] = useState([]);
+  const [user, setUser] = useState([]);
+  useEffect(() => {
+    const getUser = async() => {
+      try{
+        await axios.get(`${port}/getUser`).then((data) => {
+          setUser(data.data[0])
+        })
+        await axios.get(`${port}/getUsers`).then((data) => {
+          setUsers(data.data)
+        })
+      }catch(e){
+        console.log(e);
+      }
+    }
+    getUser()
+  }, []);
 
   const getStatus = async() => {
-    const data = await getDocs(documentsRef)
+    const data = await axios.get(`${port}/requests`)
     const buttonSet = new Set()
     const statusSet = new Set()
-    data.forEach((doc) => {
-      if(doc.data().forward_To === auth.currentUser.uid || doc.data().forwarded_By === auth.currentUser.uid || doc.data().accepted_Rejected_By === auth.currentUser.uid){
-        const status = doc.data().Status
-        const whatDoc = doc.data().document_Type
+    data.data.forEach((doc) => {
+      if((doc.forward_To == user.uID || doc.forward_To.includes(user.role) || doc.forward_To.includes("All") && !doc.forward_To.includes(user.uID)) || doc.forwarded_By == user.uID || doc.accepted_Rejected_By == user.uID){
+        const status = doc.Status
+        const whatDoc = doc.document_Type
         statusSet.add(status)
         if(whatDoc){
           buttonSet.add(whatDoc)
         }
-        if(docType.length === 0){
-          if(status === "Completed"){
+        if(docType.length == 0){
+          if(status == "Completed"){
             setStatusDone(prev => prev + 1)
           }
-          else if(status === "Pending"){
+          else if(status == "Pending"){
             setStatusPending(prev => prev + 1)
+            console.log(doc);
           }
-          else if(status === "Rejected"){
+          else if(status == "Rejected"){
             setStatusNotDone(prev => prev + 1)
           }
         }else{
-          if(status === "Completed" && docType.includes(whatDoc)){
+          if(status == "Completed" && docType.includes(whatDoc)){
             setStatusDone(prev => prev + 1)
           }
-          else if(status === "Pending" && docType.includes(whatDoc)){
+          else if(status == "Pending" && docType.includes(whatDoc)){
             setStatusPending(prev => prev + 1)
           }
-          else if(status === "Rejected" && docType.includes(whatDoc)){
+          else if(status == "Rejected" && docType.includes(whatDoc)){
             setStatusNotDone(prev => prev + 1)
           }
         }
@@ -88,7 +109,7 @@ export default function PendingCharts() {
     }else{
       setIsChecked(false)
     }
-  }, [docType])
+  }, [docType, user])
 
   const options = {
     responsive: true,
@@ -152,6 +173,8 @@ export default function PendingCharts() {
       setDocType(data)
   }
   }
+
+  
   return(
     <div className="pending-holder">
         

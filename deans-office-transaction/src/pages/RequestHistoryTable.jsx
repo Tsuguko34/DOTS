@@ -91,6 +91,7 @@ import axios from "axios";
 
 export default function StickyHeadTable() {
   const port = "http://localhost:3001"
+  axios.defaults.withCredentials = true
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   useEffect(() => {
     const handleWindowResize = () => {
@@ -375,28 +376,34 @@ export default function StickyHeadTable() {
   };
 
   const [users, setUsers] = useState([]);
+  const [user, setUser] = useState([]);
   useEffect(() => {
-    const unsub = auth.onAuthStateChanged(async(authObj) => {
-      unsub();
-      if (authObj) {
-        setuserHolder(authObj);
-        const userq = query(collection(db, "Users"))
-        const userData = await getDocs(userq)
-        setUsers(userData.docs.map((doc) => ({...doc.data(), id: doc.id})))
-        const requests = await axios.get(`${port}/requests`)
-        const updatedData = requests.data
-        setRows(updatedData.filter((item) => item.forwarded_By === auth.currentUser.uid || item.accepted_Rejected_By === auth.currentUser.uid || users.find(item => item.UID == auth.currentUser.uid)?.full_Name.includes(item.fromPer)))
-        setLoading(false);
-        if (updatedData.filter((item) => item.forwarded_By === auth.currentUser.uid || item.accepted_Rejected_By === auth.currentUser.uid || users.find(item => item.UID == auth.currentUser.uid)?.full_Name.includes(item.fromPer)).length == 0) {
-        setEmptyResult(true);
-        }else{
-          setEmptyResult(false);
-        }
-      } else {
-        setuserHolder(null);
+    const getUser = async() => {
+      try{
+        await axios.get(`${port}/getUser`).then(async(data) => {
+          if(data.status == 200){
+            setUser(data.data[0])
+            const requests = await axios.get(`${port}/requests`)
+            const updatedData = requests.data
+            setRows(updatedData.filter((item) => item.forwarded_By === data.data[0].uID || item.accepted_Rejected_By === data.data[0].uID || data.data[0].full_Name.includes(item.fromPer)))
+            setLoading(false);
+            if (updatedData.filter((item) => item.forwarded_By === data.data[0].uID || item.accepted_Rejected_By === data.data[0].uID || data.data[0].full_Name.includes(item.fromPer)).length == 0) {
+            setEmptyResult(true);
+            }else{
+              setEmptyResult(false);
+            }
+          }
+        })
+        await axios.get(`${port}/getUsers`).then((data) => {
+          setUsers(data.data)
+        })
+      }catch(e){
+        console.log(e);
       }
-    });
+    }
+    getUser()
   }, []);
+
 
   // useEffect(() => {
   //   const getRequests = async() => {
@@ -1008,7 +1015,7 @@ export default function StickyHeadTable() {
     const updateFields = {
       forward_To: forward,
       Comment: comment,
-      forwarded_By: auth.currentUser.uid,
+      forwarded_By: user.uID,
       forwarded_DateTime: dayjs().format('MM/DD/YYYY h:mm A').toString(),
       unread: true
     }

@@ -14,7 +14,7 @@ import dayjs from "dayjs";
 import React, { useEffect, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import "./Sidebar.css";
-import user from "../Images/user.png";
+import userPic from "../Images/user.png";
 import { auth, storage } from "../firebase";
 import Swal from "sweetalert2";
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -28,6 +28,7 @@ import axios from "axios";
 
 function DateandProfile() {
   const port = "http://localhost:3001"
+  axios.defaults.withCredentials = true
   const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState([]);
   const [userHolder, setuserHolder] = useState(null);
@@ -35,7 +36,7 @@ function DateandProfile() {
   const [googleName, setGoogleName] = useState("")
   const [date, setDate] = useState("");
   const [loginWith, setLoginWith] = useState(true)
-  const [profilePic, setProfilePic] = useState(user)
+  const [profilePic, setProfilePic] = useState(userPic)
   useEffect(() => {
     setDate(dayjs().format("MMMM D, YYYY h:mm A").toString());
     setInterval(() => {
@@ -52,55 +53,23 @@ function DateandProfile() {
   const handleClose = () => {
     setAnchorEl(null);
   };  
-
-  const getUserInfo = async () => {
-    setLoginWith(!setLoginWith)
-    const { uid } = auth.currentUser;
-    if (!uid) return;
-    if(ref(storage, `/ProfilePics/${uid}`)){
-      const imageListRef = ref(storage, `/ProfilePics/${uid}`);
-      const image = await getDownloadURL(imageListRef)
-      setProfilePic(image)
-    }
-    const userRef = collection(db, "Users");
-    const q = query(userRef, where("UID", "==", uid));
-    const data = await getDocs(q);
-    setUserInfo(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
-  };
-
+  const [users, setUsers] = useState([]);
+  const [user, setUser] = useState([]);
   useEffect(() => {
-    const unsub = auth.onAuthStateChanged((authObj) => {
-      unsub();
-      if (authObj) {
-        setuserHolder(authObj);
-      } else {
-        setuserHolder(null);
+    const getUser = async() => {
+      try{
+        await axios.get(`${port}/getUser`).then((data) => {
+          setUser(data.data[0])
+        })
+        await axios.get(`${port}/getUsers`).then((data) => {
+          setUsers(data.data)
+        })
+      }catch(e){
+        console.log(e);
       }
-    });
-    setLoading(false);
+    }
+    getUser()
   }, []);
-
-  const getSignInMethods = () => {
-    if (userHolder) {
-      const signInMethods = userHolder.providerData.map(
-        (provider) => provider.providerId
-      );
-      if (signInMethods.includes("google.com")) {
-        setLoginWith(true)
-        setGoogleName(auth.currentUser.displayName)
-        setProfilePic(localStorage.getItem("profilePic"))
-      } else if (signInMethods.includes("password")) {
-        getUserInfo();
-        
-      }
-    }
-    return null;
-  };
-
-  useEffect(() => {
-    getSignInMethods();
-  }, [userHolder]);
-  const { signout } = UserAuth();
   const logout = async () => {
     handleClose()
     Swal.fire({
@@ -117,11 +86,7 @@ function DateandProfile() {
           if (success.success == true){
             navigate("/pages/Login");
           }
-          else{
-
-          }
         })
-        
       }
     });
   };
@@ -153,7 +118,7 @@ function DateandProfile() {
             aria-haspopup="true"
             aria-expanded={open ? "true" : undefined}
           >
-            <Avatar src={profilePic} sx={{border: "1px solid #212121",width: 45, height: 45}}/>
+            <Avatar src={user ? `${port}/profile_Pictures/${user.profilePic}` : profilePic} sx={{border: "1px solid #212121",width: 45, height: 45}}/>
           </IconButton>
         </Tooltip>
       </div>
@@ -192,7 +157,7 @@ function DateandProfile() {
         anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
       >
         <MenuItem>
-         <PersonIcon/> &nbsp;{loginWith ? googleName : userInfo.map((userInfo) => { return userInfo.full_Name })}
+         <PersonIcon/> &nbsp; {user.full_Name}
         </MenuItem>
         <MenuItem>
           <DarkMode/>

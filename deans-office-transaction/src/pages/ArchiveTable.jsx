@@ -15,6 +15,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import axios from 'axios'
 function ArchiveTable() {
   const port = "http://localhost:3001"
+  axios.defaults.withCredentials = true
    //Loading
    const [loading, setLoading] = useState(true);
    const [emptyResult, setEmptyResult] = useState(false);
@@ -37,10 +38,20 @@ function ArchiveTable() {
   }, [])
 
   const [users, setUsers] = useState([]);
+  const [user, setUser] = useState([]);
   const getUser = async() => {
-    const userq = query(collection(db, "Users"))
-    const userData = await getDocs(userq)
-    setUsers(userData.docs.map((doc) => ({...doc.data(), id: doc.id})))
+    try{
+      await axios.get(`${port}/getUser`).then((data) => {
+        if(data.status == 200){
+          setUser(data.data[0])
+        }
+      })
+      await axios.get(`${port}/getUsers`).then((data) => {
+        setUsers(data.data)
+      })
+    }catch(e){
+      console.log(e.message);
+    }
   }
 
   const documentsRef = collection(db, "archive")
@@ -58,8 +69,8 @@ function ArchiveTable() {
       const whatYear = new Date(doc.date_Received).getFullYear()
       const elementToCheck = {Type : whatDoc, Year : whatYear}
       if(whatDoc){
-        if(users.find(item => item.UID == auth.currentUser.uid)?.role == "Faculty"){
-          if(doc.forwarded_By == auth.currentUser.uid || doc.accepted_Rejected_By == auth.currentUser.uid || users.find(item => item.UID == auth.currentUser.uid)?.full_Name.includes(doc.fromPer)){
+        if(user.role == "Faculty"){
+          if(doc.forwarded_By == user.uID || doc.forward_To == user.uID || doc.accepted_Rejected_By == user.uID || user.full_Name.includes(doc.fromPer) ){
             if (buttonSet.size === 0 || ![...buttonSet].some(button => button.Type === whatDoc)) {
               buttonSet.add({ Type: whatDoc, Year: whatYear });
               updatedButtonSet.add({ Type: whatDoc, Year: whatYear });

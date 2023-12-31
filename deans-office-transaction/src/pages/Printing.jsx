@@ -28,6 +28,7 @@ import {
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import Chart from "react-google-charts";
+import axios from "axios";
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -38,7 +39,8 @@ ChartJS.register(
 );
 
 export const ComponentToPrint = React.forwardRef((props, componentRef) => {
-  
+  const port = "http://localhost:3001"
+  axios.defaults.withCredentials = true
   const filteredData = props.filtered
   const [date, setDate] = useState("");
   useEffect(() => {
@@ -49,18 +51,24 @@ export const ComponentToPrint = React.forwardRef((props, componentRef) => {
   const printRef = collection(db, "documents");
   const [printData, setPrintData] = useState([]);
   const [users, setUsers] = useState([]);
-  const getTableData = async () => {
-    const q = query(printRef, props.dataFromParent == "Communication" || props.dataFromParent =="Memorandum"  ? where("document_Type", "==", props.dataFromParent) :  where("document_Type", "not-in", ["Communication", "Memorandum"]));
-    const data = await getDocs(q);
-    const userq = query(collection(db, "Users"))
-    const userData = await getDocs(userq)
-    setUsers(userData.docs.map((doc) => ({...doc.data(), id: doc.id})))
-    setPrintData(data.docs.map((doc) => ({ ...doc.data(), id: doc.id, dateTime: new Date(doc.data().date_Received) })));
-  };
-
+  const [user, setUser] = useState([]);
   useEffect(() => {
-    getTableData();
-  }, [props]);
+    const getUser = async() => {
+      try{
+        await axios.get(`${port}/getUser`).then((data) => {
+          if(data.status == 200){
+            setUser(data.data[0])
+          }
+        })
+        await axios.get(`${port}/getUsers`).then((data) => {
+          setUsers(data.data)
+        })
+      }catch(e){
+        console.log(e);
+      }
+    }
+    getUser()
+  }, []);
 
   const [sortedPrint, setSortedPrint] = useState([])
   const [sortedSet, setSortedSet] = useState([])
@@ -259,7 +267,7 @@ export const ComponentToPrint = React.forwardRef((props, componentRef) => {
             Printed By
           </Typography>
           <Typography sx={{fontSize: '0.9rem'}}>
-            {users.find(item => item.UID == auth.currentUser.uid)?.full_Name}
+            {user.full_Name}
           </Typography>
         </Box>
         
