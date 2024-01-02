@@ -433,7 +433,7 @@ export default function StickyHeadTable() {
       setImageUpload("")
       setImageDis("")
       setOpenAdd(false)
-      getSignInMethods("add");
+      getSignInMethods("add", documentsToBeAdded.document_Name, documentsToBeAdded.document_Type);
       setEmptyResult(false);
       setSumbmit(false);
       setUrgent(false)
@@ -454,75 +454,29 @@ export default function StickyHeadTable() {
   };
   //
 
-  const getUserInfo = async (type, name) => {
-    console.log("user info");
-    const { uid } = user;
-    if (!uid) return;
-    const userRef = collection(db, "Users");
-    const q = query(userRef, where("uID", "==", uid));
-    const data = await getDocs(q);
-    setUserInfo(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
-    console.log(userInfo);
+  const getSignInMethods = async (type, name, docType) => {
+    let log = null
     if (type == "add") {
-      await addDoc(logcollectionRef, {
+      log = {
         date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-        log: data.docs.map((doc) => doc.data().full_Name) + ` added a ${category} named ${name}`,
-      });
-    } else if (type == "edit") {
-      await addDoc(logcollectionRef, {
-        date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-        log: data.docs.map((doc) => doc.data().full_Name)  + ` edited a ${editDocType} named ${name}`,
-      });
-    } else if (type == "delete") {
-      await addDoc(logcollectionRef, {
-        date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-        log: data.docs.map((doc) => doc.data().full_Name) +  ` deleted a ${category}`,
-      }); 
-    } else if (type == "archive") {
-      console.log("archive");
-      await addDoc(logcollectionRef, {
-        date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-        log: data.docs.map((doc) => doc.data().full_Name) +  ` archived ${name}`,
-      });
-    }
-  };
-
-
-  const getSignInMethods = async (type, name) => {
-    if (userHolder) {
-      console.log("sign in Methds");
-      const signInMethods = userHolder.providerData.map(
-        (provider) => provider.providerId
-      );
-      if (signInMethods.includes("google.com")) {
-        if (type == "add") {
-          await addDoc(logcollectionRef, {
-            date: dayjs().format("MMM D, YYYY h:mm:ss A").toString(),
-            log: auth.currentUser.displayName + ` added a ${category}`,
-          });
-        } else if (type == "edit") {
-          await addDoc(logcollectionRef, {
-            date: dayjs().format("MMM D, YYYY h:mm:ss A").toString(),
-            log: auth.currentUser.displayName + ` edited a ${editDocType}`,
-          });
-        } else if (type == "delete") {
-          await addDoc(logcollectionRef, {
-            date: dayjs().format("MMM D, YYYY h:mm:ss A").toString(),
-            log: auth.currentUser.displayName +  ` deleted a ${category}`,
-          }); 
-        } else if (type == "archive") {
-          await addDoc(logcollectionRef, {
-            date: dayjs().format("MMM D, YYYY h:mm:ss A").toString(),
-            log:
-              auth.currentUser.displayName +  ` archived a student ${category}`,
-          });
-        }
-      } else if (signInMethods.includes("password")) {
-        console.log("password");
-        getUserInfo(type, name);
+        log: user.full_Name + ` added a ${docType} Letter (${name})`,
       }
+    } else if (type == "edit") {
+      log = {
+        date: dayjs().format("MMM D, YYYY h:mm A").toString(),
+        log: user.full_Name + ` edited a ${docType} Letter (${name})`,
+      };
+    } else if (type == "archive") {
+      log = {
+        date: dayjs().format("MMM D, YYYY h:mm A").toString(),
+        log: user.full_Name + ` archived a ${docType} Letter (${name})`,
+      };
     }
-    return null;
+    try{
+      await axios.post(`${port}/createLog`, log)
+    }catch(e){
+      console.log(e.message);
+    }
   };
 
   const [page, setPage] = useState(0);
@@ -594,7 +548,7 @@ export default function StickyHeadTable() {
     setPage(0);
   };
 
-  const deleteIncoming = (id) => {
+  const deleteIncoming = (id, name, docType) => {
     console.log(id);
     Swal.fire({
       title: "Archive?",
@@ -611,6 +565,7 @@ export default function StickyHeadTable() {
         try{
           await axios.post(`${port}/archiveFile?id=${id}`)
           toast.success("File has been archived")
+          getSignInMethods("archive", name, docType)
           getIncoming();
         }catch(e){
           console.log(e);
@@ -957,7 +912,7 @@ export default function StickyHeadTable() {
       }
     }
 
-    getSignInMethods("edit");
+    getSignInMethods("edit", editDocName, editDocType);
     getIncoming();
     handleEditClose();
     setIsListenerActive(false)
@@ -1683,7 +1638,7 @@ export default function StickyHeadTable() {
                           borderRadius: "5px",
                         }}
                         onClick={() => {
-                          deleteIncoming(row.uID);
+                          deleteIncoming(row.uID, row.document_Name, row.document_Type);
                         }}
                       />
                       </Tooltip>

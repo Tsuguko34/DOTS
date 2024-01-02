@@ -343,38 +343,6 @@ export default function StickyHeadTable() {
   };
   //
 
-  const [userUID, setUserUID] = useState("")
-  const getUserInfo = async (type) => {
-    const { uid } = auth.currentUser;
-    if (!uid) return;
-    const userRef = collection(db, "Users");
-    const q = query(userRef, where("uID", "==", uid));
-    const data = await getDocs(q);
-    setUserInfo(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
-    console.log(userInfo);
-    if (type == "add") {
-      await addDoc(logcollectionRef, {
-        date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-        log: data.docs.map((doc) => doc.data().full_Name) + ` added a ${category}`,
-      });
-    } else if (type == "edit") {
-      await addDoc(logcollectionRef, {
-        date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-        log: data.docs.map((doc) => doc.data().full_Name)  + ` edited a ${editDocType}`,
-      });
-    } else if (type == "delete") {
-      await addDoc(logcollectionRef, {
-        date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-        log: data.docs.map((doc) => doc.data().full_Name)  + " deleted a student document",
-      });
-    } else if (type == "archive") {
-      await addDoc(logcollectionRef, {
-        date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-        log: data.docs.map((doc) => doc.data().full_Name)  + " archived a student document",
-      });
-    }
-  };
-
   const [users, setUsers] = useState([]);
   const [user, setUser] = useState([]);
   useEffect(() => {
@@ -418,9 +386,16 @@ export default function StickyHeadTable() {
     };
   },[user])
 
-  const getSignInMethods = async (type) => {
-    getUserInfo(type);
-    return null;
+  const getSignInMethods = async (name, docType, forwarded) => {
+    let log = {
+      date: dayjs().format("MMM D, YYYY h:mm A").toString(),
+      log: user.full_Name + ` forwarded a ${docType} Letter (${name}) to ${forwarded}`,
+    }
+    try{
+      await axios.post(`${port}/createLog`, log)
+    }catch(e){
+      console.log(e.message);
+    }
   };
 
   const [page, setPage] = useState(0);
@@ -972,10 +947,11 @@ export default function StickyHeadTable() {
   const [allFaculty, setAllFaculty] = useState(false)
   //OPEN COMMENT
   const [approveReject, setApproveReject] = useState(false);
-  const openApproveReject = (id) => {
+  const openApproveReject = (id, name, type) => {
     const data = {
-
-      id: id
+      id: id,
+      name: name,
+      document_Type: type
     }
     setActionHolder(data)
     setApproveReject(true)
@@ -1009,6 +985,7 @@ export default function StickyHeadTable() {
         await axios.put(`${port}/forwardRequest`, updateFields)
         closrApproveReject()
         setSumbmit(false)
+        getSignInMethods(actionHolder.name, actionHolder.document_Type, users.find(item => item.uID == forward)?.full_Name)
         toast.success("Forwarded a Document.")
       }catch(e){
         console.log(e);
@@ -1043,6 +1020,7 @@ export default function StickyHeadTable() {
       await axios.put(`${port}/forwardRequest`, updateFields)
       closrApproveReject()
       setSumbmit(false)
+      getSignInMethods(actionHolder.name, actionHolder.document_Type, "All Users")
       toast.success("Forwarded a Document.")
     }
     else if(allFaculty){
@@ -1077,6 +1055,7 @@ export default function StickyHeadTable() {
       await axios.put(`${port}/forwardRequest`, updateFields)
       closrApproveReject()
       setSumbmit(false)
+      getSignInMethods(actionHolder.name, actionHolder.document_Type, "All Faculty")
       toast.success("Forwarded a Document.")
     }
     else if(allClerks){
@@ -1111,10 +1090,10 @@ export default function StickyHeadTable() {
       await axios.put(`${port}/forwardRequest`, updateFields)
       closrApproveReject()
       setSumbmit(false)
+      getSignInMethods(actionHolder.name, actionHolder.document_Type, "All Clerks")
       toast.success("Forwarded a Document.")
       
     }
-    getSignInMethods(action)
   }
 
   const closrApproveReject = () => {
@@ -1516,17 +1495,17 @@ export default function StickyHeadTable() {
               .map((row) => (
                 <>
                 <TableRow hover onClick={() => unread(row.unread, row.uID,  subArrayCol.find(item => item.docID == row.uID && item.userUID == user.uID)?.isRead)} role="checkbox" tabIndex={-1} key={row.uID} sx={{cursor: "pointer", userSelect: "none", height: "50px", background: "#F0EFF6",'& :last-child': {borderBottomRightRadius: "10px", borderTopRightRadius: "10px"} ,'& :first-child':  {borderTopLeftRadius: "10px", borderBottomLeftRadius: "10px"} }}>
-                  <TableCell className={userHolder && subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == 0 ? "table-cell unread first" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.document_Name} </TableCell>
-                  <TableCell className={userHolder && subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == 0 ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.Type == undefined || row.Type == "" ? row.document_Type : row.Type} </TableCell>
-                  <TableCell className={userHolder && subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == 0 ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.received_By} </TableCell>
-                  <TableCell className={userHolder && subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == 0 ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.fromDep == undefined || row.fromDep == "" ? row.fromPer : row.fromDep} </TableCell>
-                  <TableCell className={userHolder && subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == 0 ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.date_Received} </TableCell>
-                  <TableCell className={userHolder && subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == 0 ? "table-cell unread" : "table-cell"} align="left" > 
+                  <TableCell className={user && subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == 0 ? "table-cell unread first" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.document_Name} </TableCell>
+                  <TableCell className={user && subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == 0 ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.Type == undefined || row.Type == "" ? row.document_Type : row.Type} </TableCell>
+                  <TableCell className={user && subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == 0 ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.received_By} </TableCell>
+                  <TableCell className={user && subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == 0 ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.fromDep == undefined || row.fromDep == "" ? row.fromPer : row.fromDep} </TableCell>
+                  <TableCell className={user && subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == 0 ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.date_Received} </TableCell>
+                  <TableCell className={user && subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == 0 ? "table-cell unread" : "table-cell"} align="left" > 
                   {row.Status === 'Completed' ? <span className='table-Done'>Completed</span>: 
                   row.Status === 'Pending' ? <span className='table-Ongoing'>Pending</span>:
                   row.Status === 'Rejected' ? <span className='table-NotDone'>Rejected</span>: <span className='table-Default'>{row.Status}</span>}
                   </TableCell>
-                  <TableCell className={userHolder && subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == 0 ? "table-cell unread last" : "table-cell"} align="left">
+                  <TableCell className={user && subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == 0 ? "table-cell unread last" : "table-cell"} align="left">
                     <Stack spacing={1} direction="row">
                       <Tooltip title={<Typography sx={{fontSize: "0.8rem"}}>View Document</Typography>} arrow>
                       <VisibilityIcon
@@ -1551,7 +1530,7 @@ export default function StickyHeadTable() {
                           borderRadius: "5px",
                         }}
                         className="cursor-pointer"
-                        onClick={() => openApproveReject(row.uID)}
+                        onClick={() => openApproveReject(row.uID, row.document_Name, row.document_Type)}
                       />
                       </Tooltip>
                     </Stack>

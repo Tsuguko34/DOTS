@@ -54,14 +54,14 @@ app.use(express.json())
 const profileStorage = multer.diskStorage({
     destination: "../profile_Pictures",
     filename: function (req, file, cb) {
-        return cb(null, `${file.originalname}`)
+        const uID = req.query.uID || req.body.uID
+        return cb(null, `${uID}-${file.originalname}`)
     }
 })
 const uploadProfile = multer({storage: profileStorage})
 app.use('/profile_Pictures', express.static('../profile_Pictures'));
 
 app.post("/register", uploadProfile.single('files'), async(req, res) => {
-    console.log(req.file);
     const hashedPassword = await bcrypt.hash(req.body.password, 10)
     const verificationToken = crypto.randomBytes(32).toString('hex');
 
@@ -75,7 +75,7 @@ app.post("/register", uploadProfile.single('files'), async(req, res) => {
         1,
         req.body.uID,
         0,
-        req.body.file_Name,
+        `${req.body.uID}-${req.body.file_Name}`,
         verificationToken
     ]
     db.query(registerQ, [values], (err, regData) => {
@@ -152,16 +152,18 @@ app.post("/logout", (req, res) => {
 
 app.post("/login", (req, res) =>{
     const q = `SELECT * FROM users WHERE email = '${req.body.email}' LIMIT 1`
-    db.query(q, (err, data) => {
+    db.query(q, async(err, data) => {
         if (err) return console.log(err);
-        if (data.length == 0 || !(bcrypt.compare(req.body.password, data[0].password))){
-            return res.status(401).json({message: 'wrong pass'})
-        }else{
-            req.session.userID = data[0].uID
-            console.log(req.session);
-            return res.status(200).json(data)
+        if(data.length > 0){
+            const passwordMatch = await bcrypt.compare(req.body.password, data[0].password); 
+            if (!passwordMatch){
+                return res.status(200).json({success : false})
+            }else{
+                req.session.userID = data[0].uID
+                console.log(req.session);
+                return res.status(200).json(data)
+            }
         }
-       
     })
 })
 
@@ -187,7 +189,181 @@ app.get("/getUsers", (req, res) =>{
     })
 })
 
+app.put("/handleDeactivate", (req, res) => {
+    if(req.query.action == "deactivate"){
+        const q = "UPDATE users SET `Active` = 0 WHERE uID = ?"
+        db.query(q, req.query.uID, (err, data) => {
+            if(err) return console.log(err);
+            return res.status(200).json({success : true})
+        })
+    }
+    else if(req.query.action == "activate"){
+        const q = "UPDATE users SET `Active` = 1 WHERE uID = ?"
+        db.query(q, req.query.uID,(err, data) => {
+            if(err) return console.log(err);
+            return res.status(200).json({success : true})
+        })
+    }
+})
+
 //Documents
+const templateStorage = multer.diskStorage({
+    destination: "../templates",
+    filename: function (req, file, cb) {
+        return cb(null, `${new Date().getFullYear()}-${file.originalname}`)
+    }
+})
+const uploadTemplate = multer({storage: templateStorage})
+app.use('/templates', express.static('../templates'));
+app.post("/addTemplate", uploadTemplate.single("files"),(req, res) => {
+    const q = "INSERT INTO templates (`name`, `uID`, `file_Name`, `date_Added`, `type`) VALUES (?)"
+
+    const values = [
+        req.body.name,
+        req.body.uID,
+        `${new Date().getFullYear()}-${req.file.originalname}`,
+        new Date().toLocaleDateString(),
+        req.body.type
+    ]
+
+    db.query(q, [values], (err, data) => {
+        if (err) return console.log(err);
+        return res.status(200).json({success : true})
+    })
+})
+
+app.get("/getTemplates", (req, res) => {
+    const q = `SELECT * FROM templates`
+
+    db.query(q, (err, data) => {
+        if(err) return console.log(err);
+        return res.status(200).json(data)
+    })
+})
+
+app.post("/deleteTemplate",(req, res) => {
+    const filesQuery = `SELECT * FROM templates WHERE uID = '${req.query.uID}' LIMIT 1`
+    db.query(filesQuery, (err, data) => {
+        console.log(data[0].file_Name);
+        const filePath = `../templates/${data[0].file_Name}`;
+        if(fs.existsSync(filePath)){
+            fs.unlinkSync(filePath)
+            const q = `DELETE FROM templates WHERE uID = '${req.query.uID}'`
+            db.query(q, (err, data) => {
+                if (err) return console.log(err);
+                return res.status(200).json({success : true})
+            })
+        }
+    })
+    
+})
+
+app.put("/editProfile", (req, res) => {
+    if(req.query.request == "Name"){
+        const q = "UPDATE users SET `full_Name` = ? WHERE uID = ?"
+        const values = [
+            req.body.full_Name
+        ]
+
+        db.query(q, [...values, req.query.uID], (err, data) => {
+            if(err) return console.log(err);
+            return res.status(200).json({success : true})
+        })
+    }
+    else if(req.query.request == "Email"){
+        const q = `SELECT * FROM users WHERE uID = '${req.query.uID}'`
+        db.query(q, async(err, data) => {
+            if(err) return console.log(err);
+            if (data.length > 0) {
+                const passwordMatch = await bcrypt.compare(req.body.pass, data[0].password); 
+                if (!passwordMatch){
+                    return res.status(200).json({success : false})
+                }else{
+                    const q = "UPDATE users SET `email` = ? WHERE uID = ?"
+                    const values = [
+                        req.body.email
+                    ]
+                    db.query(q, [...values, req.query.uID], (err, data) => {
+                        if(err) return console.log(err);
+                        return res.status(200).json({success : true})
+                    })
+                }
+            }
+            
+        })
+    }
+    else if(req.query.request == "Password"){
+        const q = `SELECT * FROM users WHERE uID = '${req.query.uID}'`
+        db.query(q, async(err, data) => {
+            if(err) return console.log(err);
+            if (data.length > 0) {
+                const passwordMatch = await bcrypt.compare(req.body.oldPass, data[0].password); 
+                if (!passwordMatch){
+                    return res.status(200).json({success : false})
+                }else{
+                    const hashedPassword = await bcrypt.hash(req.body.newPass, 10)
+                    const q = "UPDATE users SET `password` = ? WHERE uID = ?"
+                    const values = [
+                        hashedPassword
+                    ]
+                    db.query(q, [...values, req.query.uID], (err, data) => {
+                        if(err) return console.log(err);
+                        return res.status(200).json({success : true})
+                    })
+                }
+            }
+            
+        })
+    }
+})
+
+app.put("/editProfilePic", uploadProfile.single("files"),(req, res) => {
+    const filesQuery = `SELECT * FROM users WHERE uID = '${req.query.uID}' LIMIT 1`
+    db.query(filesQuery, (err, data) => {
+        const filePath = `../profile_Pictures/${data[0].profilePic}`;
+        if(fs.existsSync(filePath)){
+            fs.unlinkSync(filePath)
+            const q = "UPDATE users SET `profilePic` = ? WHERE uID = ?"
+            const values = [
+                `${req.query.uID}-${req.file.originalname}`
+            ]
+
+            db.query(q, [...values, req.query.uID], (err, data) => {
+                if(err) return console.log(err);
+                return res.status(200).json({success : true})
+            })
+        }
+    })
+    
+})
+
+
+
+app.post("/createLog", (req, res) => {
+    const q = "INSERT INTO logs (`date`, `log`) VALUES (?)"
+    const values = [
+        req.body.date,
+        req.body.log
+    ]
+
+    db.query(q, [values], (err, data) => {
+        if(err) return console.log(err);
+        return res.status(200).json({success : true})
+    })
+})
+
+app.get("/getLogs", (req, res) => {
+    const q = `SELECT * FROM logs`
+
+    db.query(q, (err, data) => {
+        if(err) return console.log(err);
+        console.log(data);
+        return res.status(200).json(data)
+    })
+})
+
+
+
 app.get("/documents", (req, res) => {
     let q = null
     if(req.query.type == "Other"){

@@ -25,7 +25,7 @@ import toast, { Toaster } from "react-hot-toast";
 import Swal from "sweetalert2";
 import { EmailAuthProvider, createUserWithEmailAndPassword, reauthenticateWithCredential, signInWithEmailAndPassword, updateEmail, updatePassword, verifyBeforeUpdateEmail } from "firebase/auth";
 import { UserAuth } from "../components/AuthContext";
-import { Navigate } from "react-router";
+import { Navigate, useNavigate } from "react-router";
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
@@ -39,9 +39,11 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import SearchIcon from '@mui/icons-material/Search';
+import axios from "axios";
 
 function Settings() {
-
+  const port = "http://localhost:3001"
+  axios.defaults.withCredentials = true
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   useEffect(() => {
     const handleWindowResize = () => {
@@ -54,6 +56,7 @@ function Settings() {
       window.removeEventListener('resize', handleWindowResize);
     };
   });
+  const navigate = useNavigate()
   const [profilePic, setProfilePic] = useState(null);
   const [initialprofilePic, setInitialProfilePic] = useState(null);
   const [imageDis, setImageDis] = useState(userPic);
@@ -75,10 +78,11 @@ function Settings() {
   const [wrongPass, setWrongPass] = useState(false)
   const [notSame, setNotSame] = useState(false)
   const [passRequired, setPassRequired] = useState(false)
+  const [user, setUser] = useState([]);
   useEffect(() => {
-    setDate(dayjs().format("MMMM D, YYYY h:mm A").toString());
+    setDate(dayjs().format("MMMM D, YYYY h:mm A"));
     setInterval(() => {
-      setDate(dayjs().format("MMMM D, YYYY h:mm A").toString());
+      setDate(dayjs().format("MMMM D, YYYY h:mm A"));
     }, 1000);
   });
 
@@ -92,77 +96,9 @@ function Settings() {
 
   const [userList, setUserList] = useState([])
   const [imageList, setImageList] = useState([]);
-  useEffect(() => {
-    const unsub = auth.onAuthStateChanged((authObj) => {
-      unsub();
-      if (authObj) {
-        setuserHolder(authObj);
-        Swal.fire({
-          title: 'Please wait...',
-          allowEscapeKey: false,
-          allowOutsideClick: false,
-          didOpen:async() => {
-            Swal.showLoading()
-        }})
-        const imageListRef = ref(storage, `ProfilePics/`);
-        listAll(imageListRef).then((response) => {
-            response.items.forEach(async(item) => {
-              getMetadata(item).then((metadata) => {
-                if(metadata.contentType.startsWith('image/')){
-                  getDownloadURL(item).then((url) => {
-                    setImageList((prev) => [...prev, url]);
-                  });
-                }
-              })
-              });
-        });
-        const q = query(collection(db, "Users"))
-        onSnapshot(q, async(data) => {
-          setUserList(data.docs.map((doc) => ({...doc.data(), id: doc.id})))
-        })
-      } else {
-        setuserHolder(null);
-      }
-    });
-
-  }, []);
-
-  const [canAccess, setCanAccess] = useState(true)
-  const [canEmail, setCanEmail] = useState(true)
-  const [canProfile, setCanProfile] = useState("")
-  const getSignInMethods = () => {
-    if (userHolder) {
-      
-      const signInMethods = userHolder.providerData.map(
-        (provider) => provider.providerId
-      );
-      if(signInMethods.includes("google.com") && signInMethods.includes("password")){
-        getProfile()
-        setCanAccess(false)
-        setCanEmail(true)
-        setCanProfile(localStorage.getItem("profilePic"))
-      }
-      else if (signInMethods.includes("google.com")) {
-        setLoad(false)
-        setCanAccess(false)
-        setCanEmail(false)
-        Swal.close()
-      } 
-      else if (signInMethods.includes("password")) {
-        setCanAccess(true)
-        setCanEmail(true)
-        getProfile()
-      }
-    }
-    return null;
-  };
 
   useEffect(() => {
-    getSignInMethods();
-  }, [userHolder]);
-
-  useEffect(() => {
-    if(name.toString() == initialname.toString() && imageDis == initialprofilePic && oldPassword == "" && newPassword == "" && confirmPassword == ""){
+    if(name == initialname && imageDis == initialprofilePic && oldPassword == "" && newPassword == "" && confirmPassword == ""){
       setDisableFormSub(true)
     }else{
       setDisableFormSub(false)
@@ -175,23 +111,47 @@ function Settings() {
     }
   }, [name, imageDis, oldPassword, newPassword, confirmPassword])
 
-  const getProfile = async() => {
-    setLoad(true)
-    const { uid } = auth.currentUser;
-    if (!uid) return;
-    const userRef = collection(db, "Users");
-    const imageListRef = ref(storage, `/ProfilePics/${uid}`);
-    const q = query(userRef, where("UID", "==", uid));
-    const data = await getDocs(q);
-    const image = await getDownloadURL(imageListRef)
-    setImageDis(image)
-    setInitialProfilePic(image)
-    setName(data.docs.map((doc) => doc.data().full_Name))
-    setInitialName(data.docs.map((doc) => doc.data().full_Name))
-    setDocID(data.docs.map((doc) => doc.id))
-    setLoad(false)
-    Swal.close()
+  const getUser = async() => {
+    try{
+      await axios.get(`${port}/getUser`).then((data) => {
+        if(data.status == 200){
+          setUser(data.data[0])
+        }
+      })
+    }catch(e){
+      console.log(e);
+    }
   }
+  const getUserList = async() => {
+    try{
+      await axios.get(`${port}/getUsers`).then((data) => {
+        setUserList(data.data)
+      })
+    }catch(e){
+      console.log(e);
+    }
+  }
+  
+  useEffect(() => {
+    getUser()
+    getUserList()
+  },[])
+
+  useEffect(() => {
+    const getProfile = async() => {
+      setLoad(true)
+      console.log(user.full_Name);
+      setImageDis(`${port}/profile_Pictures/${user.profilePic}`)
+      setInitialProfilePic(`${port}/profile_Pictures/${user.profilePic}`)
+      setName(user.full_Name)
+      setInitialName(user.full_Name)
+      setDocID(user.uID)
+      setLoad(false)
+      Swal.close()
+    }
+    getProfile()
+  }, [user])
+  
 
   const VisuallyHiddenInput = styled('input')({
     clip: 'rect(0 0 0 0)',
@@ -206,152 +166,6 @@ function Settings() {
   });
 
   const { signout } = UserAuth();
-  const delay = 3000;
-  const editProfile = async(e) => {
-    e.preventDefault()
-    if(oldPassword == "" && newPassword == "" && confirmPassword == ""){
-      if(!profilePic){
-        setLoad2(true)
-        setDisableForm(true)
-        toast.loading("Please wait...")
-        const editDoc = doc(db, "Users", docID.toString())
-        const editName = {
-          full_Name: name.toString()
-
-        }
-        await updateDoc(editDoc, editName).then(() =>{
-          setLoad2(false)
-          toast.dismiss()
-          toast.success('Successfully edited. refreshing page')
-          setDisableForm(false)
-          setInterval(() => {
-            window.location.reload()
-          }, 1000)
-        })
-      }
-      else if(profilePic){ 
-        setLoad2(true)
-        setDisableForm(true)
-        toast.loading("Please wait...")
-        const editDoc = doc(db, "Users", docID.toString())
-        const editName = {
-          full_Name: name.toString()
-        }
-        await updateDoc(editDoc, editName);
-        const imageRef = ref(storage, `ProfilePics/${auth.currentUser.uid}`)
-        await uploadBytes(imageRef, profilePic).then(() => {
-          setLoad2(false)
-          toast.dismiss()
-          toast.success('Successfully edited. refreshing page')
-          setDisableForm(false)
-          setInterval(() => {
-            window.location.reload()
-          }, 1000)
-          
-        })
-      }
-    }else{
-      toast.loading("Please wait...")
-      if(oldPassword == newPassword){
-        setSamePass(true);
-        setNotSame(false);
-        setWrongPass(false);
-        setDisableForm(false)
-        setDisableFormSub(false)
-        toast.dismiss()
-        toast.error("Something went wrong")
-        setLoad2(false)
-      }
-      else if(newPassword != confirmPassword){
-        setSamePass(false);
-        setNotSame(true);
-        setWrongPass(false);
-        setDisableForm(false)
-        setDisableFormSub(false)
-        toast.dismiss()
-        toast.error("Something went wrong")
-        setLoad2(false)
-      }
-      else{
-        if(!profilePic){
-          setLoad2(true)
-          setDisableForm(true)
-          const user = auth.currentUser;
-          const credentials = EmailAuthProvider.credential(user.email, oldPassword)
-          await reauthenticateWithCredential(user, credentials).then( async() => {
-            const editDoc = doc(db, "Users", docID.toString())
-            const editName = {
-              full_Name: name.toString(),
-              tempPass: null,
-              passChanged: null,
-            }
-            await updateDoc(editDoc, editName)
-            await updatePassword(user, newPassword)
-                setWrongPass(false);
-                setSamePass(false)
-                setNotSame(false)
-                setOldPassword("")
-                setNewPassword("")
-                toast.dismiss()
-                toast.success('Successfully edited. logging out')
-                const interval = setInterval(async() => {
-                  clearInterval(interval); 
-                  await signout()
-                }, 2000);
-          }).catch((e) => {
-            setSamePass(false);
-            setNotSame(false);
-            setWrongPass(true);
-            setDisableForm(false)
-            setDisableFormSub(false)
-            toast.dismiss()
-            toast.error("Something went wrong")
-            setLoad2(false)
-          })
-        }
-        else if(profilePic){
-          setLoad2(true)
-          setDisableForm(true)
-          const user = auth.currentUser;
-          const credentials = EmailAuthProvider.credential(user.email, oldPassword)
-          await reauthenticateWithCredential(user, credentials).then( async() => {
-            const editDoc = doc(db, "Users", docID.toString())
-            const editName = {
-              full_Name: name.toString(),
-              tempPass: null,
-              passChanged: null,
-            }
-            await updateDoc(editDoc, editName);
-            const imageRef = ref(storage, `ProfilePics/${auth.currentUser.uid}`)
-            await uploadBytes(imageRef, profilePic)
-            await updatePassword(user, newPassword).then(async() => {
-                setWrongPass(false);
-                setSamePass(false)
-                setNotSame(false)
-                setOldPassword("")
-                setNewPassword("")
-                toast.dismiss()
-                toast.success('Successfully edited. logging out')
-                const interval = setInterval(async() => {
-                  clearInterval(interval); 
-                  await signout()
-                }, 2000);
-            })
-          }).catch((e) => {
-            setSamePass(false);
-            setNotSame(false);
-            setWrongPass(true);
-            setDisableFormSub(false)
-            toast.dismiss()
-            toast.error("Something went wrong")
-            setLoad2(false)
-          })
-        }
-        
-        
-      }
-    }
-  };
  
   const onImageChange = (e) => {
     const file = e.target.files[0];
@@ -378,19 +192,24 @@ function Settings() {
     setLoad2(true)
     setDisableForm(true)
     toast.loading("Please wait...")
-    const editDoc = doc(db, "Users", docID.toString())
     const editNamed = {
-      full_Name: name.toString()
+      full_Name: name,
     }
-    await updateDoc(editDoc, editNamed).then(() =>{
-      setLoad2(false)
-      toast.dismiss()
-      toast.success('Successfully edited. refreshing page')
-      setDisableForm(false)
-      setInterval(() => {
-        window.location.reload()
-      }, 1000)
-    })
+    try{
+      await axios.put(`${port}/editProfile?request=Name&uID=${user.uID}`, editNamed).then((success) => {
+        if(success.status == 200){
+          setLoad2(false)
+          toast.dismiss()
+          toast.success('Successfully edited. refreshing page')
+          setDisableForm(false)
+          setInterval(() => {
+            window.location.reload()
+          }, 1000)
+        }
+      })
+    }catch(e){
+      console.log(e.message);
+    }
   }
 
 
@@ -404,39 +223,34 @@ function Settings() {
     setLoad2(true)
     toast.loading("Please wait...")
     setDisableForm(true)
+    const emailEdit = {
+      email: newEmail,
+      pass: emailPass
+    }
     if(!userList.find(item => item.email == newEmail)){
-      const user = auth.currentUser;
-      const credentials = EmailAuthProvider.credential(user.email, emailPass)
-      await reauthenticateWithCredential(user, credentials).then( async() => {
-        const user = auth.currentUser
-        updateEmail(user, newEmail).then(async() => {
-          const docId = userList.find(item => item.UID == auth.currentUser.id)?.id
-          const docToUpdate = doc(collection(db, "Users"), docID)
-          await updateDoc(docToUpdate, {
-            email: newEmail.toString()
+        try{
+          await axios.put(`${port}/editProfile?request=Email&uID=${user.uID}`, emailEdit).then((success) => {
+            if(success.status == 200){
+              if(success.data.success == true){
+                setLoad2(false)
+                toast.dismiss()
+                toast.success('Successfully edited. refreshing page')
+                setDisableForm(false)
+                setInterval(() => {
+                  window.location.reload()
+                }, 1000)
+              }else if(success.data.success == false){
+                setWrongEmailPass(true)
+                setDisableForm(false)
+                setLoad2(false)
+                toast.dismiss()
+                toast.error("Something went wrong. Try again")
+              }  
+            }
           })
-          setLoad2(false)
-          setDisableForm(false)
-          toast.dismiss()
-          toast.success('A verification link has been sent to the original email.')
-          setInterval(() => {
-            auth.signOut()
-          }, 1000)
-
-        })
-      }).catch((error) => {
-        const errorCode = error.error
-        if(errorCode == 'auth/wrong-password'){
-          setWrongEmailPass(true)
+        }catch(e){
+          console.log(e.message);
         }
-        else if(errorCode == 'auth/invalid-email'){
-          setWrongEmail(true)
-        }
-        else{
-          toast.dismiss()
-          toast.error("Something went wrong. Try again")
-        }
-      })
     }else if(userList.find(item => item.email == newEmail)){
       setLoad2(false)
       setWrongEmail(true)
@@ -472,31 +286,47 @@ function Settings() {
       toast.error("Something went wrong")
       setLoad2(false)
     }else{
-      const user = auth.currentUser;
-      const credentials = EmailAuthProvider.credential(user.email, oldPassword)
-      await reauthenticateWithCredential(user, credentials).then( async() => {
-        await updatePassword(user, newPassword)
-            setWrongPass(false);
-            setSamePass(false)
-            setNotSame(false)
-            setOldPassword("")
-            setNewPassword("")
-            toast.dismiss()
-            toast.success('Successfully edited. logging out')
-            const interval = setInterval(async() => {
-              clearInterval(interval); 
-              await signout()
-            }, 2000);
-      }).catch((e) => {
-        setSamePass(false);
-        setNotSame(false);
-        setWrongPass(true);
-        setDisableForm(false)
-        setDisableFormSub(false)
-        toast.dismiss()
-        toast.error("Something went wrong")
-        setLoad2(false)
-      })
+      try{
+        const passes = {
+          oldPass : oldPassword,
+          newPass : newPassword
+        }
+        await axios.put(`${port}/editProfile?request=Password&uID=${user.uID}`, passes).then((success) => {
+          if(success.status == 200){
+            if(success.data.success == true){
+              setWrongPass(false);
+              setSamePass(false)
+              setNotSame(false)
+              setOldPassword("")
+              setNewPassword("")
+              toast.dismiss()
+              toast.success('Successfully edited. logging out')
+              const interval = setInterval(async() => {
+                clearInterval(interval); 
+                await axios.post(`${port}/logout`).then((data) => {
+                  
+                  const success = data.data
+                  console.log(success.success);
+                  if (success.success == true){
+                    navigate("/pages/Login");
+                  }
+                })
+              }, 2000);
+            }else if(success.data.success == false){
+              setSamePass(false);
+              setNotSame(false);
+              setWrongPass(true);
+              setDisableForm(false)
+              setDisableFormSub(false)
+              toast.dismiss()
+              toast.error("Something went wrong")
+              setLoad2(false)
+            }  
+          }
+        })
+      }catch(e){
+        console.log(e.message);
+      }
     }
   }
 
@@ -505,19 +335,27 @@ function Settings() {
     setLoad2(true)
     setDisableForm(true)
     toast.loading("Please wait...")
-    const imageRef = ref(storage, `ProfilePics/${auth.currentUser.uid}`)
-    await uploadBytes(imageRef, profilePic).then(() => {
-      setLoad2(false)
-      toast.dismiss()
-      toast.success('Successfully edited. refreshing page')
-      setDisableForm(false)
-      setInterval(() => {
-        window.location.reload()
-      }, 1000)
-      
-    }).catch((e) => {
-      toast.error(e.message)
-    })
+    const formData = new FormData()
+    formData.append(`files`, profilePic)
+    try{
+      await axios.put(`${port}/editProfilePic?request=Name&uID=${user.uID}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }).then((success) => {
+        if(success.status == 200){
+          setLoad2(false)
+          toast.dismiss()
+          toast.success('Successfully edited. refreshing page')
+          setDisableForm(false)
+          setInterval(() => {
+            window.location.reload()
+          }, 1000)
+        }
+      })
+    }catch(e){
+      console.log(e.message);
+    }
   }
 
   //Popper
@@ -557,19 +395,25 @@ function Settings() {
       confirmButtonColor: '#FF5600',
       cancelButtonColor: '#888',
       confirmButtonText: 'Confirm'
-    }).then((result) => {
+    }).then(async(result) => {
       if (result.isConfirmed) {
-          const editDoc = doc(db, "Users", userId)
-          if(activeHolder === true){
-            updateDoc(editDoc, {
-              Active: false
-            })
-            toast.success("Account Deactivated")
-          }else if(activeHolder === false){
-            updateDoc(editDoc, {
-              Active: true
-            })
-            toast.success("Account Activated")
+          if(activeHolder == 1){
+            try{
+              await axios.put(`${port}/handleDeactivate?action=deactivate&uID=${userId}`)
+              getUserList()
+              toast.success("Account Deactivated")
+            }catch(e){
+              console.log(e.message);
+            }
+            
+          }else if(activeHolder == 0){
+            try{
+              await axios.put(`${port}/handleDeactivate?action=activate&uID=${userId}`)
+              getUserList()
+              toast.success("Account Deactivated")
+            }catch(e){
+              console.log(e.message);
+            }
           }
         
       }
@@ -643,7 +487,7 @@ function Settings() {
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
               <TabList onChange={handleChange} aria-label="lab API tabs example">
                 <Tab sx={{textTransform: "none", fontSize: "1rem"}} label="Account Settings" value="1" />
-                {auth.currentUser != undefined && userList.find(item => item.UID === auth.currentUser.uid)?.role === "Dean"  && <Tab sx={{textTransform: "none", fontSize: "1rem"}} label="Manage Accounts" value="2" />}
+                {user != undefined && user.role === "Dean"  && <Tab sx={{textTransform: "none", fontSize: "1rem"}} label="Manage Accounts" value="2" />}
               </TabList>
             </Box>
             <TabPanel value="1">
@@ -653,7 +497,7 @@ function Settings() {
                       Change name
                     </Typography>
                     <TextField
-                      disabled={disableForm || !canAccess}
+                      disabled={disableForm}
                       className="table-search"
                       name="oldPass"
                       fullWidth
@@ -665,7 +509,7 @@ function Settings() {
                         Your name will appear on the logs
                     </Typography>
                     <Box sx={{width: "100%", display: "flex", justifyContent: "end", alignItems: "center", m: "5px"}}>
-                      <LoadingButton disabled={name.toString() == initialname.toString() || auth.currentUser != undefined && auth.currentUser.displayName == name|| load2} onClick={editName} loading={load2}  variant="contained" sx={{ml: "20px"}} loadingPosition="end" endIcon={<SaveIcon/>}>
+                      <LoadingButton disabled={name == initialname || user != undefined && user.displayName == name|| load2} onClick={editName} loading={load2}  variant="contained" sx={{ml: "20px"}} loadingPosition="end" endIcon={<SaveIcon/>}>
                         <span>Save</span>
                       </LoadingButton>
                     </Box>
@@ -681,7 +525,7 @@ function Settings() {
                             id="outlined-adornment-password"
                             className="table-search"
                             onChange={(e) => setNewEmail(e.target.value)}
-                            disabled={disableForm || !canEmail}
+                            disabled={disableForm}
                             type={'email'}
                             label="New Email"
                             helperText={newEmail != "" && !newEmail.endsWith("@bulsu.edu.ph") && emailPattern.test(newEmail) ? "Email must be a bulsu email." : wrongEmail ? "Cannot use an existing email." : ''}
@@ -694,12 +538,12 @@ function Settings() {
                             id="outlined-adornment-password"
                             className="table-search"
                             onChange={(e) => setEmailPass(e.target.value)}
-                            disabled={disableForm || !canEmail}
+                            disabled={disableForm}
                             type={showPassword ? 'text' : 'password'}
                             endAdornment={
                               <InputAdornment position="end">
                                 <IconButton
-                                  disabled={disableForm || !canEmail}
+                                  disabled={disableForm}
                                   aria-label="toggle password visibility"
                                   onClick={handleClickShowPassword}
                                   onMouseDown={handleMouseDownPassword}
@@ -737,12 +581,12 @@ function Settings() {
                       className="table-search"
                       onChange={(e) => setOldPassword(e.target.value)}
                       required={passRequired}
-                      disabled={disableForm || !canEmail}
+                      disabled={disableForm}
                       type={showPassword ? 'text' : 'password'}
                       endAdornment={
                         <InputAdornment position="end">
                           <IconButton
-                            disabled={disableForm || !canEmail}
+                            disabled={disableForm}
                             aria-label="toggle password visibility"
                             onClick={handleClickShowPassword}
                             onMouseDown={handleMouseDownPassword}
@@ -761,13 +605,13 @@ function Settings() {
                       id="outlined-adornment-password"
                       className="table-search"
                       required={passRequired}
-                      disabled={disableForm || !canEmail}
+                      disabled={disableForm}
                       onChange={(e) => setNewPassword(e.target.value)}
                       type={showPassword ? 'text' : 'password'}
                       endAdornment={
                         <InputAdornment position="end">
                           <IconButton
-                            disabled={disableForm || !canEmail}
+                            disabled={disableForm}
                             aria-label="toggle password visibility"
                             onClick={handleClickShowPassword}
                             onMouseDown={handleMouseDownPassword}
@@ -786,13 +630,13 @@ function Settings() {
                       id="outlined-adornment-password"
                       className="table-search"
                       required={passRequired}
-                      disabled={disableForm || !canEmail}
+                      disabled={disableForm}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       type={showPassword ? 'text' : 'password'}
                       endAdornment={
                         <InputAdornment position="end">
                           <IconButton
-                            disabled={disableForm || !canEmail}
+                            disabled={disableForm}
                             aria-label="toggle password visibility"
                             onClick={handleClickShowPassword}
                             onMouseDown={handleMouseDownPassword}
@@ -828,10 +672,10 @@ function Settings() {
                         <Typography component={"div"} sx={{mt: "20px"}}>
                           Profile Picture
                         </Typography>
-                        <Avatar src={canAccess ? imageDis : canProfile} sx={{width: 150, height: 150, m: "20px"}}/>
-                        <Button component="label" disabled={disableForm || !canAccess} variant="contained" startIcon={<CloudUploadIcon />} sx={{m: "1vh", mb: "20px", backgroundColor: "#FF6347", '&:hover': {backgroundColor: "#212121"}}}>
+                        <Avatar src={imageDis} sx={{width: 150, height: 150, m: "20px"}}/>
+                        <Button component="label" disabled={disableForm} variant="contained" startIcon={<CloudUploadIcon />} sx={{m: "1vh", mb: "20px", backgroundColor: "#FF6347", '&:hover': {backgroundColor: "#212121"}}}>
                             Upload file
-                          <VisuallyHiddenInput disabled={disableForm || !canAccess} type="file" accept='.png, .jpg, .jpeg' onChange={onImageChange} id="profile-img"/>
+                          <VisuallyHiddenInput disabled={disableForm} type="file" accept='.png, .jpg, .jpeg' onChange={onImageChange} id="profile-img"/>
                         </Button>
                       </Box>
                       <Box sx={{width: "100%", display: "flex", justifyContent: "center", alignItems: "center", m: "5px"}}>
@@ -844,7 +688,7 @@ function Settings() {
                 </Grid>
             </TabPanel>
 
-            { auth.currentUser != undefined && userList.find(item => item.UID === auth.currentUser.uid)?.role === "Dean" ? (
+            { user != undefined && user.role === "Dean" ? (
             <>
                 <TabPanel value="2" sx={{p: 0}}>
                   <Stack
@@ -903,7 +747,7 @@ function Settings() {
                             <CardMedia
                                 component="img"
                                 sx={{width: "100px", maxWidth: "100px", maxHeight: "100px", borderRadius: "50%", p: "5px" }}
-                                image={userList.signInMethod == "Email" && imageList.findIndex(item => item.includes(userList.UID)) !== -1 ? imageList[imageList.findIndex(item => item.includes(userList.UID))] : userList.signInMethod == "Google"? userList.profilePic : userPic}
+                                image={`${port}/profile_Pictures/${userList.profilePic}`}
                                 alt="Profile Picture"
                               />
                             <Box sx={{ display: 'flex', flexDirection: 'column' }}>
@@ -919,8 +763,8 @@ function Settings() {
                                 <Typography variant="subtitle1" component="div" sx={{fontSize: "0.85rem", color: "#999999"}}> 
                                   {userList.role}
                                 </Typography>
-                                <Typography variant="subtitle1" component="div" sx={{userSelect: "none",fontSize: "0.85rem", color: userList.Active ? "limeGreen" :  "red"}}> 
-                                  {userList.Active ? "Active" : "Deactivated"}
+                                <Typography variant="subtitle1" component="div" sx={{userSelect: "none",fontSize: "0.85rem", color: userList.Active == 1 ? "limeGreen" :  "red"}}> 
+                                  {userList.Active == 1 ? "Active" : "Deactivated"}
                                 </Typography>
                               </CardContent>
                             </Box>
@@ -929,7 +773,7 @@ function Settings() {
                                 aria-controls={open ? 'basic-menu' : undefined}
                                 aria-haspopup="true"
                                 aria-expanded={open ? 'true' : undefined}
-                                onClick={(e) => handleClick(e, userList.id, userList.Active)}/>
+                                onClick={(e) => handleClick(e, userList.uID, userList.Active)}/>
                             </Box>
                           </Card>
                         </Grid>
@@ -945,7 +789,7 @@ function Settings() {
                       'aria-labelledby': 'basic-button',
                     }}
                   >
-                    <MenuItem onClick={(e) => handleDeactivate()}><Typography sx={{color: activeHolder ? "#C41E3A" : "limeGreen"}}>{activeHolder ? "Deactivate Account" : "Activate Account"}</Typography></MenuItem>
+                    <MenuItem onClick={(e) => handleDeactivate()}><Typography sx={{color: activeHolder == 1 ? "#C41E3A" : "limeGreen"}}>{activeHolder == 1 ? "Deactivate Account" : "Activate Account"}</Typography></MenuItem>
                   </Menu>
                   
                   {/* {loading ? (

@@ -61,7 +61,7 @@ export default function PendingCharts() {
     const buttonSet = new Set()
     const statusSet = new Set()
     data.data.forEach((doc) => {
-      if((doc.forward_To == user.uID || doc.forward_To.includes(user.role) || doc.forward_To.includes("All") && !doc.forward_To.includes(user.uID)) || doc.forwarded_By == user.uID || doc.accepted_Rejected_By == user.uID){
+      if((doc.forward_To == user.uID || doc.forward_To.includes(user.role) || (doc.forward_To.includes("All") && !doc.forward_To.includes(user.uID))) || ((doc.forwarded_By != null && doc.forwarded_By == user.uID) || (doc.accepted_Rejected_By != null && doc.accepted_Rejected_By == user.uID))){
         const status = doc.Status
         const whatDoc = doc.document_Type
         statusSet.add(status)
@@ -74,7 +74,6 @@ export default function PendingCharts() {
           }
           else if(status == "Pending"){
             setStatusPending(prev => prev + 1)
-            console.log(doc);
           }
           else if(status == "Rejected"){
             setStatusNotDone(prev => prev + 1)
@@ -84,6 +83,7 @@ export default function PendingCharts() {
             setStatusDone(prev => prev + 1)
           }
           else if(status == "Pending" && docType.includes(whatDoc)){
+            console.log("pending");
             setStatusPending(prev => prev + 1)
           }
           else if(status == "Rejected" && docType.includes(whatDoc)){
@@ -109,7 +109,7 @@ export default function PendingCharts() {
     }else{
       setIsChecked(false)
     }
-  }, [docType, user])
+  }, [user])
 
   const options = {
     responsive: true,

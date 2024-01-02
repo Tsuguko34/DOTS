@@ -40,7 +40,6 @@ const Calendar = () => {
           const q = query(outgoingCollectionRef, where("Sched_Date", "==", dayjs(newValue).format('MM/DD/YYYY').toString()))
           const data = await getDocs(q)
           setSchedHolder(data.docs.map((doc) => ({...doc.data(), id: doc.id})))
-          console.log("loop");
         }else{
           setLoading(false)
           setSchedule("No meetings for today")
@@ -56,7 +55,6 @@ const Calendar = () => {
   
       useEffect(() => {
         showSched(dayjs())
-        console.log("looping");
       }, [highlighteddays])
     return (
       <LocalizationProvider dateAdapter={AdapterDayjs} >

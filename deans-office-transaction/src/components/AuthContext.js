@@ -133,18 +133,23 @@ export const AuthContextProvider = ({children}) => {
                     password: password
                   }
                   await axios.post(`${port}/login`, vals).then(async(data) => {
-                    if(data.data[0].verified == 1){
-                      if(data.data[0].Active == 1){
-                        navigate('/pages/Dashboard')
-                        Swal.fire({title: "Success", text: "Logged in successfully.", icon: "success", showConfirmButton: false, timer: 1500})
-                      }else{
-                        Swal.fire({confirmButtonColor: "#212121", text: "Account is Deactivated!"})
+                    if(data.status == 200){
+                      
+                      if(data.data.success != false){
+                        if(data.data[0].verified == 1){
+                          if(data.data[0].Active == 1){
+                            navigate('/pages/Dashboard')
+                            Swal.fire({title: "Success", text: "Logged in successfully.", icon: "success", showConfirmButton: false, timer: 1500})
+                          }else{
+                            Swal.fire({confirmButtonColor: "#212121", text: "Account is Deactivated!"})
+                          }
+                        }else{
+                          Swal.fire({text: "Account not Verified. Check your email for Verification Link", confirmButtonColor: "#212121"})
+                        }
+                      }else if(data.data.success == false){
+                        Swal.fire({text: "Wrong Email/Password", icon: "error", showConfirmButton: false, timer: 1500, allowEscapeKey: false, allowOutsideClick: false,})
                       }
-                    }else{
-                      Swal.fire({text: "Account not Verified. Check your email for Verification Link", confirmButtonColor: "#212121"})
-                    }
-                  }).catch((e) => {
-                    Swal.fire({text: "Wrong Email/Password", icon: "error", showConfirmButton: false, timer: 1500, allowEscapeKey: false, allowOutsideClick: false,})
+                    } 
                   })
                 }else{
                   Swal.fire({text: "User does not exist", icon: "error", showConfirmButton: false, timer: 1500, allowEscapeKey: false, allowOutsideClick: false,})

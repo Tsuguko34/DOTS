@@ -345,51 +345,9 @@ export default function StickyHeadTable() {
   //
 
   const [userUID, setUserUID] = useState("")
-  const getUserInfo = async (type) => {
-    const { uid } = user;
-    if (!uid) return;
-    const userRef = collection(db, "Users");
-    const q = query(userRef, where("uID", "==", uid));
-    const data = await getDocs(q);
-    setUserInfo(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
-    console.log(userInfo);
-    if (type == "add") {
-      await addDoc(logcollectionRef, {
-        date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-        log: user.full_Name + ` added a ${category}`,
-      });
-    } else if (type == "edit") {
-      await addDoc(logcollectionRef, {
-        date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-        log: user.full_Name  + ` edited a ${editDocType}`,
-      });
-    } else if (type == "delete") {
-      await addDoc(logcollectionRef, {
-        date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-        log: user.full_Name  + " deleted a student document",
-      });
-    } else if (type == "archive") {
-      await addDoc(logcollectionRef, {
-        date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-        log: user.full_Name  + " archived a student document",
-      });
-    }else if (type == "accept") {
-      await addDoc(logcollectionRef, {
-        date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-        log:
-          user.full_Name + " approved a student document",
-      });
-    }
-    else if (type == "reject") {
-      await addDoc(logcollectionRef, {
-        date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-        log:
-          user.full_Name + " rejected a student document",
-      });
-    }
-  };
   const [users, setUsers] = useState([]);
   const [user, setUser] = useState([]);
+
   useEffect(() => {
     const getUser = async() => {
       try{
@@ -426,24 +384,24 @@ export default function StickyHeadTable() {
     getUser()
   }, []);
 
-  useEffect(() => {
-    const unsub = auth.onAuthStateChanged(async (authObj) => {
-      unsub();
-      if (authObj) {
-        setuserHolder(authObj);
-        const userq = query(collection(db, "Users"))
-        const userData = await getDocs(userq)
-        setUsers(userData.docs.map((doc) => ({...doc.data(), id: doc.id})))
-        
-      } else {
-        setuserHolder(null);
+  const getSignInMethods = async (type, name, docType) => {
+    let log = null
+    if (type == "accept") {
+      log = {
+        date: dayjs().format("MMM D, YYYY h:mm A").toString(),
+        log: user.full_Name + ` accepted a ${docType} Letter (${name})`,
       }
-    });
-  }, []);
-
-  const getSignInMethods = async (type) => {
-    getUserInfo(type);
-    return null;
+    } else if (type == "reject") {
+      log = {
+        date: dayjs().format("MMM D, YYYY h:mm A").toString(),
+        log: user.full_Name + ` rejected a ${docType} Letter (${name})`,
+      };
+    }
+    try{
+      await axios.post(`${port}/createLog`, log)
+    }catch(e){
+      console.log(e.message);
+    }
   };
 
   const [page, setPage] = useState(0);
@@ -994,10 +952,12 @@ export default function StickyHeadTable() {
   const [allFaculty, setAllFaculty] = useState(false)
   //OPEN COMMENT
   const [approveReject, setApproveReject] = useState(false);
-  const openApproveReject = (action, id) => {
+  const openApproveReject = (action, id, name, docuType) => {
     const data = {
       Action: action,
-      id: id
+      id: id,
+      name: name,
+      docuType: docuType
     }
     setActionHolder(data)
     setApproveReject(true)
@@ -1141,7 +1101,7 @@ export default function StickyHeadTable() {
       toast.success("Forwarded a Document.")
       
     }
-    getSignInMethods(action)
+    getSignInMethods(action, actionHolder.name, actionHolder.docuType)
   }
 
   const closrApproveReject = () => {
@@ -1571,7 +1531,7 @@ export default function StickyHeadTable() {
                           borderRadius: "5px",
                         }}
                         className="cursor-pointer"
-                        onClick={() => openApproveReject("accept", row.uID)}
+                        onClick={() => openApproveReject("accept", row.uID, row.document_Name, row.document_Type)}
                       />
                       </Tooltip>
                       <Tooltip title={<Typography sx={{fontSize: "0.8rem"}}>Reject Document</Typography>} arrow>
@@ -1584,7 +1544,7 @@ export default function StickyHeadTable() {
                           borderRadius: "5px",
                           zIndex: "11"
                         }}
-                        onClick={() => openApproveReject("reject", row.uID)}
+                        onClick={() => openApproveReject("reject", row.uID, row.document_Name, row.document_Type)}
                       />
                       </Tooltip>
                     </Stack>

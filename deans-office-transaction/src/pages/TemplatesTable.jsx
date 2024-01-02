@@ -54,8 +54,11 @@ import docxViewIcon from '../Images/docxView.png'
 import xlsxViewIcon from '../Images/xlsxView.png'
 import { CloudDownload } from "@mui/icons-material";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
+import axios from "axios";
 
 export default function MediaCard() {
+  const port = "http://localhost:3001"
+  axios.defaults.withCredentials = true
   // Firebase
   const storage = getStorage();
   //INPUTS
@@ -107,30 +110,31 @@ export default function MediaCard() {
     setOpenAdd(false);
   };
 
+
+  const [yearData, setYearData] = useState([])
   const getTemplate = async () => {
     const extArray = []
-    const imageListRef = ref(storage, `Templates/`)
-    await listAll(imageListRef).then((result) => {
-      result.items.forEach((item) => {
-        getMetadata(item).then((metadata) => {
-          if (metadata.contentType == "application/pdf"){
-            extArray.push({uid: item.name, image:"pdf"})
-          }
-          else if (metadata.contentType == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"){
-            extArray.push({uid: item.name, image:"docx"})
-          }
-          else if (metadata.contentType == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'){
-            extArray.push({uid: item.name, image:"xlsx"})
-          }
-        })
-      })
+    const yearSet = new Set()
+    const data = await axios.get(`${port}/getTemplates`);
+    data.data.forEach((item) => {
+      yearSet.add(new Date(item.date_Added).getFullYear())
+      if (item.file_Name.endsWith('.pdf')){
+        extArray.push({uid: item.name, image:"pdf"})
+      }
+      else if (item.file_Name.endsWith('.docx') || item.file_Name.endsWith('.doc')){
+        extArray.push({uid: item.name, image:"docx"})
+      }
+      else if (item.file_Name.endsWith('.xlsx') || item.file_Name.endsWith('.xls')){
+        extArray.push({uid: item.name, image:"xlsx"})
+      }
     })
     setFileExt(extArray)
-    const data = await getDocs(q);
-    if ([data.docs.length] > 0) {
+    
+    if ([data.data.length] > 0) {
       setLoading(false);
       setEmptyResult(false);
-      fileExt && setTemplate(data.docs.map((doc) => ({ ...doc.data(), id: doc.id})));
+      setYearData(Array.from(yearSet))
+      fileExt && setTemplate(data.data.map((doc) => ({...doc, year: new Date(doc.date_Added).getFullYear()})));
     } else {
       setLoading(false);
       setEmptyResult(true);
@@ -147,15 +151,20 @@ export default function MediaCard() {
     if (imageUpload == null) return;
     e.preventDefault();
     setSumbmit(true);
-    const imageRef = ref(storage, `Templates/${uniqueID}`);
-    uploadBytes(imageRef, imageUpload);
-    await addDoc(templateCollectionRef, {
-      name: newName,
-      uID: uniqueID,
-      Remark: "Template",
-      type: imageUpload.name.endsWith('.pdf') ? "pdf" : imageUpload.name.endsWith('.doc') ? "docx": imageUpload.name.endsWith('.docx') ? "docx": imageUpload.name.endsWith('.xls') ? "xlsx" : imageUpload.name.endsWith('.xlsx') && "xlsx",
+    const formData = new FormData();
+    formData.append(`files`, imageUpload)
+    formData.append(`name`, newName)
+    formData.append(`uID`, uniqueID)
+    formData.append(`type`, imageUpload.name.endsWith('.pdf') ? "pdf" : imageUpload.name.endsWith('.doc') ? "docx": imageUpload.name.endsWith('.docx') ? "docx": imageUpload.name.endsWith('.xls') ? "xlsx" : imageUpload.name.endsWith('.xlsx') && "xlsx")
+    try{
+      await axios.post(`${port}/addTemplate`, formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+      })  
+    }catch(e){
 
-    });
+    }
     toast.success('Successfully added')
     setSumbmit(false)
     handleClose();
@@ -175,10 +184,11 @@ export default function MediaCard() {
       focusConfirm: true,
     }).then(async (result) => {
       if (result.value) {
-        const templateDoc = doc(db, "documents", id);
-        await deleteDoc(templateDoc);
-        const imageRef = ref(storage, `Templates/${uID}`);
-        await deleteObject(imageRef);
+        try{
+          await axios.post(`${port}/deleteTemplate?uID=${uID}`)
+        }catch(e){
+          console.log(e.message);
+        }
         getTemplate();
         toast.success('Deleted Successfully')
       }
@@ -187,26 +197,11 @@ export default function MediaCard() {
   };
   //Download
   const downloadTemp = async (id, name) => {
-    getDownloadURL(ref(storage, `Templates/${id}`))
-      .then(async (url) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("GET", url);
-        xhr.responseType = "blob";
-        xhr.onload = () => {
-          const blob = xhr.response;
-          const aTag = document.createElement("a");
-          aTag.href = window.URL.createObjectURL(blob);
-          aTag.setAttribute("download", name);
-          aTag.click();
-          aTag.remove();
-        };
-        await xhr.send();
-        toast.success('Download Started')
-      })
-      .catch((error) => {
-        // Handle any errors
-      });
-      
+    const anchor = document.createElement('a');
+    anchor.href = `${port}/templates/${name}`;
+    anchor.download = name;
+    anchor.target = '_blank';
+    anchor.click();
   };
 
   
@@ -219,24 +214,20 @@ export default function MediaCard() {
 
 
   const showFile = async (id) => {
-    const imageListRef = ref(storage, `Templates/${id}`);
-        getMetadata(imageListRef).then((metadata) => {
-          if (metadata.contentType == "application/pdf"){
-              getDownloadURL(imageListRef).then(async(url) => {
-                 setFilePDF(url);
-              })
-          }
-          else if (metadata.contentType == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"){
-            getDownloadURL(imageListRef).then(async(url) => {
-                setFileDocx({name: metadata.name, url: url});
-            })
-          }
-          else if (metadata.contentType == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'){
-            getDownloadURL(imageListRef).then(async(url) => {
-                setFileXlsx({name: metadata.name, url: url});
-            })
-          }
-        })
+    const data = await axios.get(`${port}/getTemplates`);
+    data.data.forEach((item) => {
+      if(item.uID == id){
+        if (item.file_Name.endsWith('.pdf')){
+          setFilePDF(`${port}/templates/${item.file_Name}`);
+        }
+        else if (item.file_Name.endsWith('.docx') || item.file_Name.endsWith('.doc')){
+          setFileDocx({name: item.name, url: `${port}/templates/${item.file_Name}`});
+        }
+        else if (item.file_Name.endsWith('.xlsx') || item.file_Name.endsWith('.xls')){
+          setFileXlsx({name: item.name, url: `${port}/templates/${item.file_Name}`});
+        }
+      }
+    })
     setLoading2(false);
   };
 
@@ -334,92 +325,98 @@ export default function MediaCard() {
             />
           </FormControl>
       </div>
-
-      <Grid container>
-        {template
-          .filter((template) => {
-            return search.toLowerCase() === '' ? template : template.name.toLowerCase().includes(search.toLowerCase())
-            })
-          .map((template) => {
-          return (
-            <Grid item xs={12} sm={windowWidth <= 768 ? 6 : 12} md={4} lg={4} justifyContent={'center'}>
-              <Box sx={{m: "10px"}}>
-                <Card
-                  className="template-card"
-                  sx={{
-                    borderRadius: "10px",
-                    "& .MuiCardContent-root:last-child": { paddingBottom: "0" },
-                  }}
-                >
-                  <CardMedia
-                    className="template-card-bg"
-                    component="img"
-                    sx={{
-                      height: 200,
-                      objectFit: "contain",
-                      paddingTop: "20px",
-                      paddingBottom: "20px",
-                      cursor: "pointer",
-                      transition: "250ms",
-                      ":hover": { padding: "10px" },
-                    }}
-                    image={template.type == "pdf" ? pdfIcon : template.type == "docx"? docxViewIcon : template.type == "xlsx" && xlsxViewIcon}
-                    title={template.name}
-                    onClick={() => openFile(template.uID)}
-                  />
-                  <CardContent sx={{ padding: 1 }}>
-                    <Typography
-                      gutterBottom
-                      variant="h6"
-                      component="div"
-                      justifyContent={"center"}
-                      display={"flex"}
-                      fontFamily={"Lato"}
-                      marginBottom={1}
-                      fontWeight={"bold"}
-                      sx={{ textDecoration: "underline" }}
-                    >
-                      {template.name}
-                    </Typography>
-                    <CardActions
-                      sx={{ display: "flex", flexDirection: "column" }}
-                    >
-                      <Button
-                        size="medium"
+      {yearData.map((year) => {
+        return(
+          <>
+            <Typography sx={{fontWeight: 'bold', fontSize: '1.2rem'}}>{year}</Typography>
+            <Grid container sx={{marginBottom: "30px"}}>
+              {template
+                .filter((template) => {return search.toLowerCase() === '' ? template : template.name.toLowerCase().includes(search.toLowerCase())})
+                .filter((template) => template.year == year)
+                .map((template) => {
+                return (
+                  <Grid item xs={12} sm={windowWidth <= 768 ? 6 : 12} md={4} lg={4} justifyContent={'center'}>
+                    <Box sx={{m: "10px"}}>
+                      <Card
+                        className="template-card"
                         sx={{
-                          textTransform: "capitalize",
-                          backgroundColor: "#FF6347",
-                          padding: "5px 24px",
-                          color: "#FFFFFF",
-                          fontWeight: "bold",
-                          fontFamily: "Lato",
-                          fontSize: "1rem",
                           borderRadius: "10px",
-                          ":hover": { backgroundColor: "#212121" },
+                          "& .MuiCardContent-root:last-child": { paddingBottom: "0" },
                         }}
-                        onClick={() => downloadTemp(template.uID, template.name)}
                       >
-                        Download
-                      </Button>
-                      <Button
-                        size="small"
-                        sx={{
-                          textTransform: "capitalize",
-                          color: "#999999",
-                          textDecoration: "underline",
-                        }}
-                        onClick={() => deleteTemplate(template.id, template.uID)}
-                      >
-                        Delete Template
-                      </Button>
-                    </CardActions>
-                  </CardContent>
-                </Card>
-              </Box>
+                        <CardMedia
+                          className="template-card-bg"
+                          component="img"
+                          sx={{
+                            height: 200,
+                            objectFit: "contain",
+                            paddingTop: "20px",
+                            paddingBottom: "20px",
+                            cursor: "pointer",
+                            transition: "250ms",
+                            ":hover": { padding: "10px" },
+                          }}
+                          image={template.type == "pdf" ? pdfIcon : template.type == "docx"? docxViewIcon : template.type == "xlsx" && xlsxViewIcon}
+                          title={template.name}
+                          onClick={() => openFile(template.uID)}
+                        />
+                        <CardContent sx={{ padding: 1 }}>
+                          <Typography
+                            gutterBottom
+                            variant="h6"
+                            component="div"
+                            justifyContent={"center"}
+                            display={"flex"}
+                            fontFamily={"Lato"}
+                            marginBottom={1}
+                            fontWeight={"bold"}
+                            sx={{ textDecoration: "underline" }}
+                          >
+                            {template.name}
+                          </Typography>
+                          <CardActions
+                            sx={{ display: "flex", flexDirection: "column" }}
+                          >
+                            <Button
+                              size="medium"
+                              sx={{
+                                textTransform: "capitalize",
+                                backgroundColor: "#FF6347",
+                                padding: "5px 24px",
+                                color: "#FFFFFF",
+                                fontWeight: "bold",
+                                fontFamily: "Lato",
+                                fontSize: "1rem",
+                                borderRadius: "10px",
+                                ":hover": { backgroundColor: "#212121" },
+                              }}
+                              onClick={() => downloadTemp(template.uID, template.file_Name)}
+                            >
+                              Download
+                            </Button>
+                            <Button
+                              size="small"
+                              sx={{
+                                textTransform: "capitalize",
+                                color: "#999999",
+                                textDecoration: "underline",
+                              }}
+                              onClick={() => deleteTemplate(template.id, template.uID)}
+                            >
+                              Delete Template
+                            </Button>
+                          </CardActions>
+                        </CardContent>
+                      </Card>
+                    </Box>
+                  </Grid>
+                );
+              })}
             </Grid>
-          );
-        })}
-      </Grid>
+          </>
+        )
+      })}
+      
       {loading ? (
         <div className="load-container2">
           <span className="loader"></span>
@@ -471,7 +468,6 @@ export default function MediaCard() {
                     name="file"
                     accept=".pdf, .doc, .docx, .xlsx, .xls"
                     capture="environment"
-                    multiple
                     onChange={(e) => setImageUpload(e.target.files[0])}
                     required
                   />

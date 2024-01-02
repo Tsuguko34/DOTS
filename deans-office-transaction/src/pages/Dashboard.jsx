@@ -295,7 +295,6 @@ function Dashboard() {
     
     if (data.data.length > 0) {
       setLoading(false);
-      document.getElementById("total2").innerHTML = data.data.length;
       setEmptyResult(false)
     }else{
       setLoading(false);
@@ -307,7 +306,9 @@ function Dashboard() {
     getDashboard();
   }, []);
 
-  
+  const [yearData, setYearData] = useState(0)
+  const [monthData, setMonthData] = useState(0)
+  const [dayData, setDayData] = useState(0)
 
   const getMonthYearData = async () => {
     const yearMonthData = await axios.get(`${port}/requests`)
@@ -315,8 +316,9 @@ function Dashboard() {
     let i = 0;
     let x = 0;
     let y = 0;
-    await yearMonth.map((yearMonth) => {
+    yearMonth.map((yearMonth) => {
       if (dayjs().isSame(yearMonth.date_Received, "year")) {
+        
         i += 1;
       }
       if (dayjs().isSame(yearMonth.date_Received, "month")) {
@@ -357,7 +359,6 @@ function Dashboard() {
       try{
         await axios.get(`${port}/getUser`).then((data) => {
           setUser(data.data[0])
-          console.log(data.data);
         })
         await axios.get(`${port}/getUsers`).then((data) => {
           setUsers(data.data)
@@ -435,9 +436,8 @@ function Dashboard() {
   const [filter6, setFilter6] = useState(false);
   const [filter10, setFilter10] = useState("");
   const getLogs = async () => {
-    const q = query(logcollectionRef, orderBy("date", "desc"));
-    const data = await getDocs(q);
-    const LogDataset = data.docs.map((doc) => ({ ...doc.data(), id: doc.id, dateTime: new Date(doc.data().date) }));
+    const data = await axios.get(`${port}/getLogs`);
+    const LogDataset = data.data.map((doc) => ({ ...doc, id: doc.uID, dateTime: new Date(doc.date) }));
     // Sort the data by year, month, day, and time in descending order
     LogDataset.sort((a, b) => {
       if (b.dateTime.getFullYear() !== a.dateTime.getFullYear()) {
@@ -446,6 +446,12 @@ function Dashboard() {
         return b.dateTime.getMonth() - a.dateTime.getMonth();
       } else if (b.dateTime.getDate() !== a.dateTime.getDate()) {
         return b.dateTime.getDate() - a.dateTime.getDate();
+      } else if (b.dateTime.getHours() !== a.dateTime.getHours()) {
+        return b.dateTime.getHours() - a.dateTime.getHours();
+      } else if (b.dateTime.getMinutes() !== a.dateTime.getMinutes()) {
+        return b.dateTime.getMinutes() - a.dateTime.getMinutes();
+      } else if (b.dateTime.getSeconds() !== a.dateTime.getSeconds()) {
+        return b.dateTime.getSeconds() - a.dateTime.getSeconds();
       } else {
         return b.dateTime.getTime() - a.dateTime.getTime();
       }
@@ -471,7 +477,7 @@ function Dashboard() {
     const filterDashData = []
     dashboard.forEach((doc) => {
       const forward = doc.forward_To
-      if(user && (forward.includes("All") ||  forward.includes(user.role) || forward == user.uID)){
+      if(user && (forward.includes("All") ||  forward.includes(user.role) || forward == user.uID) && doc.date_Received == dayjs().format('MM/DD/YYYY')){
         console.log(doc);
         filterDashData.push(doc)
         setEmptyResult(false)
@@ -480,7 +486,7 @@ function Dashboard() {
     });
     setFilteredDash(filterDashData)
     if (filterDashData.length == 0){
-      console.log(true);
+      
       setEmptyResult(true)
     }
   }, [dashboard])
@@ -779,7 +785,7 @@ function Dashboard() {
               <Grid container sx={12} gap={2} wrap="noWrap">
               <Grid item xs={12}>
                 <Card sx={{width: '100%',height: "100px", display:"flex", justifyContent: "center", alignItems: "center", p: "21.6px", mb: "21.8px", maxHeight: '100px', userSelect: 'none'}} className="dash-gradient">
-                {user != undefined && users.find(item => item.UID == user.uID)?.role === "Dean" && (
+                {user != undefined && user.role === "Dean" && (
                   <div className="welcome-holder2" onClick={openLogs} style={{cursor: "pointer", userSelect: "none"}}>
                     <div className="welcome-img">
                       <img src={LogsPic}/>

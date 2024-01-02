@@ -278,7 +278,7 @@ export default function StickyHeadTable() {
       setImageUpload("")
       setImageDis("")
       setOpenAdd(false)
-      getSignInMethods("add");
+      getSignInMethods("add", documentsToBeAdded.document_Name);
       setEmptyResult(false);
       setSumbmit(false);
       setUrgent(false)
@@ -297,72 +297,29 @@ export default function StickyHeadTable() {
     return dayjs(date).format('h:mm A');
   };
   //
-
-  const getUserInfo = async (type, name) => {
-    const { uid } = user;
-    if (!uid) return;
-    const userRef = collection(db, "Users");
-    const q = query(userRef, where("uID", "==", uid));
-    const data = await getDocs(q);
-    setUserInfo(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
-    if (type == "add") {
-      await addDoc(logcollectionRef, {
-        date: dayjs().format("MMM D, YYYY h:mm:ss A").toString(),
-        log: data.docs.map((doc) => doc.data().full_Name) + ` added a Memorandum named ${name}`,
-      });
-    } else if (type == "edit") {
-      await addDoc(logcollectionRef, {
-        date: dayjs().format("MMM D, YYYY h:mm:ss A").toString(),
-        log: data.docs.map((doc) => doc.data().full_Name)  + ` edited a Memorandum named ${name}`,
-      });
-    } else if (type == "delete") {
-      await addDoc(logcollectionRef, {
-        date: dayjs().format("MMM D, YYYY h:mm:ss A").toString(),
-        log: data.docs.map((doc) => doc.data().full_Name) +  ` deleted a Memorandum`,
-      }); 
-    } else if (type == "archive") {
-      console.log("archive");
-      await addDoc(logcollectionRef, {
-        date: dayjs().format("MMM D, YYYY h:mm:ss A").toString(),
-        log: data.docs.map((doc) => doc.data().full_Name) +  ` archived ${name}`,
-      });
-    }
-  };
-
-
   const getSignInMethods = async (type, name) => {
-    if (userHolder) {
-      const signInMethods = userHolder.providerData.map(
-        (provider) => provider.providerId
-      );
-      if (signInMethods.includes("google.com")) {
-        if (type == "add") {
-          await addDoc(logcollectionRef, {
-            date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-            log: auth.currentUser.displayName + " added an outgoing Memorandum Letter",
-          });
-        } else if (type == "edit") {
-          await addDoc(logcollectionRef, {
-            date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-            log: auth.currentUser.displayName + " edited an outgoing Memorandum Letter",
-          });
-        } else if (type == "delete") {
-          await addDoc(logcollectionRef, {
-            date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-            log: auth.currentUser.displayName + " deleted an outgoing Memorandum Letter",
-          });
-        } else if (type == "archive") {
-          await addDoc(logcollectionRef, {
-            date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-            log:
-              auth.currentUser.displayName + " archived an outgoing Memorandum Letter",
-          });
-        }
-      } else if (signInMethods.includes("password")) {
-        getUserInfo(type, name);
+    let log = null
+    if (type == "add") {
+      log = {
+        date: dayjs().format("MMM D, YYYY h:mm A").toString(),
+        log: user.full_Name + ` added an outgoing Memorandum Letter (${name})`,
       }
+    } else if (type == "edit") {
+      log = {
+        date: dayjs().format("MMM D, YYYY h:mm A").toString(),
+        log: user.full_Name + ` edited an outgoing Memorandum Letter (${name})`,
+      };
+    } else if (type == "archive") {
+      log = {
+        date: dayjs().format("MMM D, YYYY h:mm A").toString(),
+        log: user.full_Name + ` archived an outgoing Memorandum Letter (${name})`,
+      };
     }
-    return null;
+    try{
+      await axios.post(`${port}/createLog`, log)
+    }catch(e){
+      console.log(e.message);
+    }
   };
 
   const [page, setPage] = useState(0);
@@ -410,7 +367,7 @@ export default function StickyHeadTable() {
     setPage(0);
   };
 
-  const deleteIncoming = (id) => {
+  const deleteIncoming = (id, name) => {
     console.log(id);
     Swal.fire({
       title: "Archive?",
@@ -427,6 +384,7 @@ export default function StickyHeadTable() {
         try{
           await axios.post(`${port}/archiveFile?id=${id}`)
           toast.success("File has been archived")
+          getSignInMethods("archive", name)
           getIncoming();
         }catch(e){
           console.log(e);
@@ -666,7 +624,7 @@ export default function StickyHeadTable() {
       }
     }
 
-    getSignInMethods("edit");
+    getSignInMethods("edit", editDocuName);
     getIncoming();
     handleEditClose();
     toast.success("Successfully Edited.")
@@ -1352,7 +1310,7 @@ export default function StickyHeadTable() {
                           zIndex: "11"
                         }}
                         onClick={() => {
-                          deleteIncoming(row.uID);
+                          deleteIncoming(row.uID, row.document_Name);
                         }}
                       />
                       </Tooltip>
