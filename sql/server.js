@@ -805,10 +805,12 @@ cron.schedule('0 0 * * *', async() => {
             const dateReceived = new Date(docSnap.date_Received)
             const archiveAt = dateReceived.setDate(dateReceived.getDate() + 30)
             if (archiveAt == dateToday) {
-                try{
-                    await axios.post(`${port}/archiveFile?id=${docSnap.uID}`)
-                }catch(e){
-                    console.log(e.message);
+                if(docSnap.Status != "Pending"){
+                    try{
+                        await axios.post(`${port}/archiveFile?id=${docSnap.uID}`)
+                    }catch(e){
+                        console.log(e.message);
+                    }
                 }
             }
         });
