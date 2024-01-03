@@ -32,7 +32,7 @@ export const AuthContextProvider = ({children}) => {
             }else{
               const emailPattern = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
               const isValidEmail = email.endsWith("@bulsu.edu.ph")
-              if(isValidEmail){
+              if(email){
               Swal.fire({
                 title: 'Please wait',
                 allowEscapeKey: false,
@@ -49,18 +49,16 @@ export const AuthContextProvider = ({children}) => {
                       formData.append(`files`, profilepic)
                       formData.append(`email`, email)
                       formData.append(`password`, password)
-                      formData.append(`uID`, uniqueID)
                       formData.append(`full_Name`, first_Name + " " + last_Name)
                       formData.append(`file_Name`, profilepic.name)
                       try{
-                        await axios.post(`${port}/register`, formData, {
+                        await axios.post(`${port}/register?uID=${uniqueID}`, formData, {
                           headers: {
                               'Content-Type': 'multipart/form-data',
                           },
                         }).then(async() => {
                           Swal.close()
                           await Swal.fire({title: "Successfully Registered. ", text: "Verification Link is sent to the email.", icon: "success", showConfirmButton: false, timer: 2000, allowEscapeKey: false, allowOutsideClick: false})
-                          await signOut(auth);
                           navigate('/pages/Login')
                         })   
                       }catch(e){
@@ -136,7 +134,11 @@ export const AuthContextProvider = ({children}) => {
                     if(data.status == 200){
                       
                       if(data.data.success != false){
-                        if(data.data[0].verified == 1){
+                        if (data.data[0].temporary == 1){
+                          navigate('/pages/CompleteDetails')
+                          Swal.fire({text: "Complete the account details to use the website.", icon: "success", showConfirmButton: true})
+                        }
+                        else if(data.data[0].verified == 1){
                           if(data.data[0].Active == 1){
                             navigate('/pages/Dashboard')
                             Swal.fire({title: "Success", text: "Logged in successfully.", icon: "success", showConfirmButton: false, timer: 1500})

@@ -157,13 +157,22 @@ import axios from "axios";
             didOpen:async() => {
               Swal.showLoading()
               try{
-                  await axios.get(`${port}/getUser`).then((data) => {
+                  await axios.get(`${port}/getUser`).then(  async(data) => {
                     console.log(data);
-                      if(data.status == 401){
-                        Swal.close()
-                      }else{
-                        Swal.fire({title: "Logged in", text: "Logged in successfully.", icon: "success", showConfirmButton: false, timer: 1500})
-                        navigate('/pages/Dashboard')
+                      if(data.status == 200){
+                        if(data.data[0].verified == 1){
+                          Swal.fire({title: "Logged in", text: "Logged in successfully.", icon: "success", showConfirmButton: false, timer: 1500})
+                          navigate('/pages/Dashboard')
+                        }else{
+                          Swal.close()
+                          await axios.post(`${port}/logout`).then((data) => {
+                            const success = data.data
+                            console.log(success.success);
+                            if (success.success == true){
+                                navigate("/pages/Login");
+                            }
+                          }) 
+                        }
                       }
                   }).catch(()=> {
                       Swal.close()

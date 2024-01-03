@@ -12,7 +12,7 @@ import Radio from "@mui/joy/Radio";
 import RadioGroup from "@mui/joy/RadioGroup";
 import CircleIcon from "@mui/icons-material/Circle";
 import Grid from "@mui/material/Grid";
-import { Avatar, Backdrop, Box, Button, Card, CardActions, CardContent, CardMedia, CircularProgress, Dialog, DialogContent, Fade, FormControl, FormHelperText, IconButton, InputAdornment, InputLabel, Menu, MenuItem, OutlinedInput, Paper, Popper, Stack, Tab, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TextField } from "@mui/material";
+import { Avatar, Backdrop, Box, Button, Card, CardActions, CardContent, CardMedia, CircularProgress, Dialog, DialogContent, Fade, FormControl, FormControlLabel, FormHelperText, FormLabel, IconButton, InputAdornment, InputLabel, Menu, MenuItem, OutlinedInput, Paper, Popper, Stack, Tab, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TextField } from "@mui/material";
 import styled from "styled-components";
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import userPic from '../Images/user.png'
@@ -39,11 +39,14 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import SearchIcon from '@mui/icons-material/Search';
+import { v4 as uuid } from "uuid";
 import axios from "axios";
+import { Select } from "@mui/base";
 
 function Settings() {
   const port = "http://localhost:3001"
   axios.defaults.withCredentials = true
+  const uniqueID = uuid();
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   useEffect(() => {
     const handleWindowResize = () => {
@@ -140,7 +143,6 @@ function Settings() {
   useEffect(() => {
     const getProfile = async() => {
       setLoad(true)
-      console.log(user.full_Name);
       setImageDis(`${port}/profile_Pictures/${user.profilePic}`)
       setInitialProfilePic(`${port}/profile_Pictures/${user.profilePic}`)
       setName(user.full_Name)
@@ -446,27 +448,35 @@ function Settings() {
     setOpenClerk(false)
   }
 
-
+  const [role, setRole] = useState("")
   const [clerkEmail, setClerkEmail] = useState("")
   const [clerkPass, setClerkPass] = useState("")
   const createClerk = async(e) => {
     e.preventDefault()
     setOpenClerk(false)
     toast.loading("Creating Account")
-      await addDoc(collection(db, "Users"), {
-        full_Name: "Clerk(Change Name in Settings)",
-        role: "Clerk",
-        email: clerkEmail,
-        Active: true,
-        tempPass: clerkPass,
-        passChanged: false
-      }).then(() => {
-        toast.dismiss()
-        toast.success("Clerk Account Created")
-      }).catch((e) => {
-      toast.dismiss()
-      toast.error(e.message)
-    })
+    const values = {
+      role: role,
+      email: clerkEmail,
+      password: clerkPass,
+      uID: uniqueID
+    }
+    try{
+      await axios.post(`${port}/registerTemp`, values).then((data) => {
+        if(data.status == 200){
+          console.log(data.data.success);
+          if(data.data.success == true){
+            toast.dismiss()
+            toast.success("Clerk Account Created")
+          }else if(!data.data.success == false){
+            toast.dismiss()
+            toast.error(e.message)
+          }
+        }
+      })
+    }catch(e){
+      console.log(e.message);
+    }
   }
   const [search, setSearch] = useState("")
   const emailPattern = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
@@ -703,7 +713,7 @@ function Settings() {
                       style={{ fontWeight: "bold" }}
                       onClick={openClerkAdd}
                     >
-                      Add Clerk
+                      Add Staff
                     </Button>
                     <Typography
                       variant="h6"
@@ -730,7 +740,7 @@ function Settings() {
                   </Stack>
                   <Box sx={{maxHeight: "550px", overflowY: "auto", width: "100%",display: "flex", justifyContent: "center", alignContent: "center"}}>
                     <Grid container xs={12}>
-                      {userList.filter(item => item.role !== "Dean").sort((a, b) => {
+                      {userList.filter(item => item.role !== "Dean" && item.temporary != 1).sort((a, b) => {
                         const roleA = a.role.toLowerCase();
                         const roleB = b.role.toLowerCase();
                     
@@ -820,11 +830,25 @@ function Settings() {
       </Box>
       </div>
 
-      <Dialog open={openClerk} fullWidth maxWidth="md" className="Dialog" >
+      <Dialog open={openClerk} fullWidth maxWidth="xs" className="Dialog" >
         <DialogContent className="form-body">
-          <Box component={"form"} onSubmit={createClerk} action="">
-              <Typography sx={{fontWeight: "700", fontSize: "0.9rem", m: "1vh"}}>Add clerk using email and password</Typography>
-              <Box sx={{display: "flex", justifyContent: 'center', flexDirection: windowWidth <= 576 ? "column" : 'row'}}>
+          <Box component={"form"} onSubmit={createClerk} action=""> 
+              <Typography sx={{fontWeight: "700", fontSize: "0.9rem", m: "1vh"}}>Add staff using email and password</Typography>
+              <Box sx={{display: "flex", justifyContent: 'center', flexDirection:"column"}}>
+              <FormControl sx={{width: "100%", justifyContent: "center", alignItems: "start", margin: "1vh"}}>
+                <FormLabel id="demo-row-radio-buttons-group-label">Role</FormLabel>
+                <RadioGroup
+                  row
+                  sx={{display: 'flex', flexDirection:'row', padding: "0px 20px", width: "100%", justifyContent: "space-around"}}
+                  aria-labelledby="demo-row-radio-buttons-group-label"
+                  name="row-radio-buttons-group"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}>
+                  <FormControlLabel sx={{margin: "0px 10px"}} value="Secretary" control={<Radio />} label="Secretary" />
+                  <FormControlLabel sx={{margin: "0px 10px"}} value="Clerk" control={<Radio />} label="Clerk" />
+                  <FormControlLabel sx={{margin: "0px 10px"}} value="SA" control={<Radio />} label="SA" />
+                </RadioGroup>
+              </FormControl>
               <TextField
                 error={!clerkEmail.endsWith("@bulsu.edu.ph") && clerkEmail != ""}
                 type="email"
@@ -832,7 +856,7 @@ function Settings() {
                 className="table-search"
                 name="oldPass"
                 fullWidth
-                sx={{m: "1vh"}}
+                sx={{m: "1vh", backgroundColor: "#FFF"}}
                 id="oldPass"
                 value={clerkEmail}
                 onChange={(e) => setClerkEmail(e.target.value)}
@@ -840,10 +864,11 @@ function Settings() {
                 helperText={!clerkEmail.endsWith("@bulsu.edu.ph") && clerkEmail != "" &&  "Email must be a bulsu email."}
               />
               <FormControl sx={{width: '100%', m: '1vh'}} variant="outlined">
-                  <InputLabel htmlFor="outlined-adornment-password">Confirm New Password</InputLabel>
+                  <InputLabel htmlFor="outlined-adornment-password">Temporary Password</InputLabel>
                   <OutlinedInput
                     id="outlined-adornment-password"
                     required
+                    sx={{backgroundColor: "#FFF"}}
                     onChange={(e) => setClerkPass(e.target.value)}
                     type={showPassword2 ? 'text' : 'password'}
                     endAdornment={
@@ -858,7 +883,7 @@ function Settings() {
                         </IconButton>
                       </InputAdornment>
                     }
-                    label="Confirm New Password"
+                    label="Temporary Password"
                   />
                   </FormControl>
               </Box>

@@ -762,31 +762,6 @@ export default function StickyHeadTable() {
     setSearch(e.target.value)
   }
 
-  //AUTOMATIC ARCHIVE AFTER 30 DAYS
-  useEffect(() => {
-    const deleteExpiredDocuments = async () => {
-        const collectionRef = collection(db, 'documents');
-        const snapshot = await getDocs(query(collectionRef, where("document_Type", "in", ["Memorandum", "Memorandum"])));
-        const thirtyDays = dayjs().add(30, "days").format("MM/DD/YYYY").toString()
-
-        const dateToday = dayjs().format("MM/DD/YYYY").toString();
-
-        snapshot.docs.forEach(async(docSnap) => {
-        const addedAt = docSnap.data().deleted_at;
-        const archiveAt = dayjs(docSnap.data().date_Received).add(30, "days").format("MM/DD/YYYY").toString()
-        if (archiveAt == dateToday) {
-            const recentDoc = doc(collection(db, "archive"));
-            await setDoc(recentDoc, docSnap.data());
-            await deleteDoc(doc(db, "documents", docSnap.id));
-            getIncoming();
-        }
-        });
-    };
-    deleteExpiredDocuments();
-    const checkInterval = 24 * 60 * 60 * 1000; 
-    const intervalId = setInterval(deleteExpiredDocuments, checkInterval);
-    return () => clearInterval(intervalId);
-    }, []);
 
 
 

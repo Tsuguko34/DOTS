@@ -13,8 +13,7 @@ function Verification() {
         const verifyEmail = async() => {
             try{
                 await axios.get(`${port}/verify?token=${token}`).then((response) => {
-                    const data = response.data
-                    if(data.length > 0){
+                    if(response.data.success == true){
                         setExist(true)
                     }
                     else{
@@ -39,7 +38,7 @@ function Verification() {
             </div>
             <img src={exist ? verifyIMG : noToken} alt="" height={"500px"}/>
             <p style={{fontWeight: 'bold', marginBottom: '10px', fontSize: "2rem", color: '#FF9944'}}>{exist ? "Email Verified" : "Token does not exist"}</p>
-            <Link href="/pages/Login" style={{color: "#888888"}}>Go to Login Page</Link>
+            <Link to="/pages/Login" style={{color: "#888888"}}>Go to Login Page</Link>
         </div>
     )
 }

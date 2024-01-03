@@ -10,8 +10,12 @@ import cookieParser from 'cookie-parser'
 import nodemailer from 'nodemailer'
 import session from 'express-session';
 import MySQLStoreCreator from 'express-mysql-session';
+import cron from 'node-cron'
+import axios from 'axios'
+
 const MySQLStore = MySQLStoreCreator(session);
 const app = express()
+const port = 3001;
 const db = mysql.createConnection({
     host:"localhost",
     user:"root",
@@ -54,8 +58,7 @@ app.use(express.json())
 const profileStorage = multer.diskStorage({
     destination: "../profile_Pictures",
     filename: function (req, file, cb) {
-        const uID = req.query.uID || req.body.uID
-        return cb(null, `${uID}-${file.originalname}`)
+        return cb(null, `${req.query.uID}-${file.originalname}`)
     }
 })
 const uploadProfile = multer({storage: profileStorage})
@@ -73,14 +76,57 @@ app.post("/register", uploadProfile.single('files'), async(req, res) => {
         "Faculty",
         "Email",
         1,
-        req.body.uID,
+        req.query.uID,
         0,
-        `${req.body.uID}-${req.body.file_Name}`,
+        `${req.query.uID}-${req.body.file_Name}`,
         verificationToken
     ]
     db.query(registerQ, [values], (err, regData) => {
         if (err) return console.log(err);
         sendVerificationEmail(req.body.email, verificationToken)
+        return res.json({sucess: true})
+    })
+    
+})
+
+app.post("/registerTemp", async(req, res) => {
+    const hashedPassword = await bcrypt.hash(req.body.password, 10)
+
+    const registerQ = "INSERT INTO users (`email`, `password`, `role`, `signInMethod`, `Active`, `uID`, `verified`, `temporary`) VALUES (?)"
+    const values = [
+        req.body.email,
+        hashedPassword,
+        req.body.role,
+        "Email",
+        1,
+        req.body.uID,
+        0,
+        1
+    ]
+    db.query(registerQ, [values], (err, regData) => {
+        if (err){
+            console.log(err)
+            return res.status(200).json({success: false})
+        }
+        return res.status(200).json({success: true})
+    })
+})
+
+app.post("/completeRegister", uploadProfile.single('files'), async(req, res) => {
+    const hashedPassword = await bcrypt.hash(req.body.password, 10)
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+
+    const registerQ = "UPDATE users SET `password` = ?, `full_Name` = ?, `profilePic` = ?, `verification_token` = ?, `temporary` = ? WHERE uID = ?"
+    const values = [
+        hashedPassword,
+        req.body.full_Name,
+        `${req.query.uID}-${req.body.file_Name}`,
+        verificationToken,
+        0
+    ]
+    db.query(registerQ, [...values, req.query.uID], (err, regData) => {
+        if (err) return console.log(err);
+        // sendVerificationEmail(req.body.email, verificationToken)
         return res.json({sucess: true})
     })
     
@@ -122,10 +168,9 @@ app.get("/verify", (req, res) =>{
     
             db.query(q, [...values, user.uID], (err, data) => {
                 if(err) return console.log(err);;
-                return res.json({sucess: true})
+                return res.json({success: true})
             })
         }
-        return res.json(data)
     })
 })
 
@@ -748,6 +793,28 @@ app.post("/notif",(req, res) => {
         })
     })
    
+})
+
+cron.schedule('0 0 * * *', async() => {
+    try{
+        const snapshot = await axios.get(`${port}/getRequests`);
+
+        const dateToday = new Date()
+
+        snapshot.data.forEach(async(docSnap) => {
+            const dateReceived = new Date(docSnap.date_Received)
+            const archiveAt = dateReceived.setDate(dateReceived.getDate() + 30)
+            if (archiveAt == dateToday) {
+                try{
+                    await axios.post(`${port}/archiveFile?id=${docSnap.uID}`)
+                }catch(e){
+                    console.log(e.message);
+                }
+            }
+        });
+    }catch(e){
+        console.log(e.message);
+    }
 })
 
 app.listen(3001, () => { 
