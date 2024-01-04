@@ -370,30 +370,42 @@ export default function StickyHeadTable() {
     setPage(0);
   };
 
-  const deleteIncoming = (id, name) => {
-    console.log(id);
-    Swal.fire({
-      title: "Archive?",
-      text: "The document will be added to the archives.",
-      icon: "info",
-      iconColor: "#FF5600",
-      showCancelButton: true,
-      confirmButtonColor: "#FF5600",
-      cancelButtonColor: "#888",
-      confirmButtonText: "Archive doc",
-      focusConfirm: true,
-    }).then(async (result) => {
-    if(result.isConfirmed) {
-        try{
-          await axios.post(`${port}/archiveFile?id=${id}`)
-          toast.success("File has been archived")
-          getSignInMethods("archive", name)
-          getIncoming();
-        }catch(e){
-          console.log(e);
+  const deleteIncoming = async(id, name) => {
+    toast.loading("Please wait...")
+    try{
+      await axios.get(`${port}/openFile?id=${id}`).then((data) => {
+        toast.dismiss()
+        if(data.data[0].Status != "Pending"){
+          Swal.fire({
+            title: "Archive?",
+            text: "The document will be added to the archives.",
+            icon: "info",
+            iconColor: "#FF5600",
+            showCancelButton: true,
+            confirmButtonColor: "#FF5600",
+            cancelButtonColor: "#888",
+            confirmButtonText: "Archive doc",
+            focusConfirm: true,
+          }).then(async (result) => {
+          if(result.isConfirmed) {
+              try{
+                await axios.post(`${port}/archiveFile?id=${id}&user=${user.uID}`)
+                toast.success("File has been archived")
+                getSignInMethods("archive", name)
+                getIncoming();
+              }catch(e){
+                console.log(e);
+              }
+            }
+          });
+        }else if (data.data[0].Status == "Pending"){
+          Swal.fire({text: "Pending documents cannot be archived.", confirmButtonColor: "#FF5600",showConfirmButton: true})
         }
-      }
-    });
+      })
+    }catch(e){
+
+    }
+
   };
 
   const archiveFile = async (id, data) => {
@@ -1405,7 +1417,7 @@ export default function StickyHeadTable() {
                 onChange={(e, newVlaue) => { console.log(newReceivedBy); setNewReceivedBy(newVlaue ? `(${newVlaue.role}) - ${newVlaue.full_Name}`: '')}}
                 value={newReceivedBy != null && newReceivedBy != undefined ? users.find(item => item.role == (newReceivedBy.slice(newReceivedBy.indexOf("(") + 1, newReceivedBy.indexOf(")")))  && item.full_Name == (newReceivedBy.slice(newReceivedBy.indexOf(")")).replace(") - ", ""))): ''}
                 id="combo-box-demo"
-                options={users.filter(item => item.role == "Clerk")}
+                options={users.filter(item => item.role != "Dean" && item.role != "Faculty")}
                 getOptionLabel={user =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField value={newReceivedBy} className="auto-complete-text" onChange={(e) => setNewReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By"/>}/>
@@ -1418,7 +1430,7 @@ export default function StickyHeadTable() {
               options={["Office of the President", "CICT", "Budget", "Accounting", "Cashier", "EVP", "Chancellor Main", "HR", "HRMO"]}
               sx={{ width: "100%"}}
               renderInput={(params) => <TextField value={newFromDep ? newFromDep : null} className="auto-complete-text" onChange={(e) => setNewFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
-            <TextField required className="Text-input" id="fromPer" label="Contact Person" variant="outlined" onChange={(e) => setNewFromPer(e.target.value)}/>
+            <TextField className="Text-input" id="fromPer" label="Contact Person" variant="outlined" onChange={(e) => setNewFromPer(e.target.value)}/>
             <Autocomplete
               className="auto-complete"
               disablePortal
@@ -1573,7 +1585,7 @@ export default function StickyHeadTable() {
                 onChange={(e, newVlaue) => { setEditReceivedBy( newVlaue ? `(${newVlaue.role}) - ${newVlaue.full_Name}`: '')}}
                 value={editReceivedBy != null && editReceivedBy != undefined ? users.find(item => item.role == (editReceivedBy.slice(editReceivedBy.indexOf("(") + 1, editReceivedBy.indexOf(")")))  && item.full_Name == (editReceivedBy.slice(editReceivedBy.indexOf(")")).replace(") - ", ""))): ''}
                 id="combo-box-demo"
-                options={users.filter(item => item.role == "Clerk")}
+                options={users.filter(item => item.role != "Dean" && item.role != "Faculty")}
                 getOptionLabel={user =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField value={editReceivedBy} className="auto-complete-text" onChange={(e) => setEditReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By"/>}/>
@@ -1586,7 +1598,7 @@ export default function StickyHeadTable() {
               options={["Office of the President", "CICT", "Budget", "Accounting", "Cashier", "EVP", "Chancellor Main", "HR", "HRMO"]}
               sx={{ width: "100%"}}
               renderInput={(params) => <TextField value={editFromDep} className="auto-complete-text" onChange={(e) => setEditFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
-            <TextField required value={editFromPer} className="Text-input" id="fromPer" label="Contact Person" variant="outlined" onChange={(e) => setEditFromPer(e.target.value)}/>
+            <TextField value={editFromPer} className="Text-input" id="fromPer" label="Contact Person" variant="outlined" onChange={(e) => setEditFromPer(e.target.value)}/>
             <Autocomplete
               className="auto-complete"
               disablePortal

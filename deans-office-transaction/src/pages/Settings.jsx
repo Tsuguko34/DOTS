@@ -497,7 +497,7 @@ function Settings() {
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
               <TabList onChange={handleChange} aria-label="lab API tabs example">
                 <Tab sx={{textTransform: "none", fontSize: "1rem"}} label="Account Settings" value="1" />
-                {user != undefined && user.role === "Dean"  && <Tab sx={{textTransform: "none", fontSize: "1rem"}} label="Manage Accounts" value="2" />}
+                {user != undefined && user.role === "Dean" || user.role == "Secretary"  && <Tab sx={{textTransform: "none", fontSize: "1rem"}} label="Manage Accounts" value="2" />}
               </TabList>
             </Box>
             <TabPanel value="1">
@@ -698,7 +698,7 @@ function Settings() {
                 </Grid>
             </TabPanel>
 
-            { user != undefined && user.role === "Dean" ? (
+            { user != undefined && user.role === "Dean" || user.role === "Secretary" ? (
             <>
                 <TabPanel value="2" sx={{p: 0}}>
                   <Stack

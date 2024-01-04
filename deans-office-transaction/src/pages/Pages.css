@@ -424,6 +424,7 @@
     height: 100px;
     display: flex;
     justify-content: end;
+    align-items: center;
     z-index: 10;
     margin-right: 50px;
     overflow-y: hidden;
@@ -1217,7 +1218,7 @@
 }
 
 .table-cell{
-    background-color: var(--table_row_color) !important;
+    background-color: var(--table_row_color);
     max-height: 70px !important;
 }
 
@@ -1233,6 +1234,7 @@
 .table-cell.unread.last{
     border-right: 3px solid var(--page_title_color) !important;
 }
+
 
 .table-cell.active{
     background-color: var(--archive-select) !important;

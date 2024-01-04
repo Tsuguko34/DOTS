@@ -136,7 +136,7 @@ export const AuthContextProvider = ({children}) => {
                       if(data.data.success != false){
                         if (data.data[0].temporary == 1){
                           navigate('/pages/CompleteDetails')
-                          Swal.fire({text: "Complete the account details to use the website.", icon: "success", showConfirmButton: true})
+                          Swal.fire({text: "Complete the account details to use the website.", icon: "success", confirmButtonColor: "#FF5600",showConfirmButton: true})
                         }
                         else if(data.data[0].verified == 1){
                           if(data.data[0].Active == 1){

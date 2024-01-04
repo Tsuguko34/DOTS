@@ -118,7 +118,7 @@ function ArchiveMainTable() {
       setOpenPull(false)
     }
 
-    const displayFileInfo = (type, date, received, dep, per, desc, image, uID, id) => {
+    const displayFileInfo = (type, date, received, dep, per, desc, image, uID, id, archived_By) => {
         const fileIMG = image.includes(".png" || ".jpg" || ".jpeg") ? `${port}/document_Files/${image}` : image.includes(".pdf") ? pdfIcon : image.includes(".docx") ? docxViewIcon : image.includes(".xlsx") && xlsxViewIcon 
         setFileInfo("")
         const data = {
@@ -130,7 +130,8 @@ function ArchiveMainTable() {
             Description: desc,
             Image: fileIMG,
             uID: uID,
-            id: id
+            id: id,
+            archived_By: archived_By
         }
         setFileInfo(data)
         windowWidth <= 768 && openPullTab()
@@ -781,7 +782,7 @@ function ArchiveMainTable() {
                                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                                     .map((row) => (
                                       <>
-                                      <TableRow role="checkbox" tabIndex={-1} key={row.uID} sx={{ cursor: "pointer", userSelect: "none", height: "50px", background: "#F0EFF6",'& :last-child': {borderBottomRightRadius: "10px", borderTopRightRadius: "10px"} ,'& :first-child':  {borderTopLeftRadius: "10px", borderBottomLeftRadius: "10px"} }} onClick={() => displayFileInfo(row.Type == undefined ? row.document_Type: row.Type, row.date_Received, row.received_By, row.fromDep, row.fromPer, row.Description, archiveImage.find(item => item.uID == row.uID)?.file_Name, row.uID, row.id)}>
+                                      <TableRow role="checkbox" tabIndex={-1} key={row.uID} sx={{ cursor: "pointer", userSelect: "none", height: "50px", background: "#F0EFF6",'& :last-child': {borderBottomRightRadius: "10px", borderTopRightRadius: "10px"} ,'& :first-child':  {borderTopLeftRadius: "10px", borderBottomLeftRadius: "10px"} }} onClick={() => displayFileInfo(row.Type == undefined ? row.document_Type: row.Type, row.date_Received, row.received_By, row.fromDep, row.fromPer, row.Description, archiveImage.find(item => item.uID == row.uID)?.file_Name, row.uID, row.id, row.archived_By)}>
                                         <TableCell className={fileInfo.uID == row.uID ? 'table-cell active' : 'table-cell'} align="left"> {row.document_Name} </TableCell>
                                         <TableCell className={fileInfo.uID == row.uID ? 'table-cell active' : 'table-cell'} align="left"> {row.Type == undefined || row.Type == "" ? row.document_Type : row.Type} </TableCell>
                                         <TableCell className={fileInfo.uID == row.uID ? 'table-cell active' : 'table-cell'} align="left"> {row.received_By} </TableCell>
@@ -844,32 +845,40 @@ function ArchiveMainTable() {
                                     <Typography sx={{fontWeight: "500"}}>File Details</Typography>
                                 </Box>
                                 <Box sx={{mt: "20px"}}>
-                                    <Typography sx={{fontWeight: "300", fontSize: "0.8rem"}}>Type</Typography>
-                                    <Typography sx={{fontWeight: "300", fontSize: "0.9rem"}}>{fileType}</Typography>
+                                    <Typography sx={{fontWeight: "300", fontSize: "0.8rem", color: "#888888"}}>Archived By</Typography>
+                                    <Typography sx={{fontWeight: "300", fontSize: "0.9rem"}}>({users.find(user => user.uID == fileInfo.archived_By)?.role}) - {users.find(user => user.uID == fileInfo.archived_By)?.full_Name}</Typography>
                                 </Box>
+                                {fileType != undefined || fileType != null || fileType != "" && (
+                                  <Box sx={{mt: "20px"}}>
+                                    <Typography sx={{fontWeight: "300", fontSize: "0.8rem", color: "#888888"}}>Type</Typography>
+                                    <Typography sx={{fontWeight: "300", fontSize: "0.9rem"}}>{fileType}</Typography>
+                                  </Box>
+                                )}
                                 <Box sx={{mt: "20px"}}>
-                                    <Typography sx={{fontWeight: "300", fontSize: "0.8rem"}}>Date Received</Typography>
+                                    <Typography sx={{fontWeight: "300", fontSize: "0.8rem", color: "#888888"}}>Date Received</Typography>
                                     <Typography sx={{fontWeight: "300", fontSize: "0.9rem"}}>{fileDate}</Typography>
                                 </Box>
                                 <Box sx={{mt: "20px"}}>
-                                    <Typography sx={{fontWeight: "300", fontSize: "0.8rem"}}>Received By</Typography>
+                                    <Typography sx={{fontWeight: "300", fontSize: "0.8rem", color: "#888888"}}>Received By</Typography>
                                     <Typography sx={{fontWeight: "300", fontSize: "0.9rem"}}>{fileReceivedBy}</Typography>
                                 </Box>
                                 <Box sx={{mt: "20px"}}>
-                                    <Typography sx={{fontWeight: "300", fontSize: "0.8rem"}}>Office/Dept</Typography>
+                                    <Typography sx={{fontWeight: "300", fontSize: "0.8rem", color: "#888888"}}>Office/Dept</Typography>
                                     <Typography sx={{fontWeight: "300", fontSize: "0.9rem"}}>{fileFromDep}</Typography>
                                 </Box>
                                 <Box sx={{mt: "20px"}}>
-                                    <Typography sx={{fontWeight: "300", fontSize: "0.8rem"}}>Contact Person</Typography>
+                                    <Typography sx={{fontWeight: "300", fontSize: "0.8rem", color: "#888888"}}>Contact Person</Typography>
                                     <Typography sx={{fontWeight: "300", fontSize: "0.9rem"}}>{fileFromPer}</Typography>
                                 </Box>
                                 <Box sx={{mt: "20px"}}>
-                                    <Typography sx={{fontWeight: "300", fontSize: "0.8rem"}}>Description</Typography>
+                                    <Typography sx={{fontWeight: "300", fontSize: "0.8rem", color: "#888888"}}>Description</Typography>
                                     <Typography sx={{fontWeight: "300", fontSize: "0.9rem"}}>{fileDesc}</Typography>
                                 </Box>
-                                <Box sx={{display: "flex", justifyContent: "space-around", alignItems: "center", mt: "20px"}}>
+                                {user.role == "Dean" && (
+                                  <Box sx={{display: "flex", justifyContent: "space-around", alignItems: "center", mt: "20px"}}>
                                     <Button startIcon={<RestorePageIcon/>} variant='outlined' color='success' sx={{textTransform: "none"}} onClick={() => restoreDoc(fileInfo.uID)}>Restore</Button>
-                                </Box>
+                                  </Box>
+                                )}
                                 
                             </CardContent></>): 
                             (<div className="nothing-holder">
@@ -897,32 +906,40 @@ function ArchiveMainTable() {
                                     <Typography sx={{fontWeight: "500"}}>File Details</Typography>
                                 </Box>
                                 <Box sx={{mt: "20px"}}>
-                                    <Typography sx={{fontWeight: "300", fontSize: "0.8rem"}}>Type</Typography>
-                                    <Typography sx={{fontWeight: "300", fontSize: "0.9rem"}}>{fileType}</Typography>
+                                    <Typography sx={{fontWeight: "300", fontSize: "0.8rem", color: "#888888"}}>Archived By</Typography>
+                                    <Typography sx={{fontWeight: "300", fontSize: "0.9rem"}}>({users.find(user => user.uID == fileInfo.archived_By)?.role}) - {users.find(user => user.uID == fileInfo.archived_By)?.full_Name}</Typography>
                                 </Box>
+                                {fileType != undefined || fileType != null || fileType != "" && (
+                                  <Box sx={{mt: "20px"}}>
+                                    <Typography sx={{fontWeight: "300", fontSize: "0.8rem", color: "#888888"}}>Type</Typography>
+                                    <Typography sx={{fontWeight: "300", fontSize: "0.9rem"}}>{fileType}</Typography>
+                                  </Box>
+                                )}
                                 <Box sx={{mt: "20px"}}>
-                                    <Typography sx={{fontWeight: "300", fontSize: "0.8rem"}}>Date Received</Typography>
+                                    <Typography sx={{fontWeight: "300", fontSize: "0.8rem", color: "#888888"}}>Date Received</Typography>
                                     <Typography sx={{fontWeight: "300", fontSize: "0.9rem"}}>{fileDate}</Typography>
                                 </Box>
                                 <Box sx={{mt: "20px"}}>
-                                    <Typography sx={{fontWeight: "300", fontSize: "0.8rem"}}>Received By</Typography>
+                                    <Typography sx={{fontWeight: "300", fontSize: "0.8rem", color: "#888888"}}>Received By</Typography>
                                     <Typography sx={{fontWeight: "300", fontSize: "0.9rem"}}>{fileReceivedBy}</Typography>
                                 </Box>
                                 <Box sx={{mt: "20px"}}>
-                                    <Typography sx={{fontWeight: "300", fontSize: "0.8rem"}}>Office/Dept</Typography>
+                                    <Typography sx={{fontWeight: "300", fontSize: "0.8rem", color: "#888888"}}>Office/Dept</Typography>
                                     <Typography sx={{fontWeight: "300", fontSize: "0.9rem"}}>{fileFromDep}</Typography>
                                 </Box>
                                 <Box sx={{mt: "20px"}}>
-                                    <Typography sx={{fontWeight: "300", fontSize: "0.8rem"}}>Contact Person</Typography>
+                                    <Typography sx={{fontWeight: "300", fontSize: "0.8rem", color: "#888888"}}>Contact Person</Typography>
                                     <Typography sx={{fontWeight: "300", fontSize: "0.9rem"}}>{fileFromPer}</Typography>
                                 </Box>
                                 <Box sx={{mt: "20px"}}>
-                                    <Typography sx={{fontWeight: "300", fontSize: "0.8rem"}}>Description</Typography>
+                                    <Typography sx={{fontWeight: "300", fontSize: "0.8rem", color: "#888888"}}>Description</Typography>
                                     <Typography sx={{fontWeight: "300", fontSize: "0.9rem"}}>{fileDesc}</Typography>
                                 </Box>
-                                <Box sx={{display: "flex", justifyContent: "space-around", alignItems: "center", mt: "20px"}}>
+                                {user.role == "Dean" && (
+                                  <Box sx={{display: "flex", justifyContent: "space-around", alignItems: "center", mt: "20px"}}>
                                     <Button startIcon={<RestorePageIcon/>} variant='outlined' color='success' sx={{textTransform: "none"}} onClick={() => restoreDoc(fileInfo.uID)}>Restore</Button>
-                                </Box>
+                                  </Box>
+                                )}
                                 
                             </CardContent></>): 
                             (<div className="nothing-holder">

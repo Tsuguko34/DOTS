@@ -149,12 +149,12 @@ export default function PendingCharts() {
       {
         label: 'Pending',
         data: [statusPending],
-        backgroundColor: 'rgba(255, 187, 62, 0.7)',
+        backgroundColor: 'rgba(250, 98, 98, 0.7)',
       },
       {
           label: 'Rejected',
           data: [statusNotDone],
-          backgroundColor: 'rgba(250, 98, 98, 0.7)',
+          backgroundColor: 'rgba(255, 187, 62, 0.7)',
       },
     ],
   };

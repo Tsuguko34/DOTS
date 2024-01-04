@@ -8,7 +8,8 @@ import {
   Menu,
   MenuItem,
   Tooltip,
-  CssBaseline 
+  CssBaseline, 
+  Typography
 } from "@mui/material";
 import dayjs from "dayjs";
 import React, { useEffect, useState } from "react";
@@ -109,6 +110,7 @@ function DateandProfile() {
     <>
       <div className="date-time"  style={{marginTop: windowWidth <= 375 && "7vh"}}>
         <p>{date}</p>
+        <Typography component={"div"} sx={{fontWeight: "bold", color: "#FF7F50"}}>{user.role}</Typography>
         <Tooltip title="Account settings">
           <IconButton
             onClick={handleClick}

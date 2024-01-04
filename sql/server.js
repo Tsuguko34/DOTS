@@ -15,7 +15,7 @@ import axios from 'axios'
 
 const MySQLStore = MySQLStoreCreator(session);
 const app = express()
-const port = 3001;
+const port = "http://localhost:3001";
 const db = mysql.createConnection({
     host:"localhost",
     user:"root",
@@ -596,7 +596,7 @@ app.get("/getFilteredArchives",(req, res) => {
 app.post("/archiveFile",(req, res) => {
     const selectQuery = `SELECT * FROM documents WHERE uID = '${req.query.id}'`;
     const deleteQuery = `DELETE FROM documents WHERE uID = '${req.query.id}'`;
-    const insertQuery = "INSERT INTO archives (`document_Name`,`document_Type`,`date_Received`,`received_By`,`fromPer`,`fromDep`,`time_Received`,`uID`,`Status`,`Type`,`Description`,`Comment`,`forward_To`,`Remark`,`deleted_at`,`urgent`,`unread`) VALUES (?)"
+    const insertQuery = "INSERT INTO archives (`document_Name`,`document_Type`,`date_Received`,`received_By`,`fromPer`,`fromDep`,`time_Received`,`uID`,`Status`,`Type`,`Description`,`Comment`,`forward_To`,`Remark`,`deleted_at`,`urgent`,`unread`, `archived_By`) VALUES (?)"
     db.query(selectQuery, (err, data) => {
       if (err) return res.json(err);
         const selectedData = data[0]
@@ -618,6 +618,7 @@ app.post("/archiveFile",(req, res) => {
             selectedData.deleted_at,
             selectedData.urgent,
             selectedData.unread,
+            req.query.user
         ]
         db.query(insertQuery, [values], (err, insertData) => {
             if (err) return res.json(err);
@@ -738,7 +739,7 @@ app.put("/updateNotif",(req, res) => {
 })
 
 app.put("/approveReject",(req, res) => {
-    const q = "UPDATE documents SET `forward_To` = ?, `Comment` = ?, `forwarded_By` = ?, `forwarded_DateTime` = ?, `accepted_Rejected_In` = ?, `accepted_Rejected_By` = ? , `Status` = ?  WHERE uID = ?"
+    const q = "UPDATE documents SET `forward_To` = ?, `Comment` = ?, `forwarded_By` = ?, `forwarded_DateTime` = ?, `accepted_Rejected_In` = ?, `accepted_Rejected_By` = ? , `Status` = ? , `urgent` = ?  WHERE uID = ?"
     const values = [
         req.body.forward_To,
         req.body.Comment,
@@ -746,7 +747,8 @@ app.put("/approveReject",(req, res) => {
         req.body.forwarded_DateTime,
         req.body.accepted_Rejected_In,
         req.body.accepted_Rejected_By,
-        req.body.Status
+        req.body.Status,
+        0
     ]
     db.query(q, [...values, req.body.uID], (err, data) => {
         if(err) return console.log(err);
@@ -807,7 +809,7 @@ cron.schedule('0 0 * * *', async() => {
             if (archiveAt == dateToday) {
                 if(docSnap.Status != "Pending"){
                     try{
-                        await axios.post(`${port}/archiveFile?id=${docSnap.uID}`)
+                        await axios.post(`${port}/archiveFile?id=${docSnap.uID}&user=System`)
                     }catch(e){
                         console.log(e.message);
                     }
@@ -818,6 +820,103 @@ cron.schedule('0 0 * * *', async() => {
         console.log(e.message);
     }
 })
+
+cron.schedule('0 0 * * *', async() => {
+    try{
+        const snapshot = await axios.get(`${port}/getRequests`);
+        const users = await axios.get(`${port}/getUsers`);
+        const userList = users.data
+        const dateToday = new Date()
+
+        snapshot.data.forEach(async(docSnap) => {
+            const dateReceived = new Date(docSnap.date_Received)
+            const reminder = dateReceived.setDate(dateReceived.getDate() + 3)
+            if (reminder == dateToday) {
+                if(docSnap.Status == "Pending"){
+                    const transporter = nodemailer.createTransport({
+                        service: 'gmail',
+                        auth: {
+                            user: 'wp3deansofficetransaction@gmail.com',
+                            pass: 'ezoc sbde vuui qgqc'
+                        }
+                    })
+                
+                    const verificationLink = `http://localhost:3000/Pages/PendingLetters`;
+                    const mailOptions = {
+                        from: 'wp3deansofficetransaction@gmail.com',
+                        to: userList.find(user => user.uID == docSnap.forward_To)?.email,
+                        subject: 'Pending Document',
+                        html: `A ${docSnap.document_Type} document (${docSnap.document_Name}) from ${docSnap.fromPer} has been pending for the last 3 days. Click <a href="${verificationLink}">here</a> to view the document`,
+                    };
+                
+                    await transporter.sendMail(mailOptions)
+                }
+            }
+        });
+    }catch(e){
+        console.log(e.message);
+    }
+})
+
+const find = async() => {
+    try{
+        const snapshot = await axios.get(`${port}/getRequests`);
+        const users = await axios.get(`${port}/getUsers`);
+        const userList = users.data
+        const dateToday = new Date()
+       
+        snapshot.data.forEach(async(docSnap) => {
+            const dateReceived = new Date(docSnap.date_Received)
+            const reminder = dateReceived.setDate(dateReceived.getDate() + 3)
+            if (docSnap.uID == '0c849cfb-0309-4510-af7c-237224db6718'){
+                const transporter = nodemailer.createTransport({
+                    service: 'gmail',
+                    auth: {
+                        user: 'wp3deansofficetransaction@gmail.com',
+                        pass: 'ezoc sbde vuui qgqc'
+                    }
+                })
+            
+                const verificationLink = `http://localhost:3000/Pages/PendingLetters`;
+                const mailOptions = {
+                    from: 'wp3deansofficetransaction@gmail.com',
+                    to: userList.find(user => user.uID == docSnap.forward_To)?.email,
+                    subject: 'Pending Document',
+                    html: `A ${docSnap.document_Type} document (${docSnap.document_Name}) from ${docSnap.fromPer} has been pending for the last 3 days. Click <a href="${verificationLink}">here</a> to view the document`,
+                };
+            
+                await transporter.sendMail(mailOptions)
+            }
+            
+            // if (reminder == dateToday) {
+            //     if(docSnap.Status == "Pending"){
+                    
+            //         const transporter = nodemailer.createTransport({
+            //             service: 'gmail',
+            //             auth: {
+            //                 user: 'wp3deansofficetransaction@gmail.com',
+            //                 pass: 'ezoc sbde vuui qgqc'
+            //             }
+            //         })
+                
+            //         const verificationLink = `http://localhost:3000/Pages/PendingLetters`;
+            //         const mailOptions = {
+            //             from: 'wp3deansofficetransaction@gmail.com',
+            //             to: userList.find(),
+            //             subject: 'Pending Document',
+            //             html: `A ${docSnap.document_Type} document (${docSnap.document_Name}) from ${docSnap.fromPer} has been pending for the last 3 days. Click <a href="${verificationLink}">here</a> to view the document`,
+            //         };
+                
+            //         await transporter.sendMail(mailOptions)
+            //     }
+            // }
+        });
+    }catch(e){
+        console.log(e.message);
+    }
+}
+
+find()
 
 app.listen(3001, () => { 
     

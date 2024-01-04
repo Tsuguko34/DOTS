@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react'
 import * as FaIcons from "react-icons/fa";
 import * as AiIcons from "react-icons/ai";
 import * as MdIcons from "react-icons/md";
-import {Link, NavLink, useNavigate} from "react-router-dom";
+import {Link, NavLink, useLocation, useNavigate} from "react-router-dom";
 import './Sidebar.css';
 import logo from '../Images/cict-logo.png';
 import { AiFillFund } from "react-icons/ai";
@@ -163,6 +163,28 @@ function Sidebar() {
           };
       }, [user])
 
+      const location = useLocation()
+
+      useEffect(() => {
+        handleClassChange()
+      }, [location.pathname])
+      
+      const [requestTab, setRequestTab] = useState(false)
+      const [monitoringTab, setMonitoringTab] = useState(false)
+      const handleClassChange = () => {
+        if(location.pathname === "/Pages/PendingLetters" ||location.pathname === "/Pages/ApprovedLetters" || location.pathname === "/Pages/RejectedLetters" || location.pathname === "/Pages/RequestHistory"){
+            setRequestTab(true)
+            setMonitoringTab(false)
+        }else if(location.pathname === "/pages/Incoming" || location.pathname === "/pages/Outgoing" || location.pathname === "/pages/IncomingMemo" || location.pathname === "/pages/OutgoingMemo" || location.pathname === "/pages/OtherDocuments"){
+            setRequestTab(false)
+            setMonitoringTab(true)
+        }
+        else{
+            setRequestTab(false)
+            setMonitoringTab(false)
+        }
+      }
+
       
   return (
     <>
@@ -199,7 +221,7 @@ function Sidebar() {
                             </NavLink>
                     </ListItem>
                     <ListItem disablePadding className='nav-text' onClick={showRequests} end>
-                        <div className='nav-monitoring'>
+                        <div className={requestTab ? 'nav-monitoring selected':'nav-monitoring'}>
                             <DescriptionIcon size={'25px'}/>
                             <span>Requests</span>
                             <MdIcons.MdKeyboardArrowLeft size={'25px'} className={requests ? 'monitoring-arrow active' : 'monitoring-arrow'}/>
@@ -209,7 +231,6 @@ function Sidebar() {
                                     <NotificationsActiveIcon color="action" />
                                 </Badge>) : ''
                                 }
-                                
                             </div>
                         </div>
                         
@@ -251,7 +272,7 @@ function Sidebar() {
                     { user != undefined && user.role !== "Faculty" && (
                         <>
                             <ListItem disablePadding className='nav-text' onClick={showMonitoring} end>
-                                <div className='nav-monitoring'>
+                                <div className={monitoringTab ? 'nav-monitoring selected':'nav-monitoring'}>
                                     <TableRowsIcon size={'25px'}/>
                                     <span>Monitoring</span>
                                     <MdIcons.MdKeyboardArrowLeft size={'25px'} className={monitoring ? 'monitoring-arrow active' : 'monitoring-arrow'}/>

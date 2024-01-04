@@ -971,11 +971,12 @@ export default function StickyHeadTable() {
     else if(allUsers){
       const mainDocumentRef = doc(db, 'documents', actionHolder.id);
       const subcollectionRef = collection(mainDocumentRef, "UserRead");
-      for(const user of users){
+      for(const userd of users){
+        if(user.uID != userd.uID){
           try{
             const newNotif = {
               docId: actionHolder.id,
-              userUID: user.uID,
+              userUID: userd.uID,
               isRead: 0,
               multiple: 1
             }
@@ -983,6 +984,7 @@ export default function StickyHeadTable() {
           }catch(error){
               console.log(error.message);
           }
+        } 
       }
       const updateFields = {
         forward_To: "All " + user.uID,

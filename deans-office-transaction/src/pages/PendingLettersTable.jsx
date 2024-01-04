@@ -840,15 +840,23 @@ export default function StickyHeadTable() {
 
    const timeFiltered = filtered.sort((a, b) => b.time - a.time)
 
-   timeFiltered.sort((a, b) => {
-    if (new Date(b.date_Received).getFullYear() !== new Date(a.date_Received).getFullYear()) {
-      return new Date(b.date_Received).getFullYear() - new Date(a.date_Received).getFullYear();
-    } else if (new Date(b.date_Received).getMonth() !== new Date(a.date_Received).getMonth()) {
-      return new Date(b.date_Received).getMonth() - new Date(a.date_Received).getMonth();
-    } else {
-      return new Date(b.date_Received).getDate() - new Date(a.date_Received).getDate();
-    }
- })
+    timeFiltered.sort((a, b) => {
+      // Compare 'urgent' values first
+      if (a.urgent === 1 && b.urgent !== 1) {
+        return -1; // 'a' comes first
+      } else if (a.urgent !== 1 && b.urgent === 1) {
+        return 1; // 'b' comes first
+      }
+
+      if (new Date(b.date_Received).getFullYear() !== new Date(a.date_Received).getFullYear()) {
+        return new Date(b.date_Received).getFullYear() - new Date(a.date_Received).getFullYear();
+      } else if (new Date(b.date_Received).getMonth() !== new Date(a.date_Received).getMonth()) {
+        return new Date(b.date_Received).getMonth() - new Date(a.date_Received).getMonth();
+      } else {
+        return new Date(b.date_Received).getDate() - new Date(a.date_Received).getDate();
+      }
+    })
+
     setFilteredOptionsReceive(Array.from(filteredOptionReceive))
     setFilteredOptionsfromDep(Array.from(filteredOptionfromDep))
     setFilteredOptionsDocType(Array.from(filteredOptionDocType))
@@ -975,11 +983,12 @@ export default function StickyHeadTable() {
     else if(allUsers){
       const mainDocumentRef = doc(db, 'documents', actionHolder.id);
       const subcollectionRef = collection(mainDocumentRef, "UserRead");
-      for(const user of users){
+      for(const userd of users){
+        if(user.uID != userd.uID){
           try{
             const newNotif = {
               docId: actionHolder.id,
-              userUID: user.uID,
+              userUID: userd.uID,
               isRead: 0,
               multiple: 1
             }
@@ -987,6 +996,7 @@ export default function StickyHeadTable() {
           }catch(error){
               console.log(error.message);
           }
+        } 
       }
       const updateFields = {
         forward_To: "All " + user.uID,
@@ -1469,18 +1479,18 @@ export default function StickyHeadTable() {
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
               .map((row) => (
                 <>
-                <TableRow hover onClick={() => unread(row.unread, row.uID)} role="checkbox" tabIndex={-1} key={row.uID} sx={{cursor: "pointer", userSelect: "none", height: "50px", background: "#F0EFF6",'& :last-child': {borderBottomRightRadius: "10px", borderTopRightRadius: "10px"} ,'& :first-child':  {borderTopLeftRadius: "10px", borderBottomLeftRadius: "10px"} }}>
-                  <TableCell className={row.unread ? "table-cell unread first" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.document_Name} </TableCell>
-                  <TableCell className={row.unread ? "table-cell unread" : "table-cell"}  align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.Type == undefined || row.Type == "" ? row.document_Type : row.Type} </TableCell>
-                  <TableCell className={row.unread ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.received_By} </TableCell>
-                  <TableCell className={row.unread ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.fromDep == undefined || row.fromDep == ""? row.fromPer : row.fromDep} </TableCell>
-                  <TableCell className={row.unread ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.date_Received} </TableCell>
-                  <TableCell className={row.unread ? "table-cell unread" : "table-cell"} align="left" > 
+                <TableRow hover onClick={() => unread(row.unread, row.uID)} role="checkbox" tabIndex={-1} key={row.uID} sx={{cursor: "pointer", userSelect: "none", height: "50px", background:"#F0EFF6",'& :last-child': {borderBottomRightRadius: "10px", borderTopRightRadius: "10px"} ,'& :first-child':  {borderTopLeftRadius: "10px", borderBottomLeftRadius: "10px"} }}>
+                  <TableCell sx={{backgroundColor: row.urgent == 1 && "#FFBFBF"}} className={row.unread ? "table-cell unread first" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.document_Name} </TableCell>
+                  <TableCell sx={{backgroundColor: row.urgent == 1 && "#FFBFBF"}} className={row.unread ? "table-cell unread" : "table-cell"}  align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.Type == undefined || row.Type == "" ? row.document_Type : row.Type} </TableCell>
+                  <TableCell sx={{backgroundColor: row.urgent == 1 && "#FFBFBF"}} className={row.unread ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.received_By} </TableCell>
+                  <TableCell sx={{backgroundColor: row.urgent == 1 && "#FFBFBF"}} className={row.unread ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.fromDep == undefined || row.fromDep == ""? row.fromPer : row.fromDep} </TableCell>
+                  <TableCell sx={{backgroundColor: row.urgent == 1 && "#FFBFBF"}} className={row.unread ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.date_Received} </TableCell>
+                  <TableCell sx={{backgroundColor: row.urgent == 1 && "#FFBFBF"}} className={row.unread ? "table-cell unread" : "table-cell"} align="left" > <Badge color="error" badgeContent={"Urgent"} invisible={row.urgent == 0}> 
                   {row.Status === 'Completed' ? <span className='table-Done'>Completed</span>: 
                   row.Status === 'Pending' ? <span className='table-Ongoing'>Pending</span>:
-                  row.Status === 'Rejected' ? <span className='table-NotDone'>Rejected</span>: <span className='table-Default'>{row.Status}</span>}
+                  row.Status === 'Rejected' ? <span className='table-NotDone'>Rejected</span>: <span className='table-Default'>{row.Status}</span>} </Badge>
                   </TableCell>
-                  <TableCell className={row.unread ? "table-cell unread last" : "table-cell"} align="left">
+                  <TableCell sx={{backgroundColor: row.urgent == 1 && "#FFBFBF"}} className={row.unread ? "table-cell unread last" : "table-cell"} align="left">
                     <Stack spacing={1} direction="row">
                     <Tooltip title={<Typography sx={{fontSize: "0.8rem"}}>View Document</Typography>} arrow>
                       <VisibilityIcon
@@ -1522,8 +1532,9 @@ export default function StickyHeadTable() {
                       />
                       </Tooltip>
                     </Stack>
-                  </TableCell>
+                  </TableCell> 
                 </TableRow>
+               
                   <TableRow className="drop-down" sx={{height: "100%", padding: "0", '& :hover': {pointerEvents: "none", cursor: "pointer"}}}>
                   <TableCell colSpan={7} sx={{width: "100%", padding: "0 0 0 0", boxShadow: '0px 15px 10px -13px #E6E4F0', borderBottomLeftRadius: "10px", borderBottomRightRadius: "10px"}}>
                     <Collapse in={openRows[row.id]}>

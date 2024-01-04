@@ -239,7 +239,7 @@ function Dashboard() {
       "Application for Leave",
       "Training Request Form",
       "Personel Requisition Form",
-      "Letter of Contract",
+      "Contract",
       "IPCR",
       "OPCR",
       "Travel Order",
@@ -709,7 +709,7 @@ function Dashboard() {
                   <Typography className="type-title" sx={{fontWeight: "700", fontSize: "1.1rem"}}>Faculty Travel Orders</Typography>
                   <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: "center", mr: "54.7px", ml: "21.6px"}}>
                     <Typography sx={{fontWeight: "700", color: "#888"}}>Name</Typography>
-                    <Typography sx={{fontWeight: "700", color: "#888"}}>Amount</Typography>
+                    <Typography sx={{fontWeight: "700", color: "#888"}}>Count</Typography>
                   </Box>
                 </Box>
                 <Box sx={{display: 'flex', flexDirection: "column"}}>
@@ -734,7 +734,7 @@ function Dashboard() {
                     <Typography className="type-title" sx={{fontWeight: "700", fontSize: "1.1rem"}}>Faculty Training</Typography>
                     <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: "center", mr: windowWidth >= 1980 ? "21.6px": "5px", ml: "21.6px"}}>
                       <Typography sx={{fontWeight: "700", color: "#888", fontSize: "0.9rem"}}>Name</Typography>
-                      <Typography sx={{fontWeight: "700", color: "#888", fontSize: "0.9rem"}}>Amount</Typography>
+                      <Typography sx={{fontWeight: "700", color: "#888", fontSize: "0.9rem"}}>Count</Typography>
                     </Box>
                   </Box>
                   <Box sx={{display: 'flex', flexDirection: "column"}}>
@@ -759,7 +759,7 @@ function Dashboard() {
                     <Typography className="type-title" sx={{fontWeight: "700", fontSize: "1.1rem"}}>Faculty Leave</Typography>
                     <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: "center", mr: windowWidth >= 1980 ? "21.6px": "5px", ml: "21.6px"}}>
                       <Typography sx={{fontWeight: "700", color: "#888", fontSize: "0.9rem"}}>Name</Typography>
-                      <Typography sx={{fontWeight: "700", color: "#888", fontSize: "0.9rem"}}>Amount</Typography>
+                      <Typography sx={{fontWeight: "700", color: "#888", fontSize: "0.9rem"}}>Count</Typography>
                     </Box>
                   </Box>
                   <Box sx={{display: 'flex', flexDirection: "column"}}>
