@@ -90,9 +90,10 @@
     height: 100%;
 }
 
-.login-bgright{
-
+.MuiBadge-badge{
+    z-index: 10 !important;
 }
+
 
 .template-bg{
     background-color: var(--body_background) !important;
@@ -443,7 +444,7 @@
     border:var(--date_border);
     border-radius: 10px;
     right: 0;
-    margin: 20px 30px;
+    margin: 20px 0px;
 }
 
 .page-title{

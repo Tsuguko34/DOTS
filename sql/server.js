@@ -402,7 +402,6 @@ app.get("/getLogs", (req, res) => {
 
     db.query(q, (err, data) => {
         if(err) return console.log(err);
-        console.log(data);
         return res.status(200).json(data)
     })
 })
@@ -588,7 +587,6 @@ app.get("/getFilteredArchives",(req, res) => {
     const q = `SELECT * FROM archives WHERE document_Type = '${req.query.documentType}' AND SUBSTRING(date_Received, 7, 4) = '${req.query.year}';`;
     db.query(q, (err, data) => {
       if (err) return res.json(err);
-      console.log(data);
       return res.json(data);
     });
 });
@@ -727,12 +725,8 @@ app.put("/unread",(req, res) => {
 })
 
 app.put("/updateNotif",(req, res) => {
-    const q = "UPDATE notifications SET `isRead` = ? WHERE docID = ? AND userUID = ?"
-    const values = [
-        req.body.isRead,
-    ]
-
-    db.query(q, [...values, req.body.docID, req.body.userUID], (err, data) => {
+    const q = `DELETE FROM notifications WHERE docID = '${req.body.docID}' AND userUID = '${req.body.userUID}'`
+    db.query(q, (err, data) => {
         if(err) return console.log(err);;
         return res.json({sucess: true})
     })
@@ -782,12 +776,17 @@ app.post("/notif",(req, res) => {
                 if (err) return console.log(err);
             })
         }
-        const q = "INSERT INTO notifications (`docID`,`userUID`,`isRead`,`multiple`) VALUES (?)"
+        let reminder = 0
+        if(req.query.reminder == "remind"){
+            reminder = 1
+        }
+        const q = "INSERT INTO notifications (`docID`,`userUID`,`isRead`,`multiple`, `reminder`) VALUES (?)"
         const values = [
             req.body.docId,
             req.body.userUID,
             req.body.isRead,
             req.body.multiple,
+            reminder
         ]
         db.query(q, [values], (err, postData) => {   
             if(err) return console.log(err);
@@ -869,47 +868,14 @@ const find = async() => {
             const dateReceived = new Date(docSnap.date_Received)
             const reminder = dateReceived.setDate(dateReceived.getDate() + 3)
             if (docSnap.uID == '0c849cfb-0309-4510-af7c-237224db6718'){
-                const transporter = nodemailer.createTransport({
-                    service: 'gmail',
-                    auth: {
-                        user: 'wp3deansofficetransaction@gmail.com',
-                        pass: 'ezoc sbde vuui qgqc'
-                    }
-                })
-            
-                const verificationLink = `http://localhost:3000/Pages/PendingLetters`;
-                const mailOptions = {
-                    from: 'wp3deansofficetransaction@gmail.com',
-                    to: userList.find(user => user.uID == docSnap.forward_To)?.email,
-                    subject: 'Pending Document',
-                    html: `A ${docSnap.document_Type} document (${docSnap.document_Name}) from ${docSnap.fromPer} has been pending for the last 3 days. Click <a href="${verificationLink}">here</a> to view the document`,
-                };
-            
-                await transporter.sendMail(mailOptions)
+                const newNotif = {
+                    docId: docSnap.uID,
+                    userUID: docSnap.forward_To,
+                    isRead: 0,
+                    multiple: 0
+                  }
+                await axios.post(`${port}/notif?reminder=remind`, newNotif)
             }
-            
-            // if (reminder == dateToday) {
-            //     if(docSnap.Status == "Pending"){
-                    
-            //         const transporter = nodemailer.createTransport({
-            //             service: 'gmail',
-            //             auth: {
-            //                 user: 'wp3deansofficetransaction@gmail.com',
-            //                 pass: 'ezoc sbde vuui qgqc'
-            //             }
-            //         })
-                
-            //         const verificationLink = `http://localhost:3000/Pages/PendingLetters`;
-            //         const mailOptions = {
-            //             from: 'wp3deansofficetransaction@gmail.com',
-            //             to: userList.find(),
-            //             subject: 'Pending Document',
-            //             html: `A ${docSnap.document_Type} document (${docSnap.document_Name}) from ${docSnap.fromPer} has been pending for the last 3 days. Click <a href="${verificationLink}">here</a> to view the document`,
-            //         };
-                
-            //         await transporter.sendMail(mailOptions)
-            //     }
-            // }
         });
     }catch(e){
         console.log(e.message);

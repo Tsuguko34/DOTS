@@ -109,7 +109,7 @@ function Sidebar() {
                 const forward = doc.forward_To
                 const role = user.role
                 if((forward.includes(role) || forward.includes("All")) && !forward.includes(user.uID)){
-                    if(notifData.data.find(item => item.userUID == user.uID && item.docID == doc.uID && item.multiple == 1)?.isRead == 0){
+                    if(notifData.data.find(item => item.userUID == user.uID && item.docID == doc.uID && item.multiple == 1)?.isRead == 0 && notifData.data.find(item => item.userUID == user.uID && item.docID == doc.uID && item.multiple == 1)?.reminder != 1){
                         AllArr.push(doc)
                         if(doc.Status === "Pending"){
                             pendingArr.push(doc)
@@ -124,7 +124,7 @@ function Sidebar() {
                     }
                 }
                 else if(forward == user.uID){
-                    if(notifData.data.find(item => item.userUID == user.uID && item.docID == doc.uID && item.multiple == 0)?.isRead == 0){
+                    if(notifData.data.find(item => item.userUID == user.uID && item.docID == doc.uID && item.multiple == 0)?.isRead == 0 && notifData.data.find(item => item.userUID == user.uID && item.docID == doc.uID && item.multiple == 0)?.reminder != 1){
                         AllArr.push(doc)
                         if(doc.Status === "Pending"){
                             pendingArr.push(doc)

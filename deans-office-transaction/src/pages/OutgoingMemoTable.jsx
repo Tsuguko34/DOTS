@@ -35,6 +35,7 @@ import {
 import noresult from "../Images/noresults.png";
 import {
   Autocomplete,
+  Badge,
   Card,
   CardContent,
   CardMedia,
@@ -96,6 +97,7 @@ import xlsxViewIcon from '../Images/xlsxView.png'
 import RefreshIcon from '@mui/icons-material/Refresh';
 import emailjs from '@emailjs/browser';
 import axios from "axios";
+import JSZip from "jszip";
 
 export default function StickyHeadTable() {
   const port = "http://localhost:3001"
@@ -302,12 +304,12 @@ export default function StickyHeadTable() {
     if (type == "add") {
       log = {
         date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-        log: user.full_Name + ` added an outgoing Memorandum Letter (${name})`,
+        log: user.full_Name + ` added an outgoing Memorandum Letter (${name}) ${newFromPer && 'from ' + newFromPer}`,
       }
     } else if (type == "edit") {
       log = {
         date: dayjs().format("MMM D, YYYY h:mm A").toString(),
-        log: user.full_Name + ` edited an outgoing Memorandum Letter (${name})`,
+        log: user.full_Name + ` edited an outgoing Memorandum Letter (${name}) ${editFromPer && 'from ' + editFromPer}`,
       };
     } else if (type == "archive") {
       log = {
@@ -859,16 +861,66 @@ export default function StickyHeadTable() {
 
   const handleDownload = (type) => {
     const anchor = document.createElement('a');
+    anchor.style.display = 'none';
+    document.body.appendChild(anchor);
     if (type == "docx"){
       anchor.href = `${port}/document_Files/${fileDocx}`;
       anchor.download = fileDocx;
+      anchor.target = '_blank';
+      anchor.click();
     }
     else if(type == "xlsx"){
       anchor.href = `${port}/document_Files/${fileXlsx}`;
       anchor.download = fileXlsx;
+      anchor.target = '_blank';
+      anchor.click();
     }
-    anchor.target = '_blank';
-    anchor.click();
+    else if(type == "image"){
+      if(imageList.length > 1){
+        const zip = new JSZip()
+        const promises = imageList.map((image, index) => {
+          const imageUrl = `${port}/document_Files/${image}`;
+          const filename = `${image}`;
+  
+          return fetch(imageUrl)
+            .then(response => response.blob())
+            .then(blob => zip.file(filename, blob));
+        });
+  
+        Promise.all(promises).then(() => {
+          zip.generateAsync({ type: 'blob' }).then(blob => {
+            const url = URL.createObjectURL(blob);
+            anchor.href = url;
+            anchor.download = `${displayFile[0].document_Name}.zip`;
+  
+            anchor.target = '_blank';
+            anchor.click();
+  
+            URL.revokeObjectURL(url);
+          });
+        });
+       
+      }else{
+        for(const image of imageList){
+          const imageUrl = `${port}/document_Files/${image}`;
+          fetch(imageUrl)
+            .then(response => response.blob())
+            .then(blob => {
+              const objectUrl = URL.createObjectURL(blob);
+              anchor.href = objectUrl;
+              anchor.download = image;
+              anchor.target = '_blank';
+              anchor.click();
+              URL.revokeObjectURL(objectUrl);
+              console.log(true);
+            })
+            .catch(error => {
+              console.error('Error fetching image:', error);
+            });
+        }
+      }
+    }
+    document.body.removeChild(anchor);
 };
   const [rotation, setRotation] = useState(0);
   const refreshTable = () => {
@@ -1225,7 +1277,14 @@ export default function StickyHeadTable() {
           <TableBody sx={{ height: "100%" }}>
             {filteredData
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((row) => (
+              .map((row) => {
+                const startDate = new Date(row.date_Received);
+                const endDate = new Date(startDate);
+                endDate.setDate(startDate.getDate() + 30);
+
+                const currentDate = new Date();
+                const daysDifference = Math.ceil((endDate - currentDate) / (1000 * 60 * 60 * 24));
+                return(
                 <>
                 <TableRow hover role="checkbox" tabIndex={-1} key={row.uID} sx={{ cursor: "pointer", userSelect: "none", height: "50px", background: "#F0EFF6",'& :last-child': {borderBottomRightRadius: "10px", borderTopRightRadius: "10px"} ,'& :first-child':  {borderTopLeftRadius: "10px", borderBottomLeftRadius: "10px"} }}>
                   <TableCell className="table-cell" align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.document_Name} </TableCell>
@@ -1285,21 +1344,23 @@ export default function StickyHeadTable() {
                         }}
                       />
                       </Tooltip>
+                      <Badge badgeContent={`${daysDifference} days left`} color="error" sx={{zIndex: "11", position:"relative", whiteSpace: 'nowrap'}} invisible={daysDifference > 7 || row.Status == "Pending" ? true : false}>
                       <Tooltip title={<Typography sx={{fontSize: "0.8rem"}}>Archive Document</Typography>} arrow>
-                      <ArchiveIcon
-                        style={{
-                          fontSize: "30px",
-                          color: "#FFF",
-                          cursor: "pointer",
-                          background: "#52E460",
-                          borderRadius: "5px",
-                          zIndex: "11"
-                        }}
-                        onClick={() => {
-                          deleteIncoming(row.uID, row.document_Name);
-                        }}
-                      />
+                          <ArchiveIcon
+                            style={{
+                              fontSize: "30px",
+                              color: "#FFF",
+                              cursor: "pointer",
+                              background: "#52E460",
+                              borderRadius: "5px",
+                              zIndex: "2",
+                            }}
+                            onClick={() => {
+                              deleteIncoming(row.uID, row.document_Name);
+                            }}
+                          />
                       </Tooltip>
+                      </Badge>
                     </Stack>
                   </TableCell>
                 </TableRow>
@@ -1320,7 +1381,7 @@ export default function StickyHeadTable() {
                     </TableCell>
                 </TableRow>
                 </>
-              ))}
+              )})}
           </TableBody>
         </Table>
         {loading ? (
@@ -1751,6 +1812,9 @@ export default function StickyHeadTable() {
                           </Box>
                           <TabPanel value="1">
                           <Grid container xs={12}>
+                          <Button component="label" onClick={(e) => handleDownload("image")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none", marginBottom: "10px"}}>
+                                      Download Image/s
+                              </Button>
                               {imageList.some(item => item.includes(".jpg") || item.includes(".jpeg") || item.includes(".png")) &&(
                                     <ImageList variant="masonry" cols={windowWidth <= 375 ? 1 : windowWidth <=576 && windowWidth > 375? 2 : 3} gap={8}>
                                       {imageList.map((url, index) => (
@@ -1813,6 +1877,9 @@ export default function StickyHeadTable() {
                       :
                       imageList.some(item => item.includes(".jpg") || item.includes(".jpeg") || item.includes(".png")) ?(
                         <Grid container xs={12}>
+                          <Button component="label" onClick={(e) => handleDownload("image")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none", marginBottom: "10px"}}>
+                                      Download Image/s
+                              </Button>
                         {imageList.some(item => item.includes(".jpg") || item.includes(".jpeg") || item.includes(".png")) &&(
                               <ImageList variant="masonry" cols={windowWidth <= 375 ? 1 : windowWidth <=576 && windowWidth > 375? 2 : 3} gap={8}>
                                 {imageList.map((url, index) => (

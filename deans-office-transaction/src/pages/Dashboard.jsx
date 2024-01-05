@@ -995,7 +995,7 @@ function Dashboard() {
                 />
             </div>
         </Card>
-        <Dialog open={openShowLogs} fullWidth maxWidth="md">
+        <Dialog open={openShowLogs} fullWidth maxWidth="lg">
           <DialogTitle className="dialogDisplayTitle">
             <div className="display-title-holder">
               <div className="dialog-title-view">Logs</div>

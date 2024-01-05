@@ -347,7 +347,7 @@ export default function StickyHeadTable() {
   const [userUID, setUserUID] = useState("")
   const [users, setUsers] = useState([]);
   const [user, setUser] = useState([]);
-
+  const [subArrayCol, setSubArrayCol] = useState([])
   useEffect(() => {
     const getUser = async() => {
       try{
@@ -383,6 +383,16 @@ export default function StickyHeadTable() {
     }
     getUser()
   }, []);
+
+  useEffect(()=>{
+      const fetchDataInterval = setInterval( async() => {
+        const notifData = await axios.get(`${port}/getNotifs?userID=${user.uID}`)
+        setSubArrayCol(notifData.data)
+      }, 1000);
+      return () => {
+        clearInterval(fetchDataInterval);
+      };
+  },[user])
 
   const getSignInMethods = async (type, name, docType) => {
     let log = null
@@ -1096,8 +1106,8 @@ export default function StickyHeadTable() {
   }
 
   //UNREAD
-  const unread = async(unread, id) => {
-    if(unread == 1){
+  const unread = async(unread, id, isRead) => {
+    if(unread){
       const unreadFields = {
         unread: 0,
         uID: id
@@ -1106,6 +1116,20 @@ export default function StickyHeadTable() {
         await axios.put(`${port}/unread`, unreadFields)
       }catch(e){
         console.log(e.message);
+      }
+    }
+    if(!isRead){
+      if(subArrayCol.find(item => item.userUID == user.uID && item.docID == id)){
+        const unreadFields = {
+          isRead: 1,
+          docID: id,
+          userUID: user.uID
+        }
+        try{
+          await axios.put(`${port}/updateNotif`, unreadFields)
+        }catch(e){
+          console.log(e.message);
+        }
       }
     }
   }
@@ -1479,18 +1503,18 @@ export default function StickyHeadTable() {
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
               .map((row) => (
                 <>
-                <TableRow hover onClick={() => unread(row.unread, row.uID)} role="checkbox" tabIndex={-1} key={row.uID} sx={{cursor: "pointer", userSelect: "none", height: "50px", background:"#F0EFF6",'& :last-child': {borderBottomRightRadius: "10px", borderTopRightRadius: "10px"} ,'& :first-child':  {borderTopLeftRadius: "10px", borderBottomLeftRadius: "10px"} }}>
-                  <TableCell sx={{backgroundColor: row.urgent == 1 && "#FFBFBF"}} className={row.unread ? "table-cell unread first" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.document_Name} </TableCell>
-                  <TableCell sx={{backgroundColor: row.urgent == 1 && "#FFBFBF"}} className={row.unread ? "table-cell unread" : "table-cell"}  align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.Type == undefined || row.Type == "" ? row.document_Type : row.Type} </TableCell>
-                  <TableCell sx={{backgroundColor: row.urgent == 1 && "#FFBFBF"}} className={row.unread ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.received_By} </TableCell>
-                  <TableCell sx={{backgroundColor: row.urgent == 1 && "#FFBFBF"}} className={row.unread ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.fromDep == undefined || row.fromDep == ""? row.fromPer : row.fromDep} </TableCell>
-                  <TableCell sx={{backgroundColor: row.urgent == 1 && "#FFBFBF"}} className={row.unread ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.date_Received} </TableCell>
-                  <TableCell sx={{backgroundColor: row.urgent == 1 && "#FFBFBF"}} className={row.unread ? "table-cell unread" : "table-cell"} align="left" > <Badge color="error" badgeContent={"Urgent"} invisible={row.urgent == 0}> 
+                <TableRow hover onClick={() => unread(row.unread, row.uID, subArrayCol.find(item => item.docID == row.uID && item.userUID == user.uID)?.isRead)} role="checkbox" tabIndex={-1} key={row.uID} sx={{cursor: "pointer", userSelect: "none", height: "50px", background:"#F0EFF6",'& :last-child': {borderBottomRightRadius: "10px", borderTopRightRadius: "10px"} ,'& :first-child':  {borderTopLeftRadius: "10px", borderBottomLeftRadius: "10px"} }}>
+                  <TableCell sx={{backgroundColor: row.urgent == 1 && "#FFBFBF"}} className={row.unread || subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == 0 ? "table-cell unread first" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.document_Name} </TableCell>
+                  <TableCell sx={{backgroundColor: row.urgent == 1 && "#FFBFBF"}} className={row.unread || subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == 0 ? "table-cell unread" : "table-cell"}  align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.Type == undefined || row.Type == "" ? row.document_Type : row.Type} </TableCell>
+                  <TableCell sx={{backgroundColor: row.urgent == 1 && "#FFBFBF"}} className={row.unread || subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == 0 ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.received_By} </TableCell>
+                  <TableCell sx={{backgroundColor: row.urgent == 1 && "#FFBFBF"}} className={row.unread || subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == 0 ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.fromDep == undefined || row.fromDep == ""? row.fromPer : row.fromDep} </TableCell>
+                  <TableCell sx={{backgroundColor: row.urgent == 1 && "#FFBFBF"}} className={row.unread || subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == 0 ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.date_Received} </TableCell>
+                  <TableCell sx={{backgroundColor: row.urgent == 1 && "#FFBFBF"}} className={row.unread || subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == 0 ? "table-cell unread" : "table-cell"} align="left" > <Badge color="error" badgeContent={"Urgent"} invisible={row.urgent == 0}> 
                   {row.Status === 'Completed' ? <span className='table-Done'>Completed</span>: 
                   row.Status === 'Pending' ? <span className='table-Ongoing'>Pending</span>:
                   row.Status === 'Rejected' ? <span className='table-NotDone'>Rejected</span>: <span className='table-Default'>{row.Status}</span>} </Badge>
                   </TableCell>
-                  <TableCell sx={{backgroundColor: row.urgent == 1 && "#FFBFBF"}} className={row.unread ? "table-cell unread last" : "table-cell"} align="left">
+                  <TableCell sx={{backgroundColor: row.urgent == 1 && "#FFBFBF"}} className={row.unread || subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == 0 ? "table-cell unread last" : "table-cell"} align="left">
                     <Stack spacing={1} direction="row">
                     <Tooltip title={<Typography sx={{fontSize: "0.8rem"}}>View Document</Typography>} arrow>
                       <VisibilityIcon

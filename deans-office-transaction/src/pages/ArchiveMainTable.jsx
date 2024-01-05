@@ -32,6 +32,7 @@ import xlsxViewIcon from '../Images/xlsxView.png'
 import pdfIcon from '../Images/pdf.png'
 import ClearIcon from '@mui/icons-material/Clear';
 import axios from 'axios'
+import JSZip from 'jszip'
 function ArchiveMainTable() {
     const port = "http://localhost:3001"
     axios.defaults.withCredentials = true
@@ -477,16 +478,66 @@ function ArchiveMainTable() {
 
   const handleDownload = (type) => {
     const anchor = document.createElement('a');
+    anchor.style.display = 'none';
+    document.body.appendChild(anchor);
     if (type == "docx"){
       anchor.href = `${port}/document_Files/${fileDocx}`;
       anchor.download = fileDocx;
+      anchor.target = '_blank';
+      anchor.click();
     }
     else if(type == "xlsx"){
       anchor.href = `${port}/document_Files/${fileXlsx}`;
       anchor.download = fileXlsx;
+      anchor.target = '_blank';
+      anchor.click();
     }
-    anchor.target = '_blank';
-    anchor.click();
+    else if(type == "image"){
+      if(imageList.length > 1){
+        const zip = new JSZip()
+        const promises = imageList.map((image, index) => {
+          const imageUrl = `${port}/document_Files/${image}`;
+          const filename = `${image}`;
+  
+          return fetch(imageUrl)
+            .then(response => response.blob())
+            .then(blob => zip.file(filename, blob));
+        });
+  
+        Promise.all(promises).then(() => {
+          zip.generateAsync({ type: 'blob' }).then(blob => {
+            const url = URL.createObjectURL(blob);
+            anchor.href = url;
+            anchor.download = `${displayFile[0].document_Name}.zip`;
+  
+            anchor.target = '_blank';
+            anchor.click();
+  
+            URL.revokeObjectURL(url);
+          });
+        });
+       
+      }else{
+        for(const image of imageList){
+          const imageUrl = `${port}/document_Files/${image}`;
+          fetch(imageUrl)
+            .then(response => response.blob())
+            .then(blob => {
+              const objectUrl = URL.createObjectURL(blob);
+              anchor.href = objectUrl;
+              anchor.download = image;
+              anchor.target = '_blank';
+              anchor.click();
+              URL.revokeObjectURL(objectUrl);
+              console.log(true);
+            })
+            .catch(error => {
+              console.error('Error fetching image:', error);
+            });
+        }
+      }
+    }
+    document.body.removeChild(anchor);
 };
 
   
@@ -640,52 +691,6 @@ function ArchiveMainTable() {
                                         />
                                       </Box>
                                     </Menu>
-
-                                    <TableCell
-                                    className="table-cell2"
-                                      align="left"
-                                      style={{
-                                        minWidth: "100px",
-                                        fontWeight: "bold",
-                                        fontFamily: "Lato",
-                                        fontSize: "1rem",
-                                      }}
-                                    >
-                                      <Typography sx={{
-                                        fontWeight: "bold",
-                                        fontFamily: "Lato",
-                                        fontSize: "1rem",
-                                        display: "flex",
-                                        justifyContent: "space-around",
-                                        alignItems: "center",
-                                        padding: "0"
-                                      }}> {filter2 ?  limitFilterText(filter2, 14): "Received By"}<FilterAltIcon className={filter2|| open3 ? "filter-icon active" : "filter-icon"} aria-label="filter1"  aria-controls={open3 ? 'filter1' : undefined}
-                                      aria-haspopup="true"
-                                      aria-expanded={open3 ? 'true' : undefined}
-                                      onClick={(e) => handleFilter(e, 3)}/></Typography>
-                                    </TableCell>
-                                    <Menu
-                                      id="filter2"
-                                      anchorEl={anchorEl3}
-                                      open={open3}
-                                      onClose={(e) => handleFilterClose(e, 3)}
-                                      MenuListProps={{
-                                        'aria-labelledby': 'filter2',
-                                      }}
-                                    >
-                                      <Box sx={{height: "100%", padding: "20px"}}>
-                                        <Autocomplete
-                                          size="small"
-                                          defaultValue={filter2}
-                                          id="combo-box-demo"
-                                          onChange={(e) => setFilter2(e.target.innerText == undefined ? "" : e.target.innerText)}
-                                          options={filteredOptionsReceive.map((option) => option)}
-                                          sx={{ width: 250, maxHeight: "100px" }}
-                                          renderInput={(params) => <TextField onChange={(e) => setFilter2(e.target.value == undefined ? "" : e.target.value)} {...params} label="Filter Received By" />}
-                                        />
-                                      </Box>
-                                    </Menu>
-
                                     <TableCell
                                     className="table-cell2"
                                       align="left"
@@ -775,6 +780,50 @@ function ArchiveMainTable() {
                                         </Box>
                                       </Box>
                                     </Menu>
+                                    <TableCell
+                                      className="table-cell2"
+                                        align="left"
+                                        style={{
+                                          minWidth: "100px",
+                                          fontWeight: "bold",
+                                          fontFamily: "Lato",
+                                          fontSize: "1rem",
+                                        }}
+                                      >
+                                        <Typography sx={{
+                                          fontWeight: "bold",
+                                          fontFamily: "Lato",
+                                          fontSize: "1rem",
+                                          display: "flex",
+                                          justifyContent: "space-around",
+                                          alignItems: "center",
+                                          padding: "0"
+                                        }}> Status<FilterAltIcon className={filter3|| open6 ? "filter-icon active" : "filter-icon"} aria-label="filter1"  aria-controls={open6 ? 'filter1' : undefined}
+                                        aria-haspopup="true"
+                                        aria-expanded={open6 ? 'true' : undefined}
+                                        onClick={(e) => handleFilter(e, 6)} /></Typography>
+                                      </TableCell>
+                                      <Menu
+                                        id="filter2"
+                                        anchorEl={anchorEl6}
+                                        open={open6}
+                                        onClose={(e) => handleFilterClose(e, 6)}
+                                        MenuListProps={{
+                                          'aria-labelledby': 'filter2',
+                                        }}
+                                      >
+                                        <Box sx={{height: "100%", padding: "2vh"}}>
+                                          <Autocomplete
+                                            size="small"
+                                            defaultValue={filter3}
+                                            id="combo-box-demo"
+                                            onChange={(e) => setFilter3(e.target.innerText == undefined ? "" : e.target.innerText)}
+                                            options={filteredOptionsStatus.map((option) => option)}
+                                            sx={{ width: 250, maxHeight: "100px" }}
+                                            renderInput={(params) => <TextField onChange={(e) => setFilter3(e.target.value == undefined ? "" : e.target.value)} {...params} label="Filter Status" />}
+                                          />
+                                        </Box>
+                                      </Menu>
                                   </TableRow>
                                 </TableHead>
                                 <TableBody sx={{ height: "100%" }}>
@@ -785,9 +834,13 @@ function ArchiveMainTable() {
                                       <TableRow role="checkbox" tabIndex={-1} key={row.uID} sx={{ cursor: "pointer", userSelect: "none", height: "50px", background: "#F0EFF6",'& :last-child': {borderBottomRightRadius: "10px", borderTopRightRadius: "10px"} ,'& :first-child':  {borderTopLeftRadius: "10px", borderBottomLeftRadius: "10px"} }} onClick={() => displayFileInfo(row.Type == undefined ? row.document_Type: row.Type, row.date_Received, row.received_By, row.fromDep, row.fromPer, row.Description, archiveImage.find(item => item.uID == row.uID)?.file_Name, row.uID, row.id, row.archived_By)}>
                                         <TableCell className={fileInfo.uID == row.uID ? 'table-cell active' : 'table-cell'} align="left"> {row.document_Name} </TableCell>
                                         <TableCell className={fileInfo.uID == row.uID ? 'table-cell active' : 'table-cell'} align="left"> {row.Type == undefined || row.Type == "" ? row.document_Type : row.Type} </TableCell>
-                                        <TableCell className={fileInfo.uID == row.uID ? 'table-cell active' : 'table-cell'} align="left"> {row.received_By} </TableCell>
                                         <TableCell className={fileInfo.uID == row.uID ? 'table-cell active' : 'table-cell'} align="left"> {row.fromDep == undefined ? row.fromPer : row.fromDep} </TableCell>
                                         <TableCell className={fileInfo.uID == row.uID ? 'table-cell active' : 'table-cell'} align="left"> {row.date_Received} </TableCell>
+                                        <TableCell className={fileInfo.uID == row.uID ? 'table-cell active' : 'table-cell'} align="left" > 
+                                        {row.Status === 'Completed' ? <span className='table-Done'>Completed</span>: 
+                                        row.Status === 'Pending' ? <span className='table-Ongoing'>Pending</span>:
+                                        row.Status === 'Rejected' ? <span className='table-NotDone'>Rejected</span>: <span className='table-Default'>{row.Status}</span>}
+                                        </TableCell>
                                       </TableRow>
                                       </>
                                     ))}
@@ -1018,6 +1071,9 @@ function ArchiveMainTable() {
                           </Box>
                           <TabPanel value="1">
                           <Grid container xs={12}>
+                          <Button component="label" onClick={(e) => handleDownload("image")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none", marginBottom: "10px"}}>
+                                      Download Image/s
+                              </Button>
                               {imageList.some(item => item.includes(".jpg") || item.includes(".jpeg") || item.includes(".png")) &&(
                                     <ImageList variant="masonry" cols={windowWidth <= 375 ? 1 : windowWidth <=576 && windowWidth > 375? 2 : 3} gap={8}>
                                       {imageList.map((url, index) => (
@@ -1080,6 +1136,9 @@ function ArchiveMainTable() {
                       :
                       imageList.some(item => item.includes(".jpg") || item.includes(".jpeg") || item.includes(".png")) ?(
                         <Grid container xs={12}>
+                          <Button component="label" onClick={(e) => handleDownload("image")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none", marginBottom: "10px"}}>
+                                      Download Image/s
+                              </Button>
                         {imageList.some(item => item.includes(".jpg") || item.includes(".jpeg") || item.includes(".png")) &&(
                               <ImageList variant="masonry" cols={windowWidth <= 375 ? 1 : windowWidth <=576 && windowWidth > 375? 2 : 3} gap={8}>
                                 {imageList.map((url, index) => (
