@@ -29,6 +29,7 @@ import {
 import { Bar } from 'react-chartjs-2';
 import Chart from "react-google-charts";
 import axios from "axios";
+import { Helmet } from 'react-helmet';
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -181,10 +182,38 @@ export const ComponentToPrint = React.forwardRef((props, componentRef) => {
     },
     
   };
-
+  const printFooterRef = useRef(null);
   
+  useEffect(() => {
+    const printHandler = () => {
+      const printFooter = printFooterRef.current;
+      const totalPages = document.querySelectorAll('.print-holder').length;
+
+      let pageCount = 1;
+
+      const updatePageNumber = () => {
+        printFooter.setAttribute('data-page-number', pageCount);
+      };
+
+      window.onafterprint = () => {
+        pageCount++;
+        if (pageCount <= totalPages) {
+          updatePageNumber();
+          window.print();
+        }
+      };
+
+      updatePageNumber();
+      window.print();
+    };
+
+    window.addEventListener('beforeprint', printHandler);
+
+    return () => {
+      window.removeEventListener('beforeprint', printHandler);
+    };
+  }, []);
   return(
-    <>
     <div className="print-holder" ref={componentRef}>
       <div className="print-top" id="header">
         <div className="print-logo">
@@ -261,7 +290,7 @@ export const ComponentToPrint = React.forwardRef((props, componentRef) => {
           </table>
           
       </div>
-      <div className="print-footer">
+      <div className="print-footer" ref={printFooterRef}>
         <Box>
           <Typography sx={{fontWeight: 'bold', fontSize: "0.9rem"}}>
             Printed By
@@ -270,10 +299,7 @@ export const ComponentToPrint = React.forwardRef((props, componentRef) => {
             {user.full_Name}
           </Typography>
         </Box>
-        
-        
       </div>
     </div>
-    </>
   );
 });

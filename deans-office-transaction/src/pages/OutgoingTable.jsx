@@ -156,7 +156,6 @@ export default function StickyHeadTable() {
   };
 
   const handleClose = () => {
-    console.log(imageUpload != null);
     if(newDocuName != "" || newForwardTo != "" || newReceivedBy != "" || newFromDep != "" || newFromPer != "" || newDescription != ""){
       Swal.fire({
         text: "Confirm close? Inputed data will be deleted.", 
@@ -614,7 +613,7 @@ export default function StickyHeadTable() {
       Comment: editComment,
       document_Name: editDocuName
     };
-    if (imageUpload == null) {
+    if (!imageUpload) {
       try{
         await axios.put(`${port}/update`, editFields)
         setSumbmit(false);
@@ -623,7 +622,7 @@ export default function StickyHeadTable() {
       }
       
     } 
-    else if (imageUpload != null) {
+    else if (imageUpload) {
       const formData = new FormData();
       imageUpload.forEach((file, index) => {
         formData.append(`files`, file)

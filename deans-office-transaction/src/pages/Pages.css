@@ -2011,61 +2011,54 @@
 
 /* PRINTING */
 
+#header {
+    position: fixed;
+    top: 0 !important;
+  }
 
-@page{
-    size: A4 landscape !important;
-    margin: 0.5cm;
-    
+.print-holder {
+width: 100%;
+height: 100%;
+background-color: #FFF;
+display: flex;
+flex-direction: column;
+align-items: center;
+position: relative;
+top: 150px;
+print-color-adjust: exact !important;
 }
 
 @media print{
-    #header {
+
+    @page{
+        size: A4 landscape !important;
+        margin: 0.5cm;
+        
+    }
+    .print-footer{
+        
+        text-align: left;
         position: fixed;
-        top: 0 !important;
-      }
-    
-      .print-holder {
-        counter-reset: page;
-        width: 100%;
-        height: 100%;
-        background-color: #FFF;
         display: flex;
-        flex-direction: column;
-        align-items: center;
-        position: relative;
-        top: 150px;
-        print-color-adjust: exact !important;
-      }
+        left: 30px;
+        bottom: 10px;
+        width: 100vh;
+        }
     
-      /* Reset the page counter to 1 for the first page */
-      .print-holder:first-of-type {
-        counter-reset: page 1;
-      }
-    
-      /* Increment the page counter on each new "page" */
-      .print-holder::before {
-        content: counter(page);
+        /* Style the page number if needed */
+    .print-footer:before {
         counter-increment: page;
-        display: none;
-      }
-    
-      /* Style the page number if needed */
-      .print-footer::after {
         content: "Page " counter(page);
         text-align: right;
         position: fixed;
         right: 30px;
         bottom: 10px;
         width: 100%;
-      }
+    }
 }
-.print-footer{
-    text-align: left;
-    position: fixed;
-    left: 30px;
-    bottom: 10px;
-    width: 100%;
-  }
+
+
+  
 
 
 .print-top{

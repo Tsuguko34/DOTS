@@ -864,7 +864,7 @@ export default function StickyHeadTable() {
         Sched: editSched,
         Comment: editComment,
       };
-    if (imageUpload == null) {
+    if (!imageUpload) {
         try{
           if(editDocType == "Student Document"){
             await axios.put(`${port}/update`, editFields)
@@ -888,7 +888,8 @@ export default function StickyHeadTable() {
         }catch(e){
           console.log(e);
         }
-    } else if (imageUpload != null) {
+    } else if (imageUpload) {
+      console.log(imageUpload);
       const formData = new FormData();
       imageUpload.forEach((file, index) => {
         formData.append(`files`, file)

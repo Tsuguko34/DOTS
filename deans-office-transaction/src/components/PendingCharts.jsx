@@ -109,7 +109,7 @@ export default function PendingCharts() {
     }else{
       setIsChecked(false)
     }
-  }, [user])
+  }, [user, docType])
 
   const options = {
     responsive: true,
@@ -204,7 +204,7 @@ export default function PendingCharts() {
                   return <FormControlLabel control={<Checkbox checked={docType.includes(buttonData)}  onChange={(e) => filterChart(buttonData)}/>} label={buttonData}/>
                 })} */}
                  <Autocomplete
-                    sx={{width: "100%"}}
+                    sx={{maxWidth: "500px", minWidth: "150px"}}
                     multiple
                     size='small'
                     value={docType}
