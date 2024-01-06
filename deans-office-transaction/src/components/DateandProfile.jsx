@@ -29,6 +29,7 @@ import { DarkMode } from "./Darkmode";
 import { getDownloadURL, ref } from "firebase/storage";
 import axios from "axios";
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
+import TuneIcon from '@mui/icons-material/Tune';
 import RadioButtonCheckedIcon from "@mui/icons-material/RadioButtonChecked";
 
 function DateandProfile() {
@@ -326,6 +327,15 @@ function DateandProfile() {
             Account Settings
           </NavLink>
         </MenuItem>
+        {(user.role == "Secretary" || user.role == "Dean") && (
+          <MenuItem onClick={handleClose} sx={{p: 0}}>
+            <NavLink to={"../pages/SysSettings"} style={{textDecoration: "none", display: "flex", alignItems:"center", width: "100%", height: "100%", padding: "6px 16px", }} className="menu-drop2">
+              <TuneIcon fontSize="small" sx={{mr: "1vh"}}/>
+              System Settings
+            </NavLink>
+          </MenuItem>
+        )}
+        
         <MenuItem onClick={logout}>
           <Logout fontSize="small" sx={{mr: "1vh"}}/>
           Logout

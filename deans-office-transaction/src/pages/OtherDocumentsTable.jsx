@@ -1231,6 +1231,29 @@ export default function StickyHeadTable() {
     getIncoming()
   }
 
+  const [office, setOffice] = useState([])
+  const [categories, setCategories] = useState([])
+  const [student, setStudent] = useState([])
+  const [faculty, setFaculty] = useState([])
+  const [hire, setHire] = useState([])
+  useEffect(() => {
+    getDropdowns()
+  }, [])
+
+  const getDropdowns = async() => {
+    try{
+      await axios.get(`${port}/getDropdowns`).then((data) => {
+        setOffice(data.data.filter(item => item.option_For == "Office").map(filteredItem => filteredItem.option))
+        setCategories(data.data.filter(item => item.option_For == "Categories").map(filteredItem => filteredItem.option))
+        setStudent(data.data.filter(item => item.option_For == "Student").map(filteredItem => filteredItem.option))
+        setFaculty(data.data.filter(item => item.option_For == "Faculty").map(filteredItem => filteredItem.option))
+        setHire(data.data.filter(item => item.option_For == "Hire").map(filteredItem => filteredItem.option))
+      })
+    }catch(e){
+      console.log(e.message);
+    }
+  }
+
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
     <Toaster position="bottom-center"/>
@@ -1809,7 +1832,7 @@ export default function StickyHeadTable() {
                 value={newType}
                 onSelect={(e) => setNewType(e.target.value)}
                 id="combo-box-demo"
-                options={["Completion Form", "Correction of Grades"]}
+                options={student}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField value={newType} className="auto-complete-text" onChange={(e) => setNewType(e.target.value)} {...params} placeholder="Document Type" label="Document Type"/>}/>
                 <TextField required className="Text-input" id="fromPer" label="Short Description" variant="outlined" onChange={(e) => setNewDescription(e.target.value)}/>
@@ -1882,7 +1905,7 @@ export default function StickyHeadTable() {
                   value={newFromDep ? newFromDep : null}
                   onSelect={(e) => setNewFromDep(e.target.value)}
                   id="combo-box-demo"
-                  options={["Office of the President", "CICT", "Budget", "Accounting", "Cashier", "EVP", "Chancellor Main", "HR", "HRMO"]}
+                  options={office}
                   sx={{ width: "100%"}}
                   renderInput={(params) => <TextField value={newFromDep ? newFromDep : null} className="auto-complete-text" onChange={(e) => setNewFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
                 <TextField className="Text-input" id="fromPer" label="Faculty Name" variant="outlined" onChange={(e) => setNewFromPer(e.target.value)}/>
@@ -1892,7 +1915,7 @@ export default function StickyHeadTable() {
                 value={newType}
                 onSelect={(e) => setNewType(e.target.value)}
                 id="combo-box-demo"
-                options={["DTR", "Estimates of Honoraria", "Faculty Teaching Load", "Faculty Workload", "Application for Leave", "Training Request Form"]}
+                options={faculty}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField value={newType} className="auto-complete-text" onChange={(e) => setNewType(e.target.value)} {...params} placeholder="Document Type" label="Document Type"/>}/>
                 <TextField required className="Text-input" id="fromPer" label="Short Description" variant="outlined" onChange={(e) => setNewDescription(e.target.value)}/>
@@ -1962,7 +1985,7 @@ export default function StickyHeadTable() {
                   value={newFromDep ? newFromDep : null}
                   onSelect={(e) => setNewFromDep(e.target.value)}
                   id="combo-box-demo"
-                  options={["Office of the President", "CICT", "Budget", "Accounting", "Cashier", "EVP", "Chancellor Main", "HR", "HRMO"]}
+                  options={office}
                   sx={{ width: "100%"}}
                   renderInput={(params) => <TextField value={newFromDep ? newFromDep : null} className="auto-complete-text" onChange={(e) => setNewFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
                 <TextField className="Text-input" id="fromPer" label="Applicant Name" variant="outlined" onChange={(e) => setNewFromPer(e.target.value)}/>
@@ -1972,7 +1995,7 @@ export default function StickyHeadTable() {
                 value={newType}
                 onSelect={(e) => setNewType(e.target.value)}
                 id="combo-box-demo"
-                options={["Personel Requisition Form", "Contract"]}
+                options={hire}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField value={newType} className="auto-complete-text" onChange={(e) => setNewType(e.target.value)} {...params} placeholder="Document Type" label="Document Type"/>}/>
                 <TextField required className="Text-input" id="fromPer" label="Short Description" variant="outlined" onChange={(e) => setNewDescription(e.target.value)}/>
@@ -2041,7 +2064,7 @@ export default function StickyHeadTable() {
                   value={newFromDep ? newFromDep : null}
                   onSelect={(e) => setNewFromDep(e.target.value)}
                   id="combo-box-demo"
-                  options={["Office of the President", "CICT", "Budget", "Accounting", "Cashier", "EVP", "Chancellor Main", "HR", "HRMO"]}
+                  options={office}
                   sx={{ width: "100%"}}
                   renderInput={(params) => <TextField value={newFromDep ? newFromDep : null} className="auto-complete-text" onChange={(e) => setNewFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
                 <TextField className="Text-input" id="fromPer" label="Ratee Name" variant="outlined" onChange={(e) => setNewFromPer(e.target.value)}/>
@@ -2120,7 +2143,7 @@ export default function StickyHeadTable() {
                   value={newFromDep ? newFromDep : null}
                   onSelect={(e) => setNewFromDep(e.target.value)}
                   id="combo-box-demo"
-                  options={["Office of the President", "CICT", "Budget", "Accounting", "Cashier", "EVP", "Chancellor Main", "HR", "HRMO"]}
+                  options={office}
                   sx={{ width: "100%"}}
                 renderInput={(params) => <TextField value={newFromDep ? newFromDep : null} className="auto-complete-text" onChange={(e) => setNewFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
                 <TextField className="Text-input" id="fromPer" label="Contact Person" variant="outlined" onChange={(e) => setNewFromPer(e.target.value)}/>
@@ -2190,7 +2213,7 @@ export default function StickyHeadTable() {
                 value={newFromDep ? newFromDep : null}
                 onSelect={(e) => setNewFromDep(e.target.value)}
                 id="combo-box-demo"
-                options={["Office of the President", "CICT", "Budget", "Accounting", "Cashier", "EVP", "Chancellor Main", "HR", "HRMO"]}
+                options={office}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField value={newFromDep ? newFromDep : null} className="auto-complete-text" onChange={(e) => setNewFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
                 <TextField className="Text-input" id="fromPer" label="Contact Person" variant="outlined" onChange={(e) => setNewFromPer(e.target.value)}/>
@@ -2266,7 +2289,7 @@ export default function StickyHeadTable() {
                   value={newFromDep ? newFromDep : null}
                   onSelect={(e) => setNewFromDep(e.target.value)}
                   id="combo-box-demo"
-                  options={["Office of the President", "CICT", "Budget", "Accounting", "Cashier", "EVP", "Chancellor Main", "HR", "HRMO"]}
+                  options={office}
                   sx={{ width: "100%"}}
                   renderInput={(params) => <TextField value={newFromDep ? newFromDep : null} className="auto-complete-text" onChange={(e) => setNewFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
                   <TextField className="Text-input" id="fromPer" label="Contact Person" variant="outlined" onChange={(e) => setNewFromPer(e.target.value)}/>
@@ -2430,7 +2453,7 @@ export default function StickyHeadTable() {
   
                 onSelect={(e) => setEditType(e.target.value)}
                 id="combo-box-demo"
-                options={["Completion Form", "Correction of Grades"]}
+                options={student}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField value={editType} className="auto-complete-text" onChange={(e) => setEditType(e.target.value)} {...params} placeholder="Document Type" label="Document Type"/>}/>
                 <TextField required value={editDescription} className="Text-input" id="fromPer" label="Short Description" variant="outlined" onChange={(e) => setEditDescription(e.target.value)}/>
@@ -2477,7 +2500,7 @@ export default function StickyHeadTable() {
   
                 onSelect={(e) => setEditFromDep(e.target.value)}
                 id="combo-box-demo"
-                options={["Office of the President", "CICT", "Budget", "Accounting", "Cashier", "EVP", "Chancellor Main", "HR", "HRMO"]}
+                options={office}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField value={editFromDep} className="auto-complete-text" onChange={(e) => setEditFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
                 <TextField value={editFromPer} className="Text-input" id="fromPer" label="Faculty Name" variant="outlined" onChange={(e) => setEditFromPer(e.target.value)}/>
@@ -2487,7 +2510,7 @@ export default function StickyHeadTable() {
   
                 onSelect={(e) => setEditType(e.target.value)}
                 id="combo-box-demo"
-                options={["DTR", "Estimates of Honoraria", "Faculty Teaching Load", "Faculty Workload", "Application for Leave", "Training Request Form"]}
+                options={faculty}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField value={editType} className="auto-complete-text" onChange={(e) => setEditType(e.target.value)} {...params} placeholder="Document Type" label="Document Type"/>}/>
                 <TextField required value={editDescription} className="Text-input" id="fromPer" label="Short Description" variant="outlined" onChange={(e) => setEditDescription(e.target.value)}/>
@@ -2534,7 +2557,7 @@ export default function StickyHeadTable() {
   
                 onSelect={(e) => setEditFromDep(e.target.value)}
                 id="combo-box-demo"
-                options={["Office of the President", "CICT", "Budget", "Accounting", "Cashier", "EVP", "Chancellor Main", "HR", "HRMO"]}
+                options={office}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField value={editFromDep} className="auto-complete-text" onChange={(e) => setEditFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
                 <TextField value={editFromPer} className="Text-input" id="fromPer" label="Applicant Name" variant="outlined" onChange={(e) => setEditFromPer(e.target.value)}/>
@@ -2544,7 +2567,7 @@ export default function StickyHeadTable() {
   
                 onSelect={(e) => setEditType(e.target.value)}
                 id="combo-box-demo"
-                options={["Personel Requisition Form", "Contract"]}
+                options={hire}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField value={editType} className="auto-complete-text" onChange={(e) => setEditType(e.target.value)} {...params} placeholder="Document Type" label="Document Type"/>}/>
                 <TextField required value={editDescription} className="Text-input" id="fromPer" label="Short Description" variant="outlined" onChange={(e) => setEditDescription(e.target.value)}/>
@@ -2591,7 +2614,7 @@ export default function StickyHeadTable() {
   
                 onSelect={(e) => setEditFromDep(e.target.value)}
                 id="combo-box-demo"
-                options={["Office of the President", "CICT", "Budget", "Accounting", "Cashier", "EVP", "Chancellor Main", "HR", "HRMO"]}
+                options={office}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField value={editFromDep} className="auto-complete-text" onChange={(e) => setEditFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
                 <TextField value={editFromPer} className="Text-input" id="fromPer" label="Ratee Name" variant="outlined" onChange={(e) => setEditFromPer(e.target.value)}/>
@@ -2687,7 +2710,7 @@ export default function StickyHeadTable() {
   
                 onSelect={(e) => setEditFromDep(e.target.value)}
                 id="combo-box-demo"
-                options={["Office of the President", "CICT", "Budget", "Accounting", "Cashier", "EVP", "Chancellor Main", "HR", "HRMO"]}
+                options={office}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField value={editFromDep} className="auto-complete-text" onChange={(e) => setEditFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
                 <TextField value={editFromPer} className="Text-input" id="fromPer" label="Contact Person" variant="outlined" onChange={(e) => setEditFromPer(e.target.value)}/>
@@ -2740,7 +2763,7 @@ export default function StickyHeadTable() {
   
                 onSelect={(e) => setEditFromDep(e.target.value)}
                 id="combo-box-demo"
-                options={["Office of the President", "CICT", "Budget", "Accounting", "Cashier", "EVP", "Chancellor Main", "HR", "HRMO"]}
+                options={office}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField value={editFromDep} className="auto-complete-text" onChange={(e) => setEditFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
                   <TextField value={editFromPer} className="Text-input" id="fromPer" label="Contact Person" variant="outlined" onChange={(e) => setEditFromPer(e.target.value)}/>
@@ -2750,7 +2773,7 @@ export default function StickyHeadTable() {
     
                   onSelect={(e) => setEditType(e.target.value)}
                   id="combo-box-demo"
-                  options={["Completion Form", "Correction of Grades"]}
+                  options={student}
                   sx={{ width: "100%"}}
                   renderInput={(params) => <TextField value={editType} className="auto-complete-text" onChange={(e) => setEditType(e.target.value)} {...params} placeholder="Document Type" label="Document Type"/>}/>
                   <TextField required value={editDescription} className="Text-input" id="fromPer" label="Short Description" variant="outlined" onChange={(e) => setEditDescription(e.target.value)}/>

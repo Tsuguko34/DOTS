@@ -24,6 +24,8 @@ import RoleBasedRoutes from './RoleBasedRoutes';
 import SettingsRoute from './SettingsRoute';
 import Verification from '../pages/verification';
 import CompleteDetails from '../pages/CompleteDetails';
+import SysSettings from '../pages/SysSettings';
+import SysSettingsRoute from './SysSettingsRoute';
 
 function Navpages() {
   return (
@@ -36,6 +38,7 @@ function Navpages() {
             <Route path='/pages/Archives' element={<PrivateRoutes><Archives /></PrivateRoutes>} />
             <Route path='/pages/Templates' element={<PrivateRoutes><Templates /></PrivateRoutes>} />
             <Route path='/pages/Settings' element={<PrivateRoutes><Settings /></PrivateRoutes>} />
+            <Route path='/pages/SysSettings' element={<PrivateRoutes><SysSettingsRoute><SysSettings /></SysSettingsRoute></PrivateRoutes>} />
             <Route path='/pages/IncomingMemo' element={<PrivateRoutes><RoleBasedRoutes><IncomingMemo /></RoleBasedRoutes></PrivateRoutes>} />
             <Route path='/pages/OutgoingMemo' element={<PrivateRoutes><RoleBasedRoutes><OutgoingMemo /></RoleBasedRoutes></PrivateRoutes>} />
             <Route path='/pages/Archives/pages/ArchiveMainTable/:documentType/:year' element={<PrivateRoutes><ArchiveMainTable /></PrivateRoutes>} />

@@ -252,6 +252,98 @@ app.put("/handleDeactivate", (req, res) => {
 })
 
 //Documents
+app.get("/getDropdowns", (req, res) => {
+    const q = `SELECT * FROM dropdowns`
+    db.query(q, (err, data) => {
+        if (err) console.log(err);
+        return res.json(data);
+    })
+})
+
+app.post("/addDropdowns", (req, res) => {
+    const add = "INSERT INTO dropdowns (`option`, `option_For`) VALUES (?)"
+    if(req.query.type == "Office"){
+        const q = `DELETE FROM dropdowns WHERE option_For = 'Office'`
+        db.query(q, (err, data) => {
+            if (err) console.log(err);
+            for(const drop of req.body.office){
+                const values = [
+                    drop,
+                    "Office"
+                ]
+                db.query(add, [values],(err, data) => {
+                    if (err) console.log(err);
+                })
+            }
+            return res.status(200).json({success : true});
+        })
+    }
+    if(req.query.type == "Categories"){
+        const q = `DELETE FROM dropdowns WHERE option_For = 'Categories'`
+        db.query(q, (err, data) => {
+            if (err) console.log(err);
+            for(const drop of req.body.categories){
+                const values = [
+                    drop,
+                    "Categories"
+                ]
+                db.query(add, [values],(err, data) => {
+                    if (err) console.log(err);
+                })
+            }
+            return res.status(200).json({success : true});
+        })
+    }
+    if(req.query.type == "Student"){
+        const q = `DELETE FROM dropdowns WHERE option_For = 'Student'`
+        db.query(q, (err, data) => {
+            if (err) console.log(err);
+            for(const drop of req.body.student){
+                const values = [
+                    drop,
+                    "Student"
+                ]
+                db.query(add, [values],(err, data) => {
+                    if (err) console.log(err);
+                })
+            }
+            return res.status(200).json({success : true});
+        })
+    }
+    if(req.query.type == "Faculty"){
+        const q = `DELETE FROM dropdowns WHERE option_For = 'Faculty'`
+        db.query(q, (err, data) => {
+            if (err) console.log(err);
+            for(const drop of req.body.faculty){
+                const values = [
+                    drop,
+                    "Faculty"
+                ]
+                db.query(add, [values],(err, data) => {
+                    if (err) console.log(err);
+                })
+            }
+            return res.status(200).json({success : true});
+        })
+    }
+    if(req.query.type == "Hire"){
+        const q = `DELETE FROM dropdowns WHERE option_For = 'Hire'`
+        db.query(q, (err, data) => {
+            if (err) console.log(err);
+            for(const drop of req.body.hire){
+                const values = [
+                    drop,
+                    "Hire"
+                ]
+                db.query(add, [values],(err, data) => {
+                    if (err) console.log(err);
+                })
+            }
+            return res.status(200).json({success : true});
+        })
+    }
+})
+
 const templateStorage = multer.diskStorage({
     destination: "../templates",
     filename: function (req, file, cb) {
@@ -856,33 +948,6 @@ cron.schedule('0 0 * * *', async() => {
         console.log(e.message);
     }
 })
-
-const find = async() => {
-    try{
-        const snapshot = await axios.get(`${port}/getRequests`);
-        const users = await axios.get(`${port}/getUsers`);
-        const userList = users.data
-        const dateToday = new Date()
-       
-        snapshot.data.forEach(async(docSnap) => {
-            const dateReceived = new Date(docSnap.date_Received)
-            const reminder = dateReceived.setDate(dateReceived.getDate() + 3)
-            if (docSnap.uID == '0c849cfb-0309-4510-af7c-237224db6718'){
-                const newNotif = {
-                    docId: docSnap.uID,
-                    userUID: docSnap.forward_To,
-                    isRead: 0,
-                    multiple: 0
-                  }
-                await axios.post(`${port}/notif?reminder=remind`, newNotif)
-            }
-        });
-    }catch(e){
-        console.log(e.message);
-    }
-}
-
-find()
 
 app.listen(3001, () => { 
     

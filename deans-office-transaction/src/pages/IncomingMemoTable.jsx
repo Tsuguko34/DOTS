@@ -937,6 +937,21 @@ export default function StickyHeadTable() {
     getIncoming()
   }
 
+  const [office, setOffice] = useState([])
+  useEffect(() => {
+    getDropdowns()
+  }, [])
+
+  const getDropdowns = async() => {
+    try{
+      await axios.get(`${port}/getDropdowns`).then((data) => {
+        setOffice(data.data.filter(item => item.option_For == "Office").map(filteredItem => filteredItem.option))
+      })
+    }catch(e){
+      console.log(e.message);
+    }
+  }
+
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
     <Toaster position="bottom-center"/>
@@ -1460,7 +1475,7 @@ export default function StickyHeadTable() {
               value={newFromDep ? newFromDep : null}
               onSelect={(e) => setNewFromDep(e.target.value)}
               id="combo-box-demo"
-              options={["Office of the President", "CICT", "Budget", "Accounting", "Cashier", "EVP", "Chancellor Main", "HR", "HRMO"]}
+              options={office}
               sx={{ width: "100%"}}
               renderInput={(params) => <TextField value={newFromDep ? newFromDep : null} className="auto-complete-text" onChange={(e) => setNewFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
             <TextField className="Text-input" id="fromPer" label="Contact Person" variant="outlined" onChange={(e) => setNewFromPer(e.target.value)}/>
@@ -1619,7 +1634,7 @@ export default function StickyHeadTable() {
               value={editFromDep}
               onSelect={(e) => setEditFromDep(e.target.value)}
               id="combo-box-demo"
-              options={["Office of the President", "CICT", "Budget", "Accounting", "Cashier", "EVP", "Chancellor Main", "HR", "HRMO"]}
+              options={office}
               sx={{ width: "100%"}}
               renderInput={(params) => <TextField value={editFromDep} className="auto-complete-text" onChange={(e) => setEditFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
             <TextField value={editFromPer} className="Text-input" id="fromPer" label="Contact Person" variant="outlined" onChange={(e) => setEditFromPer(e.target.value)}/>

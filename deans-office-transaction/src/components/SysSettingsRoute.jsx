@@ -6,7 +6,7 @@ import Swal from "sweetalert2";
 import toast, { Toaster } from "react-hot-toast";
 import axios from "axios";
 
-const RoleBasedRoutes = ({children}) => {
+const SysSettingsRoute = ({children}) => {
     const port = "http://localhost:3001"
     axios.defaults.withCredentials = true
     const [user, setUser] = useState([]);
@@ -15,8 +15,10 @@ const RoleBasedRoutes = ({children}) => {
         const getUser = async() => {
         try{
             await axios.get(`${port}/getUser`).then((data) => {
-                if(data.data[0].role == "Faculty"){
+                if(data.data[0].role != "Secretary" && data.data[0].role != "Dean"){
                     return navigate('/pages/Dashboard')
+                }else{
+                    return children
                 }
             })
         }catch(e){
@@ -28,4 +30,4 @@ const RoleBasedRoutes = ({children}) => {
     return children
 }
 
-export default RoleBasedRoutes
+export default SysSettingsRoute
