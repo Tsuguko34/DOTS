@@ -1429,7 +1429,7 @@
 .welcome-img{
     display: flex;
     justify-content: center;
-    height: 100% !important;
+    height: 40px !important;
 }
 
 .welcome-msg{

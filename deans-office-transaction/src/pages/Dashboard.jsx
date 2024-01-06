@@ -686,13 +686,7 @@ function Dashboard() {
               <>
               <Typography sx={{fontSize: "1.2rem", fontWeight: "bold"}} className="type-title"><Typewriter words={['Schedules']} typeSpeed={40}/></Typography>
               <Card sx={{height: windowWidth > 768 ? "400px" : "100%",maxHeight: "400px", display:"flex", justifyContent: "center", alignItems: "center", p:windowWidth > 768 ? "21.6px" : 0}} className="dash-cards">
-                <div className="dash-graphs-holder">
-                  <div className="calendar-holder">
-                    <div className="calendar-card">
-                      <Calendar />
-                    </div>
-                  </div>
-                </div>
+                <iframe src="https://calendar.google.com/calendar/embed?src=carpio.johnjazpher.dc.3188%40gmail.com&ctz=Asia%2FManila" style="border: 0" width="800" height="600" frameborder="0" scrolling="no"></iframe>
               </Card>
               </>
               
@@ -784,7 +778,7 @@ function Dashboard() {
            
               <Grid container sx={12} gap={2} wrap="noWrap">
               <Grid item xs={12}>
-                <Card sx={{width: '100%',height: "100px", display:"flex", justifyContent: "center", alignItems: "center", p: "21.6px", mb: "21.8px", maxHeight: '100px', userSelect: 'none'}} className="dash-gradient">
+                <Card sx={{width: '100%',height: "50px", display:"flex", justifyContent: "center", alignItems: "center", p: "21.6px", mb: "21.8px", maxHeight: '100px', userSelect: 'none'}} className="dash-gradient">
                 {user != undefined && user.role === "Dean" && (
                   <div className="welcome-holder2" onClick={openLogs} style={{cursor: "pointer", userSelect: "none"}}>
                     <div className="welcome-img">
@@ -803,14 +797,8 @@ function Dashboard() {
            
             <Typography sx={{fontSize: "1.2rem", fontWeight: "bold"}} className="type-title"><Typewriter words={['Schedules']} typeSpeed={40}/></Typography>
             <Grid item xs={12} sm={12}>
-              <Card sx={{height: windowWidth > 768 ? "350px" : "400px",maxHeight: "400px", display:"flex", justifyContent: "center", alignItems: "center", p:windowWidth > 768 ? "21.6px" : 0}} className="dash-cards">
-                <div className="dash-graphs-holder">
-                  <div className="calendar-holder">
-                    <div className="calendar-card">
-                      <Calendar />
-                    </div>
-                  </div>
-                </div>
+              <Card sx={{height: windowWidth > 768 ? "450px" : "500px",maxHeight: "400px", display:"flex", justifyContent: "center", alignItems: "center", p:windowWidth > 768 ? "21.6px" : 0}} className="dash-cards">
+                <iframe src="https://calendar.google.com/calendar/embed?src=carpio.johnjazpher.dc.3188%40gmail.com&ctz=Asia%2FManila" style={{border: 0}} width={'550'} height="350" frameborder="0" scrolling="no"></iframe>
               </Card>
             </Grid>
             </Grid>
