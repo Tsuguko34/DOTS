@@ -252,6 +252,38 @@ app.put("/handleDeactivate", (req, res) => {
 })
 
 //Documents
+const signatureStorage = multer.diskStorage({
+    destination: "../signature",
+    filename: function (req, file, cb) {
+        return cb(null, `${req.query.docID}-${req.query.sigFor}-${file.originalname}`)
+    }
+})
+const uploadSignature = multer({storage: signatureStorage})
+app.use('/signature', express.static('../signature'));
+
+app.post("/addSignature", uploadSignature.single("files"),(req, res) => {
+    const q = "INSERT INTO signatures (`docID`, `signature_Name`, `signature_For`) VALUES (?)"
+    const values = [
+        req.query.docID,
+        `${req.query.docID}-${req.query.sigFor}-${req.file.originalname}`,
+        req.query.sigFor
+    ]
+
+    db.query(q, [values], (err, data) => {
+        if (err) return console.log(err);
+        return res.status(200).json({success : true})
+    })
+})
+
+app.get("/getSignatures", (req, res) => {
+    const q = `SELECT * FROM signatures`
+
+    db.query(q, (err, data) => {
+        if(err) return console.log(err);
+        return res.status(200).json(data)
+    })
+})
+
 app.get("/getDropdowns", (req, res) => {
     const q = `SELECT * FROM dropdowns`
     db.query(q, (err, data) => {
@@ -516,7 +548,7 @@ app.get("/documents", (req, res) => {
 const storage = multer.diskStorage({
     destination: "../document_Files",
     filename: function (req, file, cb) {
-        return cb(null, `${file.originalname}`)
+        return cb(null, `${req.query.docID}-${file.originalname}`)
     }
 })
 
@@ -534,7 +566,7 @@ app.post("/documentFiles", upload.array('files'),(req, res) => {
         for(const file of req.files){
             const q = "INSERT INTO files (`file_Name`,`uID`, `size`) VALUES (?)"
             const values = [
-                file.filename,
+                `${req.query.docID}-${file.originalname}`,
                 req.body.uID,
                 bytesToSize(file.size)
             ]
@@ -556,7 +588,7 @@ app.post("/documentFiles", upload.array('files'),(req, res) => {
 })
 
 app.post("/documents",(req, res) => {
-    const q = "INSERT INTO documents (`document_Name`,`document_Type`,`date_Received`,`received_By`,`fromPer`,`fromDep`,`time_Received`,`uID`,`Status`,`Type`,`Description`,`Comment`,`forward_To`,`Remark`,`deleted_at`,`urgent`,`unread`, `Sched_Date`, `Sched`) VALUES (?)"
+    const q = "INSERT INTO documents (`document_Name`,`document_Type`,`date_Received`,`received_By`,`fromPer`,`fromDep`,`time_Received`,`uID`,`Status`,`Type`,`Description`,`Comment`,`forward_To`,`Remark`,`deleted_at`,`urgent`,`unread`, `Sched_Date`, `Sched`, `tracking`) VALUES (?)"
     const values = [
         req.body.document_Name,
         req.body.document_Type,
@@ -577,6 +609,7 @@ app.post("/documents",(req, res) => {
         req.body.unread,
         req.body.Sched_Date,
         req.body.Sched,
+        req.body.tracking,
     ]
 
     db.query(q, [values], (err, data) => {
@@ -587,7 +620,7 @@ app.post("/documents",(req, res) => {
 })
 
 app.put("/update",(req, res) => {
-    const q = "UPDATE documents SET `document_Name` = ?,`date_Received` = ?,`received_By` = ?,`fromPer` = ?,`fromDep` = ?,`time_Received` = ?,`Status` = ?,`Type` = ?,`Description` = ?,`Comment` = ? WHERE uID = ?"
+    const q = "UPDATE documents SET `document_Name` = ?,`date_Received` = ?,`received_By` = ?,`fromPer` = ?,`fromDep` = ?,`time_Received` = ?,`Status` = ?,`Type` = ?,`Description` = ?,`Comment` = ? ,`tracking` = ? WHERE uID = ?"
     const values = [
         req.body.document_Name,
         req.body.date_Received,
@@ -599,6 +632,7 @@ app.put("/update",(req, res) => {
         req.body.Type,
         req.body.Description,
         req.body.Comment,
+        req.body.tracking,
     ]
 
     db.query(q, [...values, req.body.uID], (err, data) => {
@@ -641,7 +675,7 @@ app.put("/updateFile", upload.array('files'),(req, res) => {
                 for(const file of req.files){
                     const insertQuery = "INSERT INTO files (`file_Name`, `uID`, `size`) VALUES (?)";
                     const values = [
-                        file.filename,
+                        `${req.query.docID}-${file.originalname}`,
                         req.body.uID,
                         bytesToSize(file.size),
                     ]
@@ -686,7 +720,7 @@ app.get("/getFilteredArchives",(req, res) => {
 app.post("/archiveFile",(req, res) => {
     const selectQuery = `SELECT * FROM documents WHERE uID = '${req.query.id}'`;
     const deleteQuery = `DELETE FROM documents WHERE uID = '${req.query.id}'`;
-    const insertQuery = "INSERT INTO archives (`document_Name`,`document_Type`,`date_Received`,`received_By`,`fromPer`,`fromDep`,`time_Received`,`uID`,`Status`,`Type`,`Description`,`Comment`,`forward_To`,`Remark`,`deleted_at`,`urgent`,`unread`, `archived_By`) VALUES (?)"
+    const insertQuery = "INSERT INTO archives (`document_Name`,`document_Type`,`date_Received`,`received_By`,`fromPer`,`fromDep`,`time_Received`,`uID`,`Status`,`Type`,`Description`,`Comment`,`forward_To`,`Remark`,`deleted_at`,`urgent`,`unread`, `archived_By`, `tracker`) VALUES (?)"
     db.query(selectQuery, (err, data) => {
       if (err) return res.json(err);
         const selectedData = data[0]
@@ -708,7 +742,8 @@ app.post("/archiveFile",(req, res) => {
             selectedData.deleted_at,
             selectedData.urgent,
             selectedData.unread,
-            req.query.user
+            req.query.user,
+            selectedData.tracker
         ]
         db.query(insertQuery, [values], (err, insertData) => {
             if (err) return res.json(err);
@@ -897,7 +932,7 @@ cron.schedule('0 0 * * *', async() => {
         snapshot.data.forEach(async(docSnap) => {
             const dateReceived = new Date(docSnap.date_Received)
             const archiveAt = dateReceived.setDate(dateReceived.getDate() + 30)
-            if (archiveAt == dateToday) {
+            if (archiveAt >= dateToday) {
                 if(docSnap.Status != "Pending"){
                     try{
                         await axios.post(`${port}/archiveFile?id=${docSnap.uID}&user=System`)
@@ -922,7 +957,7 @@ cron.schedule('0 0 * * *', async() => {
         snapshot.data.forEach(async(docSnap) => {
             const dateReceived = new Date(docSnap.date_Received)
             const reminder = dateReceived.setDate(dateReceived.getDate() + 3)
-            if (reminder == dateToday) {
+            if (reminder >= dateToday) {
                 if(docSnap.Status == "Pending"){
                     const transporter = nodemailer.createTransport({
                         service: 'gmail',

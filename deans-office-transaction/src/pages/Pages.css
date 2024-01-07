@@ -1271,6 +1271,14 @@
     background-color: var(--table_row_color) !important;
 }
 
+.MuiTableRow-root.drop-down:hover{
+    background-color: white !important;
+}
+
+.MuiTableRow-root.drop-down .MuiTableCell-root:hover{
+    background-color: white !important;
+}
+
 .MuiTableRow-root:hover{
     background: var(--table_row_color) !important;
     transition: 150ms !important;

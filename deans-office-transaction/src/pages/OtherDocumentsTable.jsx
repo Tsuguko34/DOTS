@@ -100,6 +100,8 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import emailjs from '@emailjs/browser';
 import axios from "axios";
 import JSZip from "jszip";
+import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArrowRight';
+import SignatureCanvas from 'react-signature-canvas'
 
 export default function StickyHeadTable() {
   const port = "http://localhost:3001"
@@ -276,7 +278,8 @@ export default function StickyHeadTable() {
             Remark: newIncomingOutgoing,
             deleted_at: "",
             urgent: urgent ? 1 : 0,
-            unread: 1
+            unread: 1,
+            tracking: newFromDep ? newFromDep : users.find(item => item.uID == newForwardTo)?.full_Name
           };
     }
     else if (category == "Faculty Document"){
@@ -297,7 +300,8 @@ export default function StickyHeadTable() {
             Remark: newIncomingOutgoing,
             deleted_at: "",
             urgent: urgent ? 1 : 0,
-            unread: 1
+            unread: 1,
+            tracking: newFromDep ? newFromDep : users.find(item => item.uID == newForwardTo)?.full_Name
           };
     }
     else if (category == "New Hire Document"){
@@ -318,7 +322,8 @@ export default function StickyHeadTable() {
             Remark: newIncomingOutgoing,
             deleted_at: "",
             urgent: urgent ? 1 : 0,
-            unread: 1
+            unread: 1,
+            tracking: newFromDep ? newFromDep : users.find(item => item.uID == newForwardTo)?.full_Name
           };
     }
     else if (category == "IPCR/OPCR"){
@@ -339,7 +344,8 @@ export default function StickyHeadTable() {
             Remark: newIncomingOutgoing,
             deleted_at: "",
             urgent: urgent ? 1 : 0,
-      unread: 1
+            unread: 1,
+            tracking: newFromDep ? newFromDep : users.find(item => item.uID == newForwardTo)?.full_Name
           };
     }
     else if (category == "Travel Order"){
@@ -359,7 +365,8 @@ export default function StickyHeadTable() {
             Remark: newIncomingOutgoing,
             deleted_at: "",
             urgent: urgent ? 1 : 0,
-            unread: 1
+            unread: 1,
+            tracking: newFromDep ? newFromDep : users.find(item => item.uID == newForwardTo)?.full_Name
           };
     }
     else if (category == "Meeting Request"){
@@ -381,7 +388,8 @@ export default function StickyHeadTable() {
             Remark: newIncomingOutgoing,
             deleted_at: "",
             urgent: urgent ? 1 : 0,
-            unread: 1
+            unread: 1,
+            tracking: newFromDep ? newFromDep : users.find(item => item.uID == newForwardTo)?.full_Name
           };
     }
     else {
@@ -402,7 +410,8 @@ export default function StickyHeadTable() {
         Remark: newIncomingOutgoing,
         deleted_at: "",
         urgent: urgent ? 1 : 0,
-        unread: 1
+        unread: 1,
+        tracking: newFromDep ? newFromDep : users.find(item => item.uID == newForwardTo)?.full_Name
       };
     }
     const formData = new FormData();
@@ -412,7 +421,7 @@ export default function StickyHeadTable() {
 
     formData.append('uID', documentsToBeAdded.uID);
     try{
-      await axios.post(`${port}/documentFiles`, formData, {
+      await axios.post(`${port}/documentFiles?docID=${documentsToBeAdded.uID}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -604,6 +613,7 @@ export default function StickyHeadTable() {
   const [filePDF, setFilePDF] = useState([]);
   const [fileDocx, setFileDocx] = useState([]);
   const [fileXlsx, setFileXlsx] = useState([]);
+  const [currentPDF, setCurrentPDF] = useState([])
   const [loading3, setLoading3] = useState(true);
   const openFile = (id) => {
     setLoading3(true)
@@ -615,22 +625,30 @@ export default function StickyHeadTable() {
     const data = await axios.get(`${port}/openFile?id=${id}`);
     setDisplayFile(data.data);
     imageListRef.data.forEach((item) => {
-      console.log(item);
         if(item.file_Name.includes('.png') || item.file_Name.includes('.jpg') || item.file_Name.includes('.jpeg')){
             setImageList((prev) => [...prev, item.file_Name]);
         }
         else if (item.file_Name.includes('.pdf')){
-                setFilePDF(item.file_Name);
+            setFilePDF((prev) => [...prev, item]);
         }
         else if (item.file_Name.includes('.docx') || item.file_Name.includes('.doc')){
-              setFileDocx(item.file_Name);
+            setFileDocx((prev) => [...prev, item]);
         }
         else if (item.file_Name.includes('.xlsx')){
-              setFileXlsx(item.file_Name);
+            setFileXlsx((prev) => [...prev, item]);
         }
     });
     setLoading2(false);
+   
   };
+
+  const handlePDFChange = (event, newValue) => {
+    setCurrentPDF(newValue);
+  };
+  useEffect(() => {
+    setCurrentPDF(filePDF[0])
+    console.log(currentPDF);
+  }, [filePDF])
 
   const closeFile = async () => {
     await setOpenShowFile(false);
@@ -699,6 +717,7 @@ export default function StickyHeadTable() {
   const [editSched, setEditSched] = useState("");
   const [editImageHolder, setEditImageHolder] = useState([]);
   const [editImage, setEditImage] = useState([]);
+  const [editTracking, setEditTracking] = useState("");
   const editIncoming = async(
     id,
     dateRecieved,
@@ -716,7 +735,8 @@ export default function StickyHeadTable() {
     category,
     comment,
     sched_Date,
-    meeting_Details
+    meeting_Details,
+    tracking
   ) => {
     const imageListRef = await axios.get(`${port}/getFile?id=${uID}`);
     console.log(imageListRef.data);
@@ -751,6 +771,7 @@ export default function StickyHeadTable() {
       Remark: "",
       deleted_at: "",
       document_Name: docuName,
+      tracking: tracking
     };
     setFormID(data);
     handleEditOpen();
@@ -782,6 +803,7 @@ export default function StickyHeadTable() {
     setEditComment(formID.Comment)
     setEditSched_Date(formatDateBack(formID.Sched_Date))
     setEditSched(formID.Sched)
+    setEditTracking(formID.tracking)
   }, [formID]);
 
   const updateIncoming = async (e) => {
@@ -798,6 +820,7 @@ export default function StickyHeadTable() {
         Type: editType,
         Description: editDescription,
         Comment: editComment,
+        tracking: editTracking
     };
     const editFields2 = {
         document_Name: editDocName,
@@ -811,6 +834,7 @@ export default function StickyHeadTable() {
         Type: editType,
         Description: editDescription,
         Comment: editComment,
+        tracking: editTracking
       };
       const editFields3 = {
         document_Name: editDocName,
@@ -824,6 +848,7 @@ export default function StickyHeadTable() {
         Type: editType,
         Description: editDescription,
         Comment: editComment,
+        tracking: editTracking
       };
       const editFields4 = {
         document_Name: editDocName,
@@ -837,6 +862,7 @@ export default function StickyHeadTable() {
         Type: editType,
         Description: editDescription,
         Comment: editComment,
+        tracking: editTracking
       };
       const editFields5 = {
         document_Name: editDocName,
@@ -849,6 +875,7 @@ export default function StickyHeadTable() {
         Status: editStatus,
         Description: editDescription,
         Comment: editComment,
+        tracking: editTracking
       };
       const editFields6 = {
         document_Name: editDocName,
@@ -863,6 +890,7 @@ export default function StickyHeadTable() {
         Sched_Date: formatDate(editSched_Date),
         Sched: editSched,
         Comment: editComment,
+        tracking: editTracking
       };
     if (!imageUpload) {
         try{
@@ -919,7 +947,7 @@ export default function StickyHeadTable() {
   
             await axios.put(`${port}/update`, editFields6)
         }
-        await axios.put(`${port}/updateFile`, formData)
+        await axios.put(`${port}/updateFile?docID=${formID.uID}`, formData)
         setSumbmit(false);
         setImageUpload([])
       }catch(e){
@@ -1159,22 +1187,29 @@ export default function StickyHeadTable() {
     setTabValue(newValue);
   };
 
-  const handleDownload = (type) => {
+  const handleDownload = (type, name) => {
     const anchor = document.createElement('a');
     anchor.style.display = 'none';
     document.body.appendChild(anchor);
-    if (type == "docx"){
-      anchor.href = `${port}/document_Files/${fileDocx}`;
-      anchor.download = fileDocx;
-      anchor.target = '_blank';
-      anchor.click();
-    }
-    else if(type == "xlsx"){
-      anchor.href = `${port}/document_Files/${fileXlsx}`;
-      anchor.download = fileXlsx;
-      anchor.target = '_blank';
-      anchor.click();
-    }
+    const fileName = name.substring(37)
+      if (type === "docx" || type === "xlsx") {
+        const fileURL = `${port}/document_Files/${name}`;
+        fetch(fileURL)
+          .then(response => response.blob())
+          .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+          })
+          .catch(error => console.error('Error downloading file:', error));
+      }
     else if(type == "image"){
       if(imageList.length > 1){
         const zip = new JSZip()
@@ -1253,6 +1288,64 @@ export default function StickyHeadTable() {
     }catch(e){
       console.log(e.message);
     }
+  }
+
+  const [signatures, setSignatures] = useState([])
+  const getSignatures = async() => {
+    try{
+      await axios.get(`${port}/getSignatures`).then((data) => {
+        setSignatures(data.data)
+      })
+    }catch(e){
+      console.log(e.message);
+    }
+  }
+  useEffect(() => {
+    getSignatures()
+  }, [rows])
+
+
+  const [openSignature, setOpenSignature] = useState(false);
+  const [sigDocID, setSigDocID] = useState("");
+  const [sigFor, setSigFor] = useState("");
+  const [sign, setSign] = useState();
+  const handleSigOpen = (docID, sigFor) => {
+    setSigDocID(docID)
+    setSigFor(sigFor)
+    setOpenSignature(true)
+  }
+
+  const handleSigClose = (docID, sigFor) => {
+    setSigDocID("")
+    setSigFor("")
+    clearSig()
+    setOpenSignature(false)
+  }
+
+  const clearSig = () => {
+    sign.clear()
+  }
+
+  const submitSig = () => {
+    const canvasDataURL = sign.getTrimmedCanvas().toDataURL('image/png')
+    fetch(canvasDataURL)
+    .then(res => res.blob())
+    .then(async(blob) => {
+      const file = new File([blob], `signature.png`, { type: 'image/png' });
+      const formData = new FormData();
+      formData.append('files', file);
+      try{
+        await axios.post(`${port}/addSignature?docID=${sigDocID}&sigFor=${sigFor}`, formData)
+        handleSigClose()
+        clearSig()
+        getSignatures()
+      }catch(e){
+        console.log(e.message);
+      }
+    })
+    .catch(error => {
+      console.error('Error converting canvas data URL to Blob', error);
+    });
   }
 
   return (
@@ -1690,7 +1783,8 @@ export default function StickyHeadTable() {
                             row.document_Type,
                             row.Comment,
                             row.Sched_Date,
-                            row.Sched
+                            row.Sched,
+                            row.tracking
                           );
                         }}
                       />
@@ -1715,21 +1809,37 @@ export default function StickyHeadTable() {
                     </Stack>
                   </TableCell>
                 </TableRow>
-                <TableRow className="drop-down" sx={{height: "100%", padding: "0", '& :hover': {pointerEvents: "none", cursor: "pointer"}}}>
+                <TableRow className="drop-down" sx={{height: "100%", padding: "0"}}>
                   <TableCell colSpan={7} sx={{width: "100%", padding: "0 0 0 0", boxShadow: '0px 15px 10px -13px #E6E4F0', borderBottomLeftRadius: "10px", borderBottomRightRadius: "10px"}}>
-                    <Collapse in={openRows[row.id]}>
-                      <Box sx={{p: "2vh"}}>
-                          <Box sx={{}}>
-                              <Typography sx={{fontWeight: "300", fontSize: "0.8rem"}}>Description</Typography>
-                              <Typography sx={{fontWeight: "300", fontSize: "1rem",overflow: "hidden", maxWidth: "1000px", whiteSpace: "nowrap", textOverflow: "ellipsis"}}>{row.Description}</Typography>
-                          </Box>
-                          <Box sx={{mt: "2vh"}}>
-                              <Typography sx={{fontWeight: "300", fontSize: "0.8rem"}}>Comment/Note</Typography>
-                              <Typography sx={{fontWeight: "300", fontSize: "1rem",overflow: "hidden", maxWidth: "1000px", whiteSpace: "nowrap", textOverflow: "ellipsis"}}>{row.Comment}</Typography>
-                          </Box>
-                      </Box>
-                    </Collapse>
-                  </TableCell>
+                      <Collapse in={openRows[row.id]}>
+                        <Box sx={{p: "20px"}}>
+                            <Box sx={{}}>
+                                <Typography sx={{fontWeight: "300", fontSize: "0.8rem", color: "#888888"}}>Description</Typography>
+                                <Typography sx={{fontWeight: "300", fontSize: "1rem",overflowX: "auto", maxWidth: "1140px"}}>{row.Description}</Typography>
+                            </Box>
+                            <Box sx={{mt: "20px"}}>
+                                <Typography sx={{fontWeight: "300", fontSize: "0.8rem", color: "#888888"}}>Comment/Note</Typography>
+                                <Typography sx={{fontWeight: "300", fontSize: "1rem",overflowX: "auto", maxWidth: "1140px"}}>{row.Comment}</Typography>
+                            </Box>
+                            <Box sx={{mt: "20px"}}>
+                                <Typography sx={{fontWeight: "300", fontSize: "0.8rem", color: "#888888"}}>Tracking</Typography>
+                                <Box sx={{fontWeight: "300", fontSize: "1rem",overflowX: "auto", maxWidth: "1140px", whiteSpace: "nowrap", display: "flex", marginTop: "10px", '&::-webkit-scrollbar': {height: '10px'}, '&::-webkit-scrollbar-thumb': {backgroundColor: "#aeaeae", borderRadius: '6px',},'&::-webkit-scrollbar-track': {backgroundColor:  "#F0EFF6", borderRadius: '6px',},}}>
+                                  {(row.tracking != null || row.tracking != undefined) && row.tracking.split(',').map((part, partIndex, partsArray) => (
+                                      <Box sx={{display: "flex", justifyContent: "space-between", alignItems: "center"}}>
+                                          <Box component={"div"} sx={{display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
+                                            {signatures.find(item => (item.signature_For == part.trim() && item.docID == row.uID)) ? (<img height={"30px"} src={`${port}/signature/${signatures.find(item => (item.signature_For == part.trim() && item.docID == row.uID))?.signature_Name}`}/>) : (<Typography sx={{fontSize: "0.85rem", color: "#8899ac", height: "30px",textDecoration: "underline", cursor: "pointer", zIndex: "100", position: "relative"}} onClick={(e) => handleSigOpen(row.uID, part.trim())}>Add Signature</Typography>)}
+                                            <Typography sx={{minWidth: "100px", display: "flex", alignItems: "center", justifyContent: "center", color: partIndex !== partsArray.length - 1 ? '#FF9944' : '#212121',}}>
+                                              {part.trim()}
+                                            </Typography>
+                                          </Box>
+                                        {partIndex !== partsArray.length - 1 && (<KeyboardDoubleArrowRightIcon sx={{color: "#888888", margin: "0px 5px"}}/>)}
+                                      </Box>
+                                  ))}
+                                </Box>
+                            </Box>
+                        </Box>
+                      </Collapse>
+                    </TableCell>
                 </TableRow>
                 </>
               )})}
@@ -2468,6 +2578,7 @@ export default function StickyHeadTable() {
                 options={["Completed","Pending", "Rejected"]}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField value={editStatus} className="auto-complete-text" onChange={(e) => setEditStatus(e.target.value)} {...params} placeholder="Status" label="Status"/>}/>
+                <TextField required value={editTracking} className="Text-input" id="fromPer" label="Tracking(Separate by comma)" variant="outlined" onChange={(e) => setEditTracking(e.target.value)}/>
                 </>) : ''
             }
             {editDocType === "Faculty Document" ? (
@@ -2525,6 +2636,7 @@ export default function StickyHeadTable() {
                 options={["Completed","Pending", "Rejected"]}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField value={editStatus} className="auto-complete-text" onChange={(e) => setEditStatus(e.target.value)} {...params} placeholder="Status" label="Status"/>}/>
+                <TextField required value={editTracking} className="Text-input" id="fromPer" label="Tracking(Separate by comma)" variant="outlined" onChange={(e) => setEditTracking(e.target.value)}/>
                 </>) : ''
             }
             {editDocType === "New Hire Document" ? (
@@ -2582,6 +2694,7 @@ export default function StickyHeadTable() {
                 options={["Completed","Pending", "Rejected"]}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField value={editStatus} className="auto-complete-text" onChange={(e) => setEditStatus(e.target.value)} {...params} placeholder="Status" label="Status"/>}/>
+                <TextField required value={editTracking} className="Text-input" id="fromPer" label="Tracking(Separate by comma)" variant="outlined" onChange={(e) => setEditTracking(e.target.value)}/>
                 </>) : ''
             }
             {editDocType === "IPCR/OPCR" ? (
@@ -2639,6 +2752,7 @@ export default function StickyHeadTable() {
                 options={["Completed","Pending", "Rejected"]}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField value={editStatus} className="auto-complete-text" onChange={(e) => setEditStatus(e.target.value)} {...params} placeholder="Status" label="Status"/>}/>
+                <TextField required value={editTracking} className="Text-input" id="fromPer" label="Tracking(Separate by comma)" variant="outlined" onChange={(e) => setEditTracking(e.target.value)}/>
                 </>) : ''
             }
             {editDocType === "Travel Order" ? (
@@ -2678,6 +2792,7 @@ export default function StickyHeadTable() {
                 options={["Completed","Pending", "Rejected"]}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField value={editStatus} className="auto-complete-text" onChange={(e) => setEditStatus(e.target.value)} {...params} placeholder="Status" label="Status"/>}/>
+                <TextField required value={editTracking} className="Text-input" id="fromPer" label="Tracking(Separate by comma)" variant="outlined" onChange={(e) => setEditTracking(e.target.value)}/>
                 </>) : ''
             }
             {editDocType === "Meeting Request" ? (
@@ -2732,6 +2847,7 @@ export default function StickyHeadTable() {
                 options={["Completed","Pending", "Rejected"]}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField value={editStatus} className="auto-complete-text" onChange={(e) => setEditStatus(e.target.value)} {...params} placeholder="Status" label="Status"/>}/>
+                <TextField required value={editTracking} className="Text-input" id="fromPer" label="Tracking(Separate by comma)" variant="outlined" onChange={(e) => setEditTracking(e.target.value)}/>
                 </>) 
                 : editDocType != "Student Document" && editDocType != "Faculty Document" && editDocType != "New Hire Document" && editDocType != "IPCR/OPCR" && editDocType != "Travel Order" && editDocType != "Meeting Request" ? (
                   <>
@@ -2788,6 +2904,7 @@ export default function StickyHeadTable() {
                   options={["Completed","Pending", "Rejected"]}
                   sx={{ width: "100%"}}
                   renderInput={(params) => <TextField value={editStatus} className="auto-complete-text" onChange={(e) => setEditStatus(e.target.value)} {...params} placeholder="Status" label="Status"/>}/>
+                  <TextField required value={editTracking} className="Text-input" id="fromPer" label="Tracking(Separate by comma)" variant="outlined" onChange={(e) => setEditTracking(e.target.value)}/>
                   </>) : ''
             }
             </div>
@@ -2987,7 +3104,7 @@ export default function StickyHeadTable() {
                       </div>
                     </div>
                     <div className="view-img">
-                      { imageList.length !=0 && filePDF.length != 0 ?(
+                      { [imageList, filePDF, fileDocx, fileXlsx].filter(arr => arr.length > 0).length >=2?(
                         <TabContext value={tabValue}>
                           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                             <TabList onChange={handleTabChange} aria-label="lab API tabs example">
@@ -2999,7 +3116,7 @@ export default function StickyHeadTable() {
                           </Box>
                           <TabPanel value="1">
                           <Grid container xs={12}>
-                          <Button component="label" onClick={(e) => handleDownload("image")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none", marginBottom: "10px"}}>
+                              <Button component="label" onClick={(e) => handleDownload("image")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none", marginBottom: "10px"}}>
                                       Download Image/s
                               </Button>
                               {imageList.some(item => item.includes(".jpg") || item.includes(".jpeg") || item.includes(".png")) &&(
@@ -3017,13 +3134,25 @@ export default function StickyHeadTable() {
                             {
                               filePDF.length != 0 && (
                                 <>
+                                <TabContext value={currentPDF}>
+                                  <TabList onChange={handlePDFChange} aria-label="lab API tabs example">
+                                    {filePDF.map((pdf) => {
+                                      return(
+                                        <Tab sx={{textTransform: "none", fontSize: "1rem"}} label={pdf.file_Name.substring(37)} value={pdf}/>
+                                      )
+                                    })}
+                                  </TabList>
+                                </TabContext>
                                 <Worker workerUrl="https://unpkg.com/pdfjs-dist@2.4.456/build/pdf.worker.js">
-                                  {imageList && (
-                                    <>
-                                      <Viewer fileUrl={`${port}/document_Files/${filePDF}`} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark" />
-                                    </>
-                                  )}  
-                                  {!imageList && <>No PDF</>}
+                                  <>
+                                    
+                                    {imageList && (
+                                      <Box sx={{marginInline: "20px"}}>
+                                        <Viewer fileUrl={`${port}/document_Files/${currentPDF && currentPDF.file_Name}`} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark"/>
+                                      </Box>
+                                    )}  
+                                    {!imageList && <>No PDF</>}
+                                  </>
                                 </Worker>
                                 </>
                               )
@@ -3032,30 +3161,40 @@ export default function StickyHeadTable() {
                           <TabPanel value="3">
                             {
                               fileDocx.length != 0 && (
-                                <>
-                                <Box sx={{width: "100%", height: '300px', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
-                                  <img src={docxViewIcon} style={{width: "150px", height: '150px'}}></img>
-                                  <Typography sx={{mt: "5vh"}}>{fileDocx}</Typography>
-                                  <Button component="label" onClick={(e) => handleDownload("docx")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none"}}>
-                                    Download .docx File
-                                  </Button>
+                                <Box sx={{width: "100%", height: '100%', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
+                                  {fileDocx.map((file) => {
+                                    return(
+                                        <>
+                                          <img src={docxViewIcon} style={{width: "150px", height: '150px'}}></img>
+                                          <Typography sx={{mt: "5vh"}}>{file.file_Name.substring(37)}</Typography>
+                                          <Button component="label" onClick={(e) => handleDownload("docx", file.file_Name)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none", marginBottom: "20px"}}>
+                                            Download .docx File
+                                          </Button>
+                                        </>
+                                    )
+                                        
+                                  })}
                                 </Box>
-                                </>
                               )
                             }
                           </TabPanel>
                           <TabPanel value="4">
                             {
                               fileXlsx.length != 0 && (
-                                <>
-                                <Box sx={{width: "100%", height: '300px', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
-                                  <img src={xlsxViewIcon} style={{width: "150px", height: '150px'}}></img>
-                                  <Typography sx={{mt: "5vh"}}>{fileXlsx}</Typography>
-                                  <Button component="label" onClick={(e) => handleDownload("xlsx")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "hsl(126, 49%, 36%)", textTransform: "none"}}>
-                                    Download .xlsx File
-                                  </Button>
+                                <Box sx={{width: "100%", height: '100%', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
+                                  {fileXlsx.map((file) => {
+                                    return(
+                                        <>
+                                          <img src={xlsxViewIcon} style={{width: "150px", height: '150px'}}></img>
+                                          <Typography sx={{mt: "5vh"}}>{file.file_Name.substring(37)}</Typography>
+                                          <Button component="label" onClick={(e) => handleDownload("xlsx", file.file_Name)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "hsl(126, 49%, 36%)", textTransform: "none", marginBottom: "20px"}}>
+                                            Download .xlsx File
+                                          </Button>
+                                        </>
+                                    )
+                                        
+                                  })}
                                 </Box>
-                                </>
                               )
                             }
                           </TabPanel>
@@ -3064,9 +3203,9 @@ export default function StickyHeadTable() {
                       :
                       imageList.some(item => item.includes(".jpg") || item.includes(".jpeg") || item.includes(".png")) ?(
                         <Grid container xs={12}>
-                          <Button component="label" onClick={(e) => handleDownload("image")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none", marginBottom: "10px"}}>
-                                      Download Image/s
-                              </Button>
+                        <Button component="label" onClick={(e) => handleDownload("image")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none", marginBottom: "10px"}}>
+                                  Download Image/s
+                        </Button>
                         {imageList.some(item => item.includes(".jpg") || item.includes(".jpeg") || item.includes(".png")) &&(
                               <ImageList variant="masonry" cols={windowWidth <= 375 ? 1 : windowWidth <=576 && windowWidth > 375? 2 : 3} gap={8}>
                                 {imageList.map((url, index) => (
@@ -3081,37 +3220,58 @@ export default function StickyHeadTable() {
                       :
                       filePDF.length != 0 ? (
                         <>
+                        <TabContext value={currentPDF}>
+                          <TabList onChange={handlePDFChange} aria-label="lab API tabs example">
+                            {filePDF.map((pdf) => {
+                              return(
+                                <Tab sx={{textTransform: "none", fontSize: "1rem"}} label={pdf.file_Name.substring(37)} value={pdf}/>
+                              )
+                            })}
+                          </TabList>
+                        </TabContext>
                         <Worker workerUrl="https://unpkg.com/pdfjs-dist@2.4.456/build/pdf.worker.js">
-                          {imageList && (
-                            <>
-                              <Viewer fileUrl={`${port}/document_Files/${filePDF}`} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark" />
-                            </>
-                          )}  
-                          {!imageList && <>No PDF</>}
+                          <>
+                            
+                            {imageList && (
+                              <Box sx={{marginInline: "20px"}}>
+                                <Viewer fileUrl={`${port}/document_Files/${currentPDF && currentPDF.file_Name}`} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark"/>
+                              </Box>
+                            )}  
+                            {!imageList && <>No PDF</>}
+                          </>
                         </Worker>
                         </>
                       )
                       : fileDocx.length !=0 ? (
-                          <>
-                            <Box sx={{width: "100%", height: '300px', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
-                              <img src={docxViewIcon} style={{width: "150px", height: '150px'}}></img>
-                              <Typography sx={{mt: "5vh"}}>{fileDocx}</Typography>
-                              <Button component="label" onClick={(e) => handleDownload("docx")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none"}}>
-                                Download .docx File
-                              </Button>
-                            </Box>
-                            
-                          </> 
+                        <Box sx={{width: "100%", height: '100%', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
+                          {fileDocx.map((file) => {
+                            return(
+                                <>
+                                  <img src={docxViewIcon} style={{width: "150px", height: '150px'}}></img>
+                                  <Typography sx={{mt: "5vh"}}>{file.file_Name.substring(37)}</Typography>
+                                  <Button component="label" onClick={(e) => handleDownload("docx", file.file_Name)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none", marginBottom: "20px"}}>
+                                    Download .docx File
+                                  </Button>
+                                </>
+                            )
+                                
+                          })}
+                        </Box>
                       ) : fileXlsx.length !=0 ? (
-                        <>
-                          <Box sx={{width: "100%", height: '300px', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
-                            <img src={xlsxViewIcon} style={{width: "150px", height: '150px'}}></img>
-                            <Typography sx={{mt: "5vh"}}>{fileXlsx}</Typography>
-                            <Button component="label" onClick={(e) => handleDownload("xlsx")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "hsl(126, 49%, 36%)", textTransform: "none"}}>
-                              Download .xlsx File
-                            </Button>
+                          <Box sx={{width: "100%", height: '100%', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
+                            {fileXlsx.map((file) => {
+                              return(
+                                  <>
+                                    <img src={xlsxViewIcon} style={{width: "150px", height: '150px'}}></img>
+                                    <Typography sx={{mt: "5vh"}}>{file.file_Name.substring(37)}</Typography>
+                                    <Button component="label" onClick={(e) => handleDownload("xlsx", file.file_Name)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "hsl(126, 49%, 36%)", textTransform: "none", marginBottom: "20px"}}>
+                                      Download .xlsx File
+                                    </Button>
+                                  </>
+                              )
+                                  
+                            })}
                           </Box>
-                        </> 
                       )
                       :
                       (
@@ -3138,73 +3298,34 @@ export default function StickyHeadTable() {
           )}
         </DialogContent>
       </Dialog>
-      <Dialog open={openFilter} fullWidth maxWidth="sm">
+      <Dialog open={openSignature} fullWidth maxWidth="sm">
         <DialogTitle className="dialogDisplayTitle">
           <div className="display-title-holder">
-            <div className="dialog-title-view">Filter</div>
+            <div className="dialog-title-view">Signature</div>
             <div className="dialog-title-close">
-              <button onClick={filterClose}>Close</button>
+              <button onClick={handleSigClose}>Close</button>
             </div>
           </div>
         </DialogTitle>
         <DialogContent className="dialogDisplay">
-        <Box sx={{display: "flex", width: "100%", mb: "5vh"}}>
-            <Box sx={{width: "100%", padding: "1vh"}}>
-                <FormControl variant="outlined" sx={{ marginTop: 1, width: "100%" }}>
-                <InputLabel id="DocuType" className="table-filter">Document Type</InputLabel>
-                <Select
-                labelId="DocuType"
-                id="demo-simple-select"
-                label="Document Type"
-                onChange={(e) => setFilter(e.target.value)}
-                className="table-filter"
-                value={filter}
-                >
-                <MenuItem value={""}>Clear Filter</MenuItem>
-                {uniqueValuesArray.map((value, index) =>(
-                    <MenuItem value={value}>{value}</MenuItem>
-                ))}
-                </Select>
-            </FormControl>
-            <TextField label="Description Keyword..." value={filter2} onChange={(e) => setFilter2(e.target.value)} sx={{marginTop: 1}} className="Label-input"/>
+          <Box sx={{width: "100%", height: "100%", padding: "10px",display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
+            <Box component={"div"} sx={{width: 500, height: 200, border: "#aeaeae 1px solid", borderRadius: '10px'}}>
+              <SignatureCanvas
+                canvasProps={{ width: 500, height: 200}}
+                ref={data => setSign(data)}
+                style
+              />
             </Box>
-            <Box sx={{width: "100%", padding: "1vh"}}>
-                <FormControl variant="outlined" sx={{ marginTop: 1, width: "100%" }}>
-                <InputLabel id="DocuFrom" className="table-filter">Status</InputLabel>
-                <Select
-                labelId="DocuFrom"
-                id="demo-simple-select"
-                label="Status"
-                onChange={(e) => setFilter3(e.target.value)}
-                className="table-filter"
-                value={filter3}
-                >
-                <MenuItem value={""}>Clear Filter</MenuItem>
-                <MenuItem value={"Completed"}><span className='table-Done'>Completed</span></MenuItem>
-                <MenuItem value={"Pending"}><span className='table-Ongoing'>Pending</span></MenuItem>
-                <MenuItem value={"Rejected"}><span className='table-NotDone'>Rejected</span></MenuItem>
-            
-                </Select>
-            </FormControl>
-            <Autocomplete
-                className="requests-Forward"
-                value={filter7}
-  
-                id="combo-box-demo"
-                onSelect={(e) => setFilter7(e.target.value)}
-                options={["Student Document", "Faculty Document", "New Hire Document", "IPCR/OPCR", "Travel Order", "Meeting Request"]}
-                sx={{ width: "100%", marginTop: 1 }}
-                renderInput={(params) => <TextField value={filter7} onChange={(e) => setFilter7(e.target.value)} {...params} label="Category" />}
-                />
+            <Box sx={{width: "40%", height: "100%", padding: "10px",display: "flex", justifyContent: "space-between", alignItems: "center"}}>
+              <Button onClick={clearSig} sx={{color: "#888888"}}>
+                  Clear
+              </Button>
+              <Button onClick={submitSig} variant="contained" sx={{ background: "#FF9944"}}>
+                  Save
+              </Button>
             </Box>
-        </Box>
+          </Box>
           
-          
-          <FormGroup sx={{padding: "1vh"}}>
-            <FormControlLabel className="filter-time" control={<Checkbox checked={filter4}  onChange={(e) => setFilter4((prev) => !prev)}/>} label="This Year" />
-            <FormControlLabel className="filter-time" control={<Checkbox checked={filter5}  onChange={(e) => setFilter5((prev) => !prev)}/>} label="This Month" />
-            <FormControlLabel className="filter-time" control={<Checkbox checked={filter6}  onChange={(e) => setFilter6((prev) => !prev)}/>} label="This Day" />
-          </FormGroup>
         </DialogContent>
       </Dialog>
     </Paper>
