@@ -32,7 +32,7 @@ export const AuthContextProvider = ({children}) => {
             }else{
               const emailPattern = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
               const isValidEmail = email.endsWith("@bulsu.edu.ph")
-              if(email){
+              if(isValidEmail){
               Swal.fire({
                 title: 'Please wait',
                 allowEscapeKey: false,
@@ -142,6 +142,8 @@ export const AuthContextProvider = ({children}) => {
                           if(data.data[0].Active == 1){
                             navigate('/pages/Dashboard')
                             Swal.fire({title: "Success", text: "Logged in successfully.", icon: "success", showConfirmButton: false, timer: 1500})
+                            localStorage.removeItem('loginAttempts');
+                            localStorage.removeItem('loginTimeout');
                           }else{
                             Swal.fire({confirmButtonColor: "#212121", text: "Account is Deactivated!"})
                           }

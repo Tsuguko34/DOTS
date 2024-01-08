@@ -205,7 +205,6 @@ app.post("/login", (req, res) =>{
                 return res.status(200).json({success : false})
             }else{
                 req.session.userID = data[0].uID
-                console.log(req.session);
                 return res.status(200).json(data)
             }
         }
@@ -413,7 +412,6 @@ app.get("/getTemplates", (req, res) => {
 app.post("/deleteTemplate",(req, res) => {
     const filesQuery = `SELECT * FROM templates WHERE uID = '${req.query.uID}' LIMIT 1`
     db.query(filesQuery, (err, data) => {
-        console.log(data[0].file_Name);
         const filePath = `../templates/${data[0].file_Name}`;
         if(fs.existsSync(filePath)){
             fs.unlinkSync(filePath)
@@ -647,7 +645,6 @@ app.put("/updateFile", upload.array('files'),(req, res) => {
         db.query(selectQuery, (err, data) => {
             if (err) return console.log(err);
             const fileNames = data.map(item => item.file_Name)
-            console.log(fileNames);
             const deleteQuery = `DELETE FROM files WHERE uID = '${req.body.uID}'`;
             db.query(deleteQuery, (deleteErr, deleteData) => {
                 if (deleteErr) {
@@ -663,7 +660,6 @@ app.put("/updateFile", upload.array('files'),(req, res) => {
                         if(!existingFileNames.includes(filename)){
                             const filePath = `../document_Files/${filename}`;
                             if(fs.existsSync(filePath)){
-                                console.log(true);
                                 fs.unlinkSync(filePath)
                             }
                         }
@@ -709,7 +705,6 @@ app.get("/getArchives",(req, res) => {
 });
 
 app.get("/getFilteredArchives",(req, res) => {
-    console.log(req.query.documentType, req.query.year);
     const q = `SELECT * FROM archives WHERE document_Type = '${req.query.documentType}' AND SUBSTRING(date_Received, 7, 4) = '${req.query.year}';`;
     db.query(q, (err, data) => {
       if (err) return res.json(err);
@@ -720,7 +715,7 @@ app.get("/getFilteredArchives",(req, res) => {
 app.post("/archiveFile",(req, res) => {
     const selectQuery = `SELECT * FROM documents WHERE uID = '${req.query.id}'`;
     const deleteQuery = `DELETE FROM documents WHERE uID = '${req.query.id}'`;
-    const insertQuery = "INSERT INTO archives (`document_Name`,`document_Type`,`date_Received`,`received_By`,`fromPer`,`fromDep`,`time_Received`,`uID`,`Status`,`Type`,`Description`,`Comment`,`forward_To`,`Remark`,`deleted_at`,`urgent`,`unread`, `archived_By`, `tracker`) VALUES (?)"
+    const insertQuery = "INSERT INTO archives (`document_Name`,`document_Type`,`date_Received`,`received_By`,`fromPer`,`fromDep`,`time_Received`,`uID`,`Status`,`Type`,`Description`,`Comment`,`forward_To`,`Remark`,`deleted_at`,`urgent`,`unread`, `archived_By`, `tracking`) VALUES (?)"
     db.query(selectQuery, (err, data) => {
       if (err) return res.json(err);
         const selectedData = data[0]
@@ -743,12 +738,12 @@ app.post("/archiveFile",(req, res) => {
             selectedData.urgent,
             selectedData.unread,
             req.query.user,
-            selectedData.tracker
+            selectedData.tracking
         ]
         db.query(insertQuery, [values], (err, insertData) => {
-            if (err) return res.json(err);
+            if (err) return console.log(err);
             db.query(deleteQuery, (err, delData) => {
-                if (err) return res.json(err);
+                if (err)  console.log(err);
                 return res.json({sucess: true})
             })
         })
@@ -926,13 +921,12 @@ app.post("/notif",(req, res) => {
 cron.schedule('0 0 * * *', async() => {
     try{
         const snapshot = await axios.get(`${port}/getRequests`);
-
-        const dateToday = new Date()
-
         snapshot.data.forEach(async(docSnap) => {
             const dateReceived = new Date(docSnap.date_Received)
-            const archiveAt = dateReceived.setDate(dateReceived.getDate() + 30)
-            if (archiveAt >= dateToday) {
+            const today = new Date();
+            const thirtyDaysAgo = new Date(today);
+            thirtyDaysAgo.setDate(today.getDate() - 30);
+            if (dateReceived <= thirtyDaysAgo) {
                 if(docSnap.Status != "Pending"){
                     try{
                         await axios.post(`${port}/archiveFile?id=${docSnap.uID}&user=System`)
@@ -952,13 +946,23 @@ cron.schedule('0 0 * * *', async() => {
         const snapshot = await axios.get(`${port}/getRequests`);
         const users = await axios.get(`${port}/getUsers`);
         const userList = users.data
-        const dateToday = new Date()
-
-        snapshot.data.forEach(async(docSnap) => {
+        for(const docSnap of snapshot.data){
             const dateReceived = new Date(docSnap.date_Received)
-            const reminder = dateReceived.setDate(dateReceived.getDate() + 3)
-            if (reminder >= dateToday) {
+            const today = new Date();
+            const threeDaysAgo = new Date(today);
+            threeDaysAgo.setDate(today.getDate() - 3);
+            const timeDifference = today - dateReceived;
+            const daysPending = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+            if (dateReceived <= threeDaysAgo) {
                 if(docSnap.Status == "Pending"){
+                    console.log("pending");
+                    const values = {
+                        docId : docSnap.uID,
+                        userUID : docSnap.forward_To,
+                        isRead : 0,
+                        multiple : 0,
+                    }
+                    axios.post(`${port}/notif?reminder=remind`, values)
                     const transporter = nodemailer.createTransport({
                         service: 'gmail',
                         auth: {
@@ -972,17 +976,19 @@ cron.schedule('0 0 * * *', async() => {
                         from: 'wp3deansofficetransaction@gmail.com',
                         to: userList.find(user => user.uID == docSnap.forward_To)?.email,
                         subject: 'Pending Document',
-                        html: `A ${docSnap.document_Type} document (${docSnap.document_Name}) from ${docSnap.fromPer} has been pending for the last 3 days. Click <a href="${verificationLink}">here</a> to view the document`,
+                        html: `A ${docSnap.document_Type} document (${docSnap.document_Name}) from ${docSnap.fromPer} has been pending for the last ${daysPending} days. Click <a href="${verificationLink}">here</a> to view the document`,
                     };
                 
                     await transporter.sendMail(mailOptions)
+                    
                 }
             }
-        });
+        };
     }catch(e){
         console.log(e.message);
     }
 })
+
 
 app.listen(3001, () => { 
     

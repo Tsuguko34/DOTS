@@ -429,6 +429,7 @@ export default function StickyHeadTable() {
   const [fileDocx, setFileDocx] = useState([]);
   const [fileXlsx, setFileXlsx] = useState([]);
   const [currentPDF, setCurrentPDF] = useState([])
+  const [tabValue, setTabValue] = useState('1');
   const openFile = (id) => {
     setOpenShowFile(true);
     showFile(id);
@@ -462,6 +463,11 @@ export default function StickyHeadTable() {
     setCurrentPDF(filePDF[0])
     console.log(currentPDF);
   }, [filePDF])
+
+  useEffect(() => {
+    setTabValue(imageList.length != 0 ? '1' : (imageList.length == 0 && filePDF.length != 0) ? '2' : (imageList.length == 0 && filePDF.length == 0 && fileDocx.length != 0) ? '3' : (imageList.length == 0 && filePDF.length == 0 && fileDocx.length == 0 && fileXlsx.length != 0) && '4')
+    console.log(tabValue);
+  }, [filePDF, imageList, fileDocx, fileXlsx])
 
   const closeFile = async () => {
     await setOpenShowFile(false);
@@ -877,7 +883,7 @@ export default function StickyHeadTable() {
   };
 
   //Tab Pannel
-  const [tabValue, setTabValue] = useState('1');
+
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
   };
@@ -886,8 +892,9 @@ export default function StickyHeadTable() {
     const anchor = document.createElement('a');
     anchor.style.display = 'none';
     document.body.appendChild(anchor);
-    const fileName = name.substring(37)
+    
       if (type === "docx" || type === "xlsx") {
+        const fileName = name.substring(37)
         const fileURL = `${port}/document_Files/${name}`;
         fetch(fileURL)
           .then(response => response.blob())
@@ -1583,7 +1590,7 @@ export default function StickyHeadTable() {
               },
             }}/>
               </DemoContainer>
-            <TextField required className="Text-input" id="fromPer" label="Document name" variant="outlined" onChange={(e) => setNewDocuName(e.target.value)}/>
+            <TextField required className="Text-input" id="fromPer" label="Document name" variant="outlined" onChange={(e) => setNewDocuName(e.target.value)} inputProps={{ maxLength: 50 }}/>
             <Autocomplete
                 className="auto-complete"
                 onChange={(e, newVlaue) => { console.log(newReceivedBy); setNewReceivedBy(newVlaue ? `(${newVlaue.role}) - ${newVlaue.full_Name}`: '')}}
@@ -1592,7 +1599,7 @@ export default function StickyHeadTable() {
                 options={users.filter(item => item.role != "Dean" && item.role != "Faculty")}
                 getOptionLabel={user =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={newReceivedBy} className="auto-complete-text" onChange={(e) => setNewReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By"/>}/>
+                renderInput={(params) => <TextField value={newReceivedBy} className="auto-complete-text" onChange={(e) => setNewReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By"inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
             <Autocomplete
               className="auto-complete"
               disablePortal
@@ -1601,8 +1608,8 @@ export default function StickyHeadTable() {
               id="combo-box-demo"
               options={office}
               sx={{ width: "100%"}}
-              renderInput={(params) => <TextField value={newFromDep ? newFromDep : null} className="auto-complete-text" onChange={(e) => setNewFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
-            <TextField className="Text-input" id="fromPer" label="Contact Person" variant="outlined" onChange={(e) => setNewFromPer(e.target.value)}/>
+              renderInput={(params) => <TextField value={newFromDep ? newFromDep : null} className="auto-complete-text" onChange={(e) => setNewFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+            <TextField className="Text-input" id="fromPer" label="Contact Person" variant="outlined" onChange={(e) => setNewFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
             <Autocomplete
               className="auto-complete"
               disablePortal
@@ -1612,8 +1619,8 @@ export default function StickyHeadTable() {
               options={["Internal Communication", "External Communication"]}
               sx={{ width: "100%"}}
               renderInput={(params) => <TextField value={newType}  className="auto-complete-text" onChange={(e) => setNewType(e.target.value)} {...params} placeholder="Internal/External" label="Internal/External"/>}/>
-            <TextField required className="Text-input" id="fromPer" label="Short Description" variant="outlined" onChange={(e) => setNewDescription(e.target.value)}/>
-            <TextField className="Text-input" id="fromPer" label="Comment/Note" variant="outlined" onChange={(e) => setNewComment(e.target.value)}/>
+            <TextField required className="Text-input" id="fromPer" label="Short Description" variant="outlined" onChange={(e) => setNewDescription(e.target.value)} inputProps={{ maxLength: 1000 }}/>
+            <TextField className="Text-input" id="fromPer" label="Comment/Note" variant="outlined" onChange={(e) => setNewComment(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                 <Autocomplete
                 className="auto-complete"
                 disablePortal
@@ -1622,7 +1629,7 @@ export default function StickyHeadTable() {
                 id="combo-box-demo"
                 options={["Completed","Pending", "Rejected", "Cancelled"]}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={newStatus ? newStatus : null} className="auto-complete-text" onChange={(e) => setNewStatus(e.target.value)} {...params} placeholder="Status" label="Status"/>}/>
+                renderInput={(params) => <TextField value={newStatus ? newStatus : null} className="auto-complete-text" onChange={(e) => setNewStatus(e.target.value)} {...params} placeholder="Status" label="Status" inputProps={{ ...params.inputProps,maxLength: 20 }}/>}/>
                 <Autocomplete
                 className="auto-complete"
                 onChange={(e, newValue) => {
@@ -1750,7 +1757,7 @@ export default function StickyHeadTable() {
               },
             }}/>
               </DemoContainer>
-            <TextField required value={editDocuName} className="Text-input" id="fromPer" label="Document name" variant="outlined" onChange={(e) => setEditDocuName(e.target.value)}/>
+            <TextField required value={editDocuName} className="Text-input" id="fromPer" label="Document name" variant="outlined" onChange={(e) => setEditDocuName(e.target.value)} inputProps={{ maxLength: 50 }}/>
             <Autocomplete
                 className="auto-complete"
   
@@ -1760,7 +1767,7 @@ export default function StickyHeadTable() {
                 options={users.filter(item => item.role != "Dean" && item.role != "Faculty")}
                 getOptionLabel={user =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={editReceivedBy} className="auto-complete-text" onChange={(e) => setEditReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By"/>}/>
+                renderInput={(params) => <TextField value={editReceivedBy} className="auto-complete-text" onChange={(e) => setEditReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
             <Autocomplete
               className="auto-complete"
               disablePortal
@@ -1769,8 +1776,8 @@ export default function StickyHeadTable() {
               id="combo-box-demo"
               options={office}
               sx={{ width: "100%"}}
-              renderInput={(params) => <TextField value={editFromDep} className="auto-complete-text" onChange={(e) => setEditFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
-            <TextField value={editFromPer} className="Text-input" id="fromPer" label="Contact Person" variant="outlined" onChange={(e) => setEditFromPer(e.target.value)}/>
+              renderInput={(params) => <TextField value={editFromDep} className="auto-complete-text" onChange={(e) => setEditFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+            <TextField value={editFromPer} className="Text-input" id="fromPer" label="Contact Person" variant="outlined" onChange={(e) => setEditFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
             <Autocomplete
               className="auto-complete"
               disablePortal
@@ -1780,8 +1787,8 @@ export default function StickyHeadTable() {
               options={["Internal Communication", "External Communication"]}
               sx={{ width: "100%"}}
               renderInput={(params) => <TextField value={editType}  className="auto-complete-text" onChange={(e) => setEditType(e.target.value)} {...params} placeholder="Internal/External" label="Internal/External"/>}/>
-            <TextField required value={editDescription} className="Text-input" id="fromPer" label="Short Description" variant="outlined" onChange={(e) => setEditDescription(e.target.value)}/>
-            <TextField value={editComment} className="Text-input" id="fromPer" label="Comment/Note" variant="outlined" onChange={(e) => setEditComment(e.target.value)}/>
+            <TextField required value={editDescription} className="Text-input" id="fromPer" label="Short Description" variant="outlined" onChange={(e) => setEditDescription(e.target.value)} inputProps={{ maxLength: 1000 }}/>
+            <TextField value={editComment} className="Text-input" id="fromPer" label="Comment/Note" variant="outlined" onChange={(e) => setEditComment(e.target.value)} inputProps={{ maxLength: 1000 }}/>
             <Autocomplete
             className="auto-complete"
             disablePortal
@@ -1790,7 +1797,7 @@ export default function StickyHeadTable() {
             id="combo-box-demo"
             options={["Completed","Pending", "Rejected", "Cancelled"]}
             sx={{ width: "100%"}}
-            renderInput={(params) => <TextField value={editStatus} className="auto-complete-text"{...params} placeholder="Status" label="Status"/>}/> </>): ''}
+            renderInput={(params) => <TextField value={editStatus} className="auto-complete-text"{...params} placeholder="Status" label="Status" inputProps={{ ...params.inputProps,maxLength: 20 }}/>}/> </>): ''}
             <TextField required value={editTracking} className="Text-input" id="fromPer" label="Tracking(Separate by comma)" variant="outlined" onChange={(e) => setEditTracking(e.target.value)}/>
             </div>
             <div className="right-holder">

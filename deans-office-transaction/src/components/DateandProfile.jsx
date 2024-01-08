@@ -252,7 +252,7 @@ function DateandProfile() {
                     <Box component={"div"} sx={{display: "flex", flexDirection: "column", justifyContent: "start", alignItems: "center"}}>
                       
                         <Typography sx={{maxWidth: "300px"}}>
-                          <Typography sx={{fontWeight: "bold"}}>{notif.document_Name}</Typography> pending for the last 3 days.
+                          <Typography sx={{fontWeight: "bold"}}>{notif.document_Name}</Typography> pending for the last {Math.floor((new Date() - new Date(notif.date_Received)) / (1000 * 60 * 60 * 24))} days.
                         </Typography>
                       
                     </Box>

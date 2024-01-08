@@ -1212,15 +1212,23 @@
     color: var(--font_color) !important;
     border-bottom:none!important;
     max-height: 50px !important;
+    max-width: 150px;
+    overflow: hidden !important;
+    word-wrap: break-word !important;
+    -webkit-line-clamp: 2 !important;
+    text-overflow: ellipsis !important;
 }
 
 .MuiTableRow-root{
+    min-height: 50px !important;
     max-height: 50px !important;
 }
 
 .table-cell{
     background-color: var(--table_row_color);
     max-height: 70px !important;
+    overflow: auto !important;
+    word-wrap: break-word !important;
 }
 
 .table-cell.unread{
@@ -1278,6 +1286,8 @@
 .MuiTableRow-root.drop-down .MuiTableCell-root:hover{
     background-color: white !important;
 }
+
+
 
 .MuiTableRow-root:hover{
     background: var(--table_row_color) !important;
@@ -2019,163 +2029,167 @@
 
 /* PRINTING */
 
-#header {
-    position: fixed;
-    top: 0 !important;
-  }
-
-.print-holder {
-width: 100%;
-height: 100%;
-background-color: #FFF;
-display: flex;
-flex-direction: column;
-align-items: center;
-position: relative;
-top: 150px;
-print-color-adjust: exact !important;
-}
-
 @media print{
-
     @page{
         size: A4 landscape !important;
-        margin: 0.5cm;
-        
+        margin: 10mm 5mm !important;
     }
-    .print-footer{
-        
+    #header {
+        position: relative!important;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .print-holder {
+        width: 100%;
+        height: 100%;
+        background-color: #FFF;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        print-color-adjust: exact !important;
+        page-break-before: always;
+
+    }
+
+
+    .print-footer {
         text-align: left;
         position: fixed;
         display: flex;
         left: 30px;
-        bottom: 10px;
-        width: 100vh;
-        }
-    
-        /* Style the page number if needed */
-    .print-footer:before {
-        counter-increment: page;
+        bottom: -3px !important;
+        width: 100%;
+    }
+    /* .print-footer:after {
         content: "Page " counter(page);
         text-align: right;
         position: fixed;
         right: 30px;
-        bottom: 10px;
+        color: #555;
+        bottom: 0 !important;
+        font-size: 0.85rem;
         width: 100%;
+    } */
+
+    .print-holder:first-of-type {
+        counter-increment: page; /* Increment the page counter only for the first .print-holder */
     }
-}
+    
 
-
-  
-
-
-.print-top{
-    padding: 20px !important;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-
-.print-logo {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    margin-bottom: 1vh;
-}
-
-.print-logo img{
-    width: 10vh;
-}
-
-.print-title{
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    margin: 1vh;
-}
-
-.print-title h1{
-    font-size: 1.3rem;
-}
-
-.print-info{
-    width: 100%;
-    margin-top: 30px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.10rem;
-}
-
-.print-info span{
-    font-weight: bold;
-}
-
-.print-info div{
-    margin-left: 10px;
-    margin-right: 10px;
-}
-
-.print-charts{
-    height: 100%;
-    padding: 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px !important;
-}
-
-.print-table{
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.print-wholeTable{
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-    margin-left: 30px;
-    margin-right: 30px;
-    margin-bottom: 30px;
-}
-
-.print-wholeTable td, .print-wholeTable th{
-    border: 1px solid #dddddd;
-    text-align: left;
-    padding: 2px;
-    width: 14%;
-}
-.print-wholeTable th{
-    background-color: #aeaeae;
-    padding: 4px;
-    font-size: 1rem;
-}
-
-.print-wholeTable td{
-    font-size: 0.9rem;
-    height: 50px;
-    max-height: 50px;
-}
-
-.print-wholeTable tr{
-    text-align: left;
-    padding: 2px;
-    width: 14%;
-}
-
-.print-wholeTable td:last-child, .print-wholeTable th:last-child{
-    width:10%;
-}
-
-.print-wholeTable td:first-child, .print-wholeTable th:first-child{
-    width: 10%;
-}
-
-.print-wholeTable tr:nth-child(odd) {
-    background-color: #E7E9EB;
+    .print-logo {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+    
+    .print-logo img{
+        width: 70px;
+    }
+    
+    .print-title{
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+    
+    .print-title h1{
+        font-size: 0.95rem;
+    }
+    
+    .print-info{
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        font-size: 0.85rem;
+        color: #555;
+    }
+    
+    .print-info span{
+        font-weight: bold;
+        color: #212121;
+    }
+    
+    .print-info div{
+        margin-left: 10px;
+        margin-right: 10px;
+    }
+    
+    .print-charts{
+        height: 100%;
+        width: 100%;
+        padding: 10px;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    
+    .print-table{
+        width: 100%;
+        max-height: 400px;
+        overflow-y: auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .print-wholeTable{
+        width: 100%;
+        border-collapse: collapse;
+        margin-left: 15px;
+        page-break-inside: auto
+    }
+    
+    .print-wholeTable td, .print-wholeTable th{
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 2px;
+        width: 14%;
+    }
+    .print-wholeTable th{
+        background-color: #aeaeae;
+        height: 30px;
+        max-height: 30px;
+        padding: 4px;
+        font-size: 0.8rem;
+    }
+    
+    .print-wholeTable td{
+        font-size: 0.8rem;
+        height: 30px;
+        max-height: 30px;
+        max-width: 200px;
+        overflow: auto;
+        word-wrap: break-word;
+    }
+    
+    .print-wholeTable tr{
+        text-align: left;
+        padding: 2px;
+        width: 14%;
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+    
+    .print-wholeTable td:last-child, .print-wholeTable th:last-child{
+        width:10%;
+    }
+    
+    .print-wholeTable td:first-child, .print-wholeTable th:first-child{
+        width: 10%;
+    }
+    
+    .print-wholeTable tr:nth-child(odd) {
+        background-color: #E7E9EB;
+    }
+    
+    
 }
 
 

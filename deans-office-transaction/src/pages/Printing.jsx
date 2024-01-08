@@ -185,36 +185,28 @@ export const ComponentToPrint = React.forwardRef((props, componentRef) => {
   const printFooterRef = useRef(null);
   
   useEffect(() => {
-    const printHandler = () => {
-      const printFooter = printFooterRef.current;
-      const totalPages = document.querySelectorAll('.print-holder').length;
+    // const updatePageNumbers = () => {
+    //   const pageNumbers = document.querySelectorAll('.print-page-number');
 
-      let pageCount = 1;
+    //   pageNumbers.forEach((pageNumber, index) => {
+    //     pageNumber.textContent = `Page ${index + 1}`;
+    //   });
+    // };
 
-      const updatePageNumber = () => {
-        printFooter.setAttribute('data-page-number', pageCount);
-      };
+    // // Call the function immediately to update page numbers on load
+    // updatePageNumbers();
 
-      window.onafterprint = () => {
-        pageCount++;
-        if (pageCount <= totalPages) {
-          updatePageNumber();
-          window.print();
-        }
-      };
+    // // Add the event listener to update page numbers on print
+    // window.addEventListener('beforeprint', updatePageNumbers);
 
-      updatePageNumber();
-      window.print();
-    };
+    // return () => {
+    //   window.removeEventListener('beforeprint', updatePageNumbers);
+    // };
+  }, [filteredData]);
 
-    window.addEventListener('beforeprint', printHandler);
-
-    return () => {
-      window.removeEventListener('beforeprint', printHandler);
-    };
-  }, []);
   return(
-    <div className="print-holder" ref={componentRef}>
+    <div ref={componentRef}>
+    <div className="print-holder" >
       <div className="print-top" id="header">
         <div className="print-logo">
           <img src={logo} alt="" />
@@ -224,49 +216,40 @@ export const ComponentToPrint = React.forwardRef((props, componentRef) => {
         </div>
       </div>
       <div className="print-info">
-        <div className="dateFrom"><span>From Date: </span>{dateFrom}</div>
-        <div className="dateTo"><span>To Date: </span>{dateTo}</div>
+        <Box sx={{display: "flex"}}>
+          <div className="dateFrom"><span>From Date : </span>{dateFrom}</div>
+          <p>-</p>
+          <div className="dateTo"><span>To Date : </span>{dateTo}</div>
+        </Box>
+        <Box sx={{display: "flex"}}>
+          <Typography sx={{fontWeight: 'bold', fontSize: "0.85rem", color: "#212121"}}>
+            Printed By : 
+          </Typography>
+          <Typography sx={{fontSize: '0.85rem'}}>
+            &nbsp;{user.role} - {user.full_Name}
+          </Typography>
+        </Box>
       </div>
       
       <div className="print-charts">
-          <Chart
-            chartType="BarChart"
-            data={data}
-            options={options}
-            width='100%'  // Set the width to 100% for responsiveness
-            height="200px"  // Set an initial height, which can be adjusted
-            style={{marginLeft: "50px", marginRight: "50px"}}
-          />
-          {props.dataFromParent == "Communication" && (
-            <Chart
-            chartType="PieChart"
-            data={Piedata}
-            options={Pieoptions}
-            width={"100%"}
-            height={"200px"}
-            style={{marginLeft: "50px", marginRight: "50px"}}
-          />
-          )}
-
-          {props.dataFromParent == "Others" && (
-            <Chart
-            chartType="PieChart"
-            data={Piedata2}
-            options={Pieoptions2}
-            width={"100%"}
-            height={"200px"}
-            style={{marginLeft: "50px", marginRight: "50px"}}
-          />
-          )}
-
-          
-          
+        <Typography sx={{color: "#555"}}>
+            <span style={{fontWeight: 'bold', fontSize: "0.85rem", color: "#212121"}}>Total Items</span> : {filteredData.length} item/s
+        </Typography>
+        <Typography sx={{color: "#555"}}>
+            <span style={{fontWeight: 'bold', fontSize: "0.85rem", color: "#212121"}}>Total Pending</span> : {filteredData.filter(data => data.Status == "Pending").length} item/s
+        </Typography>
+        <Typography sx={{color: "#555"}}>
+            <span style={{fontWeight: 'bold', fontSize: "0.85rem", color: "#212121"}}>Total Approved</span> : {filteredData.filter(data => data.Status == "Completed").length} item/s
+        </Typography>
+        <Typography sx={{color: "#555"}}>
+            <span style={{fontWeight: 'bold', fontSize: "0.85rem", color: "#212121"}}>Total Rejected</span> : {filteredData.filter(data => data.Status == "Rejected").length} item/s
+        </Typography>
       </div>
-      <span style={{width: "100%", marginLeft: "70px", fontSize: "1.2rem"}}>{`${props.dataFromParent} Documents Table`}</span>
+      <Typography sx={{width: "100%", display: "flex", justifyContent: "center", fontWeight: 'bold', textDecoration: "underline", textTransform: "uppercase", fontSize: "1rem"}}>{`${props.dataFromParent} Documents Table`}</Typography>
       <div className="print-table">
           <table className="print-wholeTable">
             <tr>
-              <th>Date Received/Sent</th>
+              <th>Date</th>
               <th>Document Name</th>
               <th>Document Type</th>
               <th>Received By</th>
@@ -276,7 +259,7 @@ export const ComponentToPrint = React.forwardRef((props, componentRef) => {
             </tr>
               {filteredData.map((print, index) => {
                 return(
-                  <tr key={print.uID} style={index === 4 ? { pageBreakAfter: 'always' } : (index > 4 && (index - 4) % 12 === 0) ? { pageBreakAfter: 'always' } : {}}>
+                  <tr key={print.uID}>
                     <td>{print.date_Received}</td>
                     <td>{print.document_Name}</td>
                     <td>{print.Type == undefined || print.Type == "" ? print.document_Type : print.Type}</td>
@@ -290,16 +273,18 @@ export const ComponentToPrint = React.forwardRef((props, componentRef) => {
           </table>
           
       </div>
-      <div className="print-footer" ref={printFooterRef}>
-        <Box>
-          <Typography sx={{fontWeight: 'bold', fontSize: "0.9rem"}}>
-            Printed By
-          </Typography>
-          <Typography sx={{fontSize: '0.9rem'}}>
-            {user.full_Name}
-          </Typography>
-        </Box>
       </div>
+      <div className="print-footer" id="print-footer" ref={printFooterRef}>
+          <Box sx={{display: "flex"}}>
+            <Typography sx={{fontWeight: 'bold', fontSize: "0.85rem", color: "#212121"}}>
+              Date Printed : 
+            </Typography>
+            <Typography sx={{fontSize: '0.85rem', color: "#555"}}>
+            &nbsp;{dayjs().format('MMMM D, YYYY')}
+            </Typography>
+          </Box>
+            
+        </div>
     </div>
   );
 });

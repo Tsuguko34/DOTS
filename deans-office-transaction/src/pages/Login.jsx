@@ -165,17 +165,20 @@ import axios from "axios";
                           navigate('/pages/Dashboard')
                         }else{
                           Swal.close()
+                          checkAttempts()
                           await axios.post(`${port}/logout`).then((data) => {
                             const success = data.data
                             console.log(success.success);
                             if (success.success == true){
                                 navigate("/pages/Login");
                             }
-                          }) 
+                          })
+                          
                         }
                       }
                   }).catch(()=> {
                       Swal.close()
+                      checkAttempts()
                   })
               }
               catch(e){
@@ -191,39 +194,52 @@ import axios from "axios";
     const [loginEmail, setLoginEmail] = useState("");
     const [loginPass, setLoginPass] = useState("");
     const {signin} = UserAuth()
-    const [loginAttempts, setLoginAttempts] = useState(0);
-    const [remainingTime, setRemainingTime] = useState(0);
+    const [loginAttempts, setLoginAttempts] = useState(parseInt(localStorage.getItem('loginAttempts')) || 0);
+    const [remainingTime, setRemainingTime] = useState(parseInt(localStorage.getItem('loginTimeout')) || null);
     const [error, setError] = useState(null);
     const [isDisabled, setIsDisabled] = useState(false);
-
     const handleSubmit = async(event) => {
       event.preventDefault();
         await signin(loginEmail, loginPass)
         setError(null);
-        setLoginAttempts(loginAttempts + 1);
-        if (loginAttempts === 2) {
-            setIsDisabled(true);
-            setRemainingTime(30)
-            setTimeout(() => {
-                setIsDisabled(false);
-            }, 30000); // 30 seconds in milliseconds
-        }
-        else if(loginAttempts === 5){
-            setIsDisabled(true);
-            setRemainingTime(60)
-            setTimeout(() => {
-                setIsDisabled(false);
-                setLoginAttempts(0);
-            }, 60000); // 30 seconds in milliseconds
-        }
+        setLoginAttempts(prev => prev + 1);
+        localStorage.setItem('loginAttempts', loginAttempts + 1);
+        timeout()
     };
+
+    const timeout = (time) => {
+      console.log(true);
+      if (loginAttempts >= 2) {
+        setIsDisabled(true);
+        let remaining = null
+        if(time){
+          remaining = time
+        }else{
+          remaining = 30
+          setRemainingTime(30)
+          localStorage.setItem('loginTimeout', 30);
+        }
+        setTimeout(() => {
+            setIsDisabled(false);
+            setLoginAttempts(0);
+            localStorage.removeItem('loginAttempts');
+            localStorage.removeItem('loginTimeout');
+        }, (remaining * 1000));
+      }
+    }
+
+    const checkAttempts = () => {
+      if(loginAttempts != 0 && remainingTime != null){
+        timeout(remainingTime)
+      }
+    }
 
     useEffect(() => {
         let timerInterval;
-    
         if (remainingTime > 0) {
           timerInterval = setInterval(() => {
             setRemainingTime((prevTime) => prevTime - 1);
+            localStorage.setItem('loginTimeout', remainingTime);
           }, 1000); // Update every second
         } else {
           clearInterval(timerInterval);
@@ -231,7 +247,7 @@ import axios from "axios";
         return () => {
           clearInterval(timerInterval);
         };
-      }, [remainingTime, loginAttempts]);
+      }, [remainingTime]);
 
     const [openResetPass, setOpenResetPass] = useState(false)
     const [resetEmail, setResetEmail] = useState("")
