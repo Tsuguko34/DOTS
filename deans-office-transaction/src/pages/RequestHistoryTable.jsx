@@ -385,12 +385,16 @@ export default function StickyHeadTable() {
             setUser(data.data[0])
             const requests = await axios.get(`${port}/requests`)
             const updatedData = requests.data
-            setRows(updatedData.filter((item) => item.forwarded_By === data.data[0].uID || item.accepted_Rejected_By === data.data[0].uID || data.data[0].full_Name.includes(item.fromPer)))
-            setLoading(false);
-            if (updatedData.filter((item) => item.forwarded_By === data.data[0].uID || item.accepted_Rejected_By === data.data[0].uID || data.data[0].full_Name.includes(item.fromPer)).length == 0) {
-            setEmptyResult(true);
+            if(updatedData.success == false){
+              toast.error("There was an error while retrieving the documents")
             }else{
-              setEmptyResult(false);
+              setRows(updatedData.filter((item) => item.forwarded_By === data.data[0].uID || item.accepted_Rejected_By === data.data[0].uID || data.data[0].full_Name.includes(item.fromPer)))
+              setLoading(false);
+              if (updatedData.filter((item) => item.forwarded_By === data.data[0].uID || item.accepted_Rejected_By === data.data[0].uID || data.data[0].full_Name.includes(item.fromPer)).length == 0) {
+              setEmptyResult(true);
+              }else{
+                setEmptyResult(false);
+              }
             }
           }
         })

@@ -130,18 +130,23 @@
     }
 
     .toggle-color{
-        fill: #212121;
+        fill: #FFF;
         width: 100%;
+        opacity: 1;
     }
 
     .toggle-sidebar{
         display: flex;
         justify-content: center;
         align-items: center;
-        width: 10vh;
-        background-color: transparent;
-        height: 80px;
-        border-bottom-right-radius: 30px;
+        width: 70px;
+        background-color:#fcb49a;
+        opacity: 0.7;
+        height: 100%;
+        margin-top: 20px;
+        border-top-right-radius: 50%;
+        border-bottom-right-radius: 50%;
+
     }
 
     .toggle-color:hover{

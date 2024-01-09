@@ -61,16 +61,33 @@ function ArchiveTable() {
 
   const getStatus = async() => {
     const data = await axios.get(`${port}/getArchives`)
-    const buttonSet = new Set()
-    const yearSet = new Set()
-    const updatedButtonSet = new Set()
-    data.data.forEach((doc) => {
-      const whatDoc = doc.document_Type
-      const whatYear = new Date(doc.date_Received).getFullYear()
-      const elementToCheck = {Type : whatDoc, Year : whatYear}
-      if(whatDoc){
-        if(user.role == "Faculty"){
-          if(doc.forwarded_By == user.uID || doc.forward_To == user.uID || doc.accepted_Rejected_By == user.uID || user.full_Name.includes(doc.fromPer) ){
+    if(data.data.success == false){
+      toast.error("There was an error while retrieving the archives")
+    }
+    else{
+      const buttonSet = new Set()
+      const yearSet = new Set()
+      const updatedButtonSet = new Set()
+      data.data.forEach((doc) => {
+        const whatDoc = doc.document_Type
+        const whatYear = new Date(doc.date_Received).getFullYear()
+        const elementToCheck = {Type : whatDoc, Year : whatYear}
+        if(whatDoc){
+          if(user.role == "Faculty"){
+            if(doc.forwarded_By == user.uID || doc.forward_To == user.uID || doc.accepted_Rejected_By == user.uID || user.full_Name.includes(doc.fromPer) ){
+              if (buttonSet.size === 0 || ![...buttonSet].some(button => button.Type === whatDoc)) {
+                buttonSet.add({ Type: whatDoc, Year: whatYear });
+                updatedButtonSet.add({ Type: whatDoc, Year: whatYear });
+              } else {
+                buttonSet.forEach((button) => {
+                  if (button.Type === whatDoc && button.Year !== whatYear) {
+                    updatedButtonSet.add({ Type: whatDoc, Year: whatYear });
+                  }
+                });
+              }
+              yearSet.add(whatYear)
+            }
+          }else{
             if (buttonSet.size === 0 || ![...buttonSet].some(button => button.Type === whatDoc)) {
               buttonSet.add({ Type: whatDoc, Year: whatYear });
               updatedButtonSet.add({ Type: whatDoc, Year: whatYear });
@@ -83,34 +100,23 @@ function ArchiveTable() {
             }
             yearSet.add(whatYear)
           }
-        }else{
-          if (buttonSet.size === 0 || ![...buttonSet].some(button => button.Type === whatDoc)) {
-            buttonSet.add({ Type: whatDoc, Year: whatYear });
-            updatedButtonSet.add({ Type: whatDoc, Year: whatYear });
-          } else {
-            buttonSet.forEach((button) => {
-              if (button.Type === whatDoc && button.Year !== whatYear) {
-                updatedButtonSet.add({ Type: whatDoc, Year: whatYear });
-              }
-            });
-          }
-          yearSet.add(whatYear)
+          
         }
-        
+      })
+      console.log(updatedButtonSet);
+      const buttonArray = Array.from(updatedButtonSet)
+      const yearArray = Array.from(yearSet)
+      if(buttonArray.length > 0 || yearArray.length > 0){
+        setEmptyResult(false)
+      }else{
+        setEmptyResult(true)
       }
-    })
-    console.log(updatedButtonSet);
-    const buttonArray = Array.from(updatedButtonSet)
-    const yearArray = Array.from(yearSet)
-    if(buttonArray.length > 0 || yearArray.length > 0){
-      setEmptyResult(false)
-    }else{
-      setEmptyResult(true)
+      yearArray.sort((a, b) => b - a);
+      setButtonData(buttonArray)
+      setYearData(yearArray)
+      setLoading(false)
     }
-    yearArray.sort((a, b) => b - a);
-    setButtonData(buttonArray)
-    setYearData(yearArray)
-    setLoading(false)
+    
   }
 
   useEffect(() => {

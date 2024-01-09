@@ -82,9 +82,9 @@ app.post("/register", uploadProfile.single('files'), async(req, res) => {
         verificationToken
     ]
     db.query(registerQ, [values], (err, regData) => {
-        if (err) return console.log(err);
+        if (err) return res.json({success : false})
         sendVerificationEmail(req.body.email, verificationToken)
-        return res.json({sucess: true})
+        return res.json({success: true})
     })
     
 })
@@ -105,7 +105,7 @@ app.post("/registerTemp", async(req, res) => {
     ]
     db.query(registerQ, [values], (err, regData) => {
         if (err){
-            console.log(err)
+            return res.json({success : false})
             return res.status(200).json({success: false})
         }
         return res.status(200).json({success: true})
@@ -125,9 +125,9 @@ app.post("/completeRegister", uploadProfile.single('files'), async(req, res) => 
         0
     ]
     db.query(registerQ, [...values, req.query.uID], (err, regData) => {
-        if (err) return console.log(err);
+        if (err) return res.json({success : false})
         // sendVerificationEmail(req.body.email, verificationToken)
-        return res.json({sucess: true})
+        return res.json({success: true})
     })
     
 })
@@ -157,7 +157,7 @@ app.get("/verify", (req, res) =>{
     const q = `SELECT * FROM users WHERE verification_token = '${req.query.token}'`
 
     db.query(q, (err, data) => {
-        if (err) return console.log(err);
+        if (err) return res.json({success : false})
         const user = data[0]
         if(user){
             const q = "UPDATE users SET `verified` = ?,`verification_token` = ? WHERE uID = ?"
@@ -167,7 +167,7 @@ app.get("/verify", (req, res) =>{
             ]
     
             db.query(q, [...values, user.uID], (err, data) => {
-                if(err) return console.log(err);;
+                if(err) return res.json({success : false});
                 return res.json({success: true})
             })
         }
@@ -178,7 +178,7 @@ app.get("/lookEmail", (req, res) =>{
     const q = `SELECT * FROM users WHERE email = '${req.query.email}'`
 
     db.query(q, (err, data) => {
-        if (err) return console.log(err);
+        if (err) return res.json({success : false})
         return res.json(data)
     })
 })
@@ -198,7 +198,7 @@ app.post("/logout", (req, res) => {
 app.post("/login", (req, res) =>{
     const q = `SELECT * FROM users WHERE email = '${req.body.email}' LIMIT 1`
     db.query(q, async(err, data) => {
-        if (err) return console.log(err);
+        if (err) return res.json({success : false})
         if(data.length > 0){
             const passwordMatch = await bcrypt.compare(req.body.password, data[0].password); 
             if (!passwordMatch){
@@ -216,7 +216,7 @@ app.get("/getUser", async(req, res) => {
         let cols = [req.session.userID]
         const q = `SELECT * FROM users WHERE uID = '${cols}' LIMIT 1`
         db.query(q, (err, data) => {
-            if (err) return res.json(err)
+            if (err) return res.json({success : false})
             return res.status(200).json(data)
         })
     }else{
@@ -228,7 +228,7 @@ app.get("/getUser", async(req, res) => {
 app.get("/getUsers", (req, res) =>{
     const q = `SELECT * FROM users`
     db.query(q, (err, data) => {
-        if (err) return console.log(err);
+        if (err) return res.json({success : false})
         return res.json(data)
     })
 })
@@ -237,14 +237,14 @@ app.put("/handleDeactivate", (req, res) => {
     if(req.query.action == "deactivate"){
         const q = "UPDATE users SET `Active` = 0 WHERE uID = ?"
         db.query(q, req.query.uID, (err, data) => {
-            if(err) return console.log(err);
+            if(err) return res.json({success : false})
             return res.status(200).json({success : true})
         })
     }
     else if(req.query.action == "activate"){
         const q = "UPDATE users SET `Active` = 1 WHERE uID = ?"
         db.query(q, req.query.uID,(err, data) => {
-            if(err) return console.log(err);
+            if(err) return res.json({success : false})
             return res.status(200).json({success : true})
         })
     }
@@ -269,7 +269,7 @@ app.post("/addSignature", uploadSignature.single("files"),(req, res) => {
     ]
 
     db.query(q, [values], (err, data) => {
-        if (err) return console.log(err);
+        if (err) return res.json({success : false})
         return res.status(200).json({success : true})
     })
 })
@@ -278,7 +278,7 @@ app.get("/getSignatures", (req, res) => {
     const q = `SELECT * FROM signatures`
 
     db.query(q, (err, data) => {
-        if(err) return console.log(err);
+        if(err) return res.json({success : false})
         return res.status(200).json(data)
     })
 })
@@ -286,7 +286,7 @@ app.get("/getSignatures", (req, res) => {
 app.get("/getDropdowns", (req, res) => {
     const q = `SELECT * FROM dropdowns`
     db.query(q, (err, data) => {
-        if (err) console.log(err);
+        if (err) return res.json({success : false});
         return res.json(data);
     })
 })
@@ -296,14 +296,14 @@ app.post("/addDropdowns", (req, res) => {
     if(req.query.type == "Office"){
         const q = `DELETE FROM dropdowns WHERE option_For = 'Office'`
         db.query(q, (err, data) => {
-            if (err) console.log(err);
+            if (err) return res.json({success : false});
             for(const drop of req.body.office){
                 const values = [
                     drop,
                     "Office"
                 ]
                 db.query(add, [values],(err, data) => {
-                    if (err) console.log(err);
+                    if (err) return res.json({success : false});
                 })
             }
             return res.status(200).json({success : true});
@@ -312,14 +312,14 @@ app.post("/addDropdowns", (req, res) => {
     if(req.query.type == "Categories"){
         const q = `DELETE FROM dropdowns WHERE option_For = 'Categories'`
         db.query(q, (err, data) => {
-            if (err) console.log(err);
+            if (err) return res.json({success : false});
             for(const drop of req.body.categories){
                 const values = [
                     drop,
                     "Categories"
                 ]
                 db.query(add, [values],(err, data) => {
-                    if (err) console.log(err);
+                    if (err) return res.json({success : false});
                 })
             }
             return res.status(200).json({success : true});
@@ -328,14 +328,14 @@ app.post("/addDropdowns", (req, res) => {
     if(req.query.type == "Student"){
         const q = `DELETE FROM dropdowns WHERE option_For = 'Student'`
         db.query(q, (err, data) => {
-            if (err) console.log(err);
+            if (err) return res.json({success : false});
             for(const drop of req.body.student){
                 const values = [
                     drop,
                     "Student"
                 ]
                 db.query(add, [values],(err, data) => {
-                    if (err) console.log(err);
+                    if (err) return res.json({success : false});
                 })
             }
             return res.status(200).json({success : true});
@@ -344,14 +344,14 @@ app.post("/addDropdowns", (req, res) => {
     if(req.query.type == "Faculty"){
         const q = `DELETE FROM dropdowns WHERE option_For = 'Faculty'`
         db.query(q, (err, data) => {
-            if (err) console.log(err);
+            if (err) return res.json({success : false});
             for(const drop of req.body.faculty){
                 const values = [
                     drop,
                     "Faculty"
                 ]
                 db.query(add, [values],(err, data) => {
-                    if (err) console.log(err);
+                    if (err) return res.json({success : false});
                 })
             }
             return res.status(200).json({success : true});
@@ -360,14 +360,14 @@ app.post("/addDropdowns", (req, res) => {
     if(req.query.type == "Hire"){
         const q = `DELETE FROM dropdowns WHERE option_For = 'Hire'`
         db.query(q, (err, data) => {
-            if (err) console.log(err);
+            if (err) return res.json({success : false});
             for(const drop of req.body.hire){
                 const values = [
                     drop,
                     "Hire"
                 ]
                 db.query(add, [values],(err, data) => {
-                    if (err) console.log(err);
+                    if (err) return res.json({success : false});
                 })
             }
             return res.status(200).json({success : true});
@@ -395,7 +395,7 @@ app.post("/addTemplate", uploadTemplate.single("files"),(req, res) => {
     ]
 
     db.query(q, [values], (err, data) => {
-        if (err) return console.log(err);
+        if (err) return res.json({success : false})
         return res.status(200).json({success : true})
     })
 })
@@ -404,7 +404,7 @@ app.get("/getTemplates", (req, res) => {
     const q = `SELECT * FROM templates`
 
     db.query(q, (err, data) => {
-        if(err) return console.log(err);
+        if(err) return res.json({success : false})
         return res.status(200).json(data)
     })
 })
@@ -417,7 +417,7 @@ app.post("/deleteTemplate",(req, res) => {
             fs.unlinkSync(filePath)
             const q = `DELETE FROM templates WHERE uID = '${req.query.uID}'`
             db.query(q, (err, data) => {
-                if (err) return console.log(err);
+                if (err) return res.json({success : false})
                 return res.status(200).json({success : true})
             })
         }
@@ -433,14 +433,14 @@ app.put("/editProfile", (req, res) => {
         ]
 
         db.query(q, [...values, req.query.uID], (err, data) => {
-            if(err) return console.log(err);
+            if(err) return res.json({success : false})
             return res.status(200).json({success : true})
         })
     }
     else if(req.query.request == "Email"){
         const q = `SELECT * FROM users WHERE uID = '${req.query.uID}'`
         db.query(q, async(err, data) => {
-            if(err) return console.log(err);
+            if(err) return res.json({success : false})
             if (data.length > 0) {
                 const passwordMatch = await bcrypt.compare(req.body.pass, data[0].password); 
                 if (!passwordMatch){
@@ -451,7 +451,7 @@ app.put("/editProfile", (req, res) => {
                         req.body.email
                     ]
                     db.query(q, [...values, req.query.uID], (err, data) => {
-                        if(err) return console.log(err);
+                        if(err) return res.json({success : false})
                         return res.status(200).json({success : true})
                     })
                 }
@@ -462,7 +462,7 @@ app.put("/editProfile", (req, res) => {
     else if(req.query.request == "Password"){
         const q = `SELECT * FROM users WHERE uID = '${req.query.uID}'`
         db.query(q, async(err, data) => {
-            if(err) return console.log(err);
+            if(err) return res.json({success : false})
             if (data.length > 0) {
                 const passwordMatch = await bcrypt.compare(req.body.oldPass, data[0].password); 
                 if (!passwordMatch){
@@ -474,7 +474,7 @@ app.put("/editProfile", (req, res) => {
                         hashedPassword
                     ]
                     db.query(q, [...values, req.query.uID], (err, data) => {
-                        if(err) return console.log(err);
+                        if(err) return res.json({success : false})
                         return res.status(200).json({success : true})
                     })
                 }
@@ -496,7 +496,7 @@ app.put("/editProfilePic", uploadProfile.single("files"),(req, res) => {
             ]
 
             db.query(q, [...values, req.query.uID], (err, data) => {
-                if(err) return console.log(err);
+                if(err) return res.json({success : false})
                 return res.status(200).json({success : true})
             })
         }
@@ -514,7 +514,7 @@ app.post("/createLog", (req, res) => {
     ]
 
     db.query(q, [values], (err, data) => {
-        if(err) return console.log(err);
+        if(err) return res.json({success : false})
         return res.status(200).json({success : true})
     })
 })
@@ -523,7 +523,7 @@ app.get("/getLogs", (req, res) => {
     const q = `SELECT * FROM logs`
 
     db.query(q, (err, data) => {
-        if(err) return console.log(err);
+        if(err) return res.json({success : false})
         return res.status(200).json(data)
     })
 })
@@ -539,7 +539,7 @@ app.get("/documents", (req, res) => {
     }
     
     db.query(q, (err, data) => {
-        if(err) return res.json(err)
+        if(err) return res.json({success : false})
         return res.json(data)
     })
 })
@@ -571,11 +571,11 @@ app.post("/documentFiles", upload.array('files'),(req, res) => {
         
             db.query(q, [values], (err, data) => {
                 if(err){
-                    return res.json(err.message);
+                    return res.json({success : false})
                 }else{
                     queriesExecuted++;
                     if(queriesExecuted == req.files.length){
-                        return res.json({sucess: true})
+                        return res.json({success: true})
                     }
                 }
             })
@@ -612,8 +612,8 @@ app.post("/documents",(req, res) => {
 
     db.query(q, [values], (err, data) => {
         
-        if(err) return res.json(err);
-        return res.json({sucess: true})
+        if(err) return res.json({success : false});
+        return res.json({success: true})
     })
 })
 
@@ -634,8 +634,8 @@ app.put("/update",(req, res) => {
     ]
 
     db.query(q, [...values, req.body.uID], (err, data) => {
-        if(err) return console.log(err);;
-        return res.json({sucess: true})
+        if(err) return res.json({success : false})
+        return res.json({success: true})
     })
 })
 
@@ -643,7 +643,7 @@ app.put("/updateFile", upload.array('files'),(req, res) => {
     let queriesExecuted = 0;
     const selectQuery = `SELECT * FROM files WHERE uID = '${req.body.uID}'`
         db.query(selectQuery, (err, data) => {
-            if (err) return console.log(err);
+            if (err) return res.json({success : false})
             const fileNames = data.map(item => item.file_Name)
             const deleteQuery = `DELETE FROM files WHERE uID = '${req.body.uID}'`;
             db.query(deleteQuery, (deleteErr, deleteData) => {
@@ -678,11 +678,11 @@ app.put("/updateFile", upload.array('files'),(req, res) => {
                 
                     db.query(insertQuery, [values], (err, data) => {
                         if(err){
-                            return res.json(err.message);
+                            return res.json({success : false})
                         }else{
                             queriesExecuted++;
                             if(queriesExecuted == req.files.length){
-                                return res.json({sucess: true})
+                                return res.json({success: true})
                             }
                         }
                     })
@@ -699,7 +699,7 @@ app.put("/updateFile", upload.array('files'),(req, res) => {
 app.get("/getArchives",(req, res) => {
     const q = `SELECT * FROM archives`;
     db.query(q, (err, data) => {
-      if (err) return res.json(err);
+      if (err) return res.json({success : false});
       return res.json(data);
     });
 });
@@ -707,7 +707,7 @@ app.get("/getArchives",(req, res) => {
 app.get("/getFilteredArchives",(req, res) => {
     const q = `SELECT * FROM archives WHERE document_Type = '${req.query.documentType}' AND SUBSTRING(date_Received, 7, 4) = '${req.query.year}';`;
     db.query(q, (err, data) => {
-      if (err) return res.json(err);
+      if (err) return res.json({success : false});
       return res.json(data);
     });
 });
@@ -717,7 +717,7 @@ app.post("/archiveFile",(req, res) => {
     const deleteQuery = `DELETE FROM documents WHERE uID = '${req.query.id}'`;
     const insertQuery = "INSERT INTO archives (`document_Name`,`document_Type`,`date_Received`,`received_By`,`fromPer`,`fromDep`,`time_Received`,`uID`,`Status`,`Type`,`Description`,`Comment`,`forward_To`,`Remark`,`deleted_at`,`urgent`,`unread`, `archived_By`, `tracking`) VALUES (?)"
     db.query(selectQuery, (err, data) => {
-      if (err) return res.json(err);
+      if (err) return res.json({success : false});
         const selectedData = data[0]
         const values = [
             selectedData.document_Name,
@@ -741,10 +741,10 @@ app.post("/archiveFile",(req, res) => {
             selectedData.tracking
         ]
         db.query(insertQuery, [values], (err, insertData) => {
-            if (err) return console.log(err);
+            if (err) return res.json({success : false})
             db.query(deleteQuery, (err, delData) => {
-                if (err)  console.log(err);
-                return res.json({sucess: true})
+                if (err)  return res.json({success : false});
+                return res.json({success: true})
             })
         })
     });
@@ -753,7 +753,7 @@ app.post("/archiveFile",(req, res) => {
 app.get("/openFile",(req, res) => {
     const q = `SELECT * FROM documents WHERE uID = '${req.query.id}'`;
     db.query(q, (err, data) => {
-      if (err) return res.json(err);
+      if (err) return res.json({success : false});
       return res.json(data);
     });
 });
@@ -761,7 +761,7 @@ app.get("/openFile",(req, res) => {
 app.get("/getFile",(req, res) => {
     const q = `SELECT * FROM files WHERE uID = '${req.query.id}'`;
     db.query(q, (err, data) => {
-      if (err) return res.json(err);
+      if (err) return res.json({success : false});
       return res.json(data);
     });
 });
@@ -769,7 +769,7 @@ app.get("/getFile",(req, res) => {
 app.get("/openArchiveFile",(req, res) => {
     const q = `SELECT * FROM archives WHERE uID = '${req.query.id}'`;
     db.query(q, (err, data) => {
-      if (err) return res.json(err);
+      if (err) return res.json({success : false});
       return res.json(data);
     });
 });
@@ -777,7 +777,7 @@ app.get("/openArchiveFile",(req, res) => {
 app.get("/getArchiveFiles",(req, res) => {
     const q = `SELECT * FROM files`;
     db.query(q, (err, data) => {
-      if (err) return res.json(err);
+      if (err) return res.json({success : false});
       return res.json(data);
     });
 });
@@ -786,7 +786,7 @@ app.get("/getArchiveFiles",(req, res) => {
 app.get("/getPending", (req, res) => {
     const q = `SELECT * FROM documents WHERE Status = 'Pending' AND forward_To ='${req.query.userID}'`
     db.query(q, (err, data) => {
-        if (err) console.log(err);
+        if (err) return res.json({success : false});
         return res.json(data);
     })
 })
@@ -794,7 +794,7 @@ app.get("/getPending", (req, res) => {
 app.get("/getApproved", (req, res) => {
     const q = `SELECT * FROM documents WHERE Status = 'Completed'`
     db.query(q, (err, data) => {
-        if (err) console.log(err);
+        if (err) return res.json({success : false});
         const sentData = data.filter(item => item.forward_To == req.query.userID || ((item.forward_To.includes(req.query.role) || item.forward_To.includes("All")) && !item.forward_To.includes(req.query.userID)))
         return res.json(sentData);
     })
@@ -803,7 +803,7 @@ app.get("/getApproved", (req, res) => {
 app.get("/getRejected", (req, res) => {
     const q = `SELECT * FROM documents WHERE Status = 'Rejected'`
     db.query(q, (err, data) => {
-        if (err) console.log(err);
+        if (err) return res.json({success : false});
         const sentData = data.filter(item => item.forward_To == req.query.userID || ((item.forward_To.includes(req.query.role) || item.forward_To.includes("All")) && !item.forward_To.includes(req.query.userID)))
         return res.json(sentData);
     })
@@ -812,7 +812,7 @@ app.get("/getRejected", (req, res) => {
 app.get("/getRequests", (req, res) => {
     const q = `SELECT * FROM documents`
     db.query(q, (err, data) => {
-        if (err) console.log(err);
+        if (err) return res.json({success : false});
         return res.json(data);
     })
 })
@@ -820,7 +820,7 @@ app.get("/getRequests", (req, res) => {
 app.get("/getNotifs", (req, res) => {
     const q = `SELECT * FROM notifications WHERE userUID = '${req.query.userID}'`
     db.query(q, (err, data) => {
-        if (err) console.log(err);
+        if (err) return res.json({success : false});
         return res.json(data);
         
     })
@@ -829,7 +829,7 @@ app.get("/getNotifs", (req, res) => {
 app.get("/requests", (req, res) => {
     const q = `SELECT * FROM documents`
     db.query(q, (err, data) => {
-        if (err) console.log(err);
+        if (err) return res.json({success : false});
         return res.json(data);
     })
 })
@@ -841,16 +841,16 @@ app.put("/unread",(req, res) => {
     ]
 
     db.query(q, [...values, req.body.uID], (err, data) => {
-        if(err) return console.log(err);;
-        return res.json({sucess: true})
+        if(err) return res.json({success : false});
+        return res.json({success: true})
     })
 })
 
 app.put("/updateNotif",(req, res) => {
     const q = `DELETE FROM notifications WHERE docID = '${req.body.docID}' AND userUID = '${req.body.userUID}'`
     db.query(q, (err, data) => {
-        if(err) return console.log(err);;
-        return res.json({sucess: true})
+        if(err) return res.json({success : false});
+        return res.json({success: true})
     })
 })
 
@@ -867,8 +867,8 @@ app.put("/approveReject",(req, res) => {
         0
     ]
     db.query(q, [...values, req.body.uID], (err, data) => {
-        if(err) return console.log(err);
-        return res.json({sucess: true})
+        if(err) return res.json({success : false})
+        return res.json({success: true})
     })
 })
 
@@ -883,19 +883,19 @@ app.put("/forwardRequest",(req, res) => {
         req.body.accepted_Rejected_By,
     ]
     db.query(q, [...values, req.body.uID], (err, data) => {
-        if(err) return console.log(err);
-        return res.json({sucess: true})
+        if(err) return res.json({success : false})
+        return res.json({success: true})
     })
 })
 
 app.post("/notif",(req, res) => {
     const selectQuery = `SELECT * FROM notifications WHERE userUID = '${req.body.userUID}' AND docID = '${req.body.docId}'`
     db.query(selectQuery, (err, data) => {
-        if (err) console.log(err);
+        if (err) return res.json({success : false});
         if (data.length > 0){
             const deleteQuery = `DELETE FROM notifications WHERE userUID = '${req.body.userUID}' AND docID = '${req.body.docId}'`
             db.query(deleteQuery, (err, deleteData) =>{
-                if (err) return console.log(err);
+                if (err) return res.json({success : false})
             })
         }
         let reminder = 0
@@ -911,8 +911,8 @@ app.post("/notif",(req, res) => {
             reminder
         ]
         db.query(q, [values], (err, postData) => {   
-            if(err) return console.log(err);
-            return res.json({sucess: true})
+            if(err) return res.json({success : false})
+            return res.json({success: true})
         })
     })
    

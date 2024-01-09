@@ -1447,7 +1447,18 @@
 .welcome-img{
     display: flex;
     justify-content: center;
+    height: 100px !important;
+}
+
+.logs-img{
+    display: flex;
+    justify-content: center;
     height: 40px !important;
+}
+
+.logs-img img {
+    width: 100% !important;
+    height: 100% !important;
 }
 
 .welcome-msg{
@@ -2717,7 +2728,14 @@
     .form-style{
         flex-direction: column;
     }
-
+    .date-time{
+        display: flex;
+        /* flex-direction: column; */
+        height: 110px;
+        margin: 20px 10px;
+        padding: 0 10px;
+        width: 100%;
+    }
     .right-holder{
         margin-left: 0;
     }

@@ -116,29 +116,34 @@ export default function MediaCard() {
     const extArray = []
     const yearSet = new Set()
     const data = await axios.get(`${port}/getTemplates`);
-    data.data.forEach((item) => {
-      yearSet.add(new Date(item.date_Added).getFullYear())
-      if (item.file_Name.endsWith('.pdf')){
-        extArray.push({uid: item.name, image:"pdf"})
+    if(data.data.success == false){
+      toast.error("There was an error while retrieving the documents")
+    }else{
+      data.data.forEach((item) => {
+        yearSet.add(new Date(item.date_Added).getFullYear())
+        if (item.file_Name.endsWith('.pdf')){
+          extArray.push({uid: item.name, image:"pdf"})
+        }
+        else if (item.file_Name.endsWith('.docx') || item.file_Name.endsWith('.doc')){
+          extArray.push({uid: item.name, image:"docx"})
+        }
+        else if (item.file_Name.endsWith('.xlsx') || item.file_Name.endsWith('.xls')){
+          extArray.push({uid: item.name, image:"xlsx"})
+        }
+      })
+      setFileExt(extArray)
+      
+      if ([data.data.length] > 0) {
+        setLoading(false);
+        setEmptyResult(false);
+        setYearData(Array.from(yearSet))
+        fileExt && setTemplate(data.data.map((doc) => ({...doc, year: new Date(doc.date_Added).getFullYear()})));
+      } else {
+        setLoading(false);
+        setEmptyResult(true);
       }
-      else if (item.file_Name.endsWith('.docx') || item.file_Name.endsWith('.doc')){
-        extArray.push({uid: item.name, image:"docx"})
-      }
-      else if (item.file_Name.endsWith('.xlsx') || item.file_Name.endsWith('.xls')){
-        extArray.push({uid: item.name, image:"xlsx"})
-      }
-    })
-    setFileExt(extArray)
-    
-    if ([data.data.length] > 0) {
-      setLoading(false);
-      setEmptyResult(false);
-      setYearData(Array.from(yearSet))
-      fileExt && setTemplate(data.data.map((doc) => ({...doc, year: new Date(doc.date_Added).getFullYear()})));
-    } else {
-      setLoading(false);
-      setEmptyResult(true);
     }
+    
    
   };
 

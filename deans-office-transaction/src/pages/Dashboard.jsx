@@ -3,7 +3,7 @@ import "./Pages.css";
 import * as FaIcons from "react-icons/fa";
 import * as AiIcons from "react-icons/ai";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
-import { Doughnut } from "react-chartjs-2";
+import { Bar, Doughnut } from "react-chartjs-2";
 import { Link, NavLink, Navigate, useNavigate } from "react-router-dom";
 import cn from "../components/cn";
 import dayjs from "dayjs";
@@ -77,25 +77,6 @@ function Dashboard() {
   axios.defaults.withCredentials = true
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true);
-  const [data1, setData1] = useState(0);
-  const [data2, setData2] = useState(0);
-  const [data3, setData3] = useState(0);
-  const [data4, setData4] = useState(0);
-  const [data5, setData5] = useState(0);
-  const [data6, setData6] = useState(0);
-  const [data7, setData7] = useState(0);
-  const [data8, setData8] = useState(0);
-  const [data9, setData9] = useState(0);
-  const [data10, setData10] = useState(0);
-  const [data11, setData11] = useState(0);
-  const [data12, setData12] = useState(0);
-  const [data13, setData13] = useState(0);
-  const [data14, setData14] = useState(0);
-  const [data15, setData15] = useState(0);
-  const [data16, setData16] = useState(0);
-  const [data17, setData17] = useState(0);
-  const [data18, setData18] = useState(0);
-  const [data19, setData19] = useState(0);
   const [others, setOthers] = useState(false)
   const showOthers = () => setOthers(!others);
   
@@ -106,43 +87,27 @@ function Dashboard() {
   const [trainingData, setTrainingData] = useState([])
   const [leaveData, setLeaveData] = useState([])
   const [travelData, setTravelData] = useState([])
+  const [fiveOffice, setFiveOffice] = useState([])
+  const [officeData, setofficeData] = useState([])
+  const [typeSets, setTypeSets] = useState([])
   const getChartData1 = async () => {
     
     const data = await axios.get(`${port}/requests`)
+    setofficeData(data.data)
+    const fromDepValues = data.data.filter(item => item.fromDep !== null).map(item => item.fromDep)
+    const officeCount = fromDepValues.reduce((acc, fromDep) => {
+      acc[fromDep] = (acc[fromDep] || 0) + 1;
+      return acc;
+    }, {});
+    const sortedOffices = Object.keys(officeCount).sort((a, b) => officeCount[b] - officeCount[a]);
+    const topFiveOffices = sortedOffices.slice(0, 5);
+    setFiveOffice(topFiveOffices);
+
 
     data.data.forEach((doc) => {
       const docType = doc.document_Type
       const Type = doc.Type
-
-      if(docType == "Communication"){
-        setData1(prev => prev + 1)
-      }
-      else if(docType === "Memorandum"){
-        setData2(prev => prev + 1)
-      }
-      else if(docType === "Student Document" && Type === "Completion Form"){
-        setData3(prev => prev + 1)
-        setData16(prev => prev + 1)
-      }
-      else if(docType === "Student Document" && Type === "Correction of Grades"){
-        setData4(prev => prev + 1)
-        setData16(prev => prev + 1)
-      }
-      else if(docType === "Faculty Document" && Type === "Estimates of Honoraria"){
-        setData5(prev => prev + 1)
-        setData17(prev => prev + 1)
-      }
-      else if(docType === "Faculty Document" && Type === "Faculty Teaching Load"){
-        setData6(prev => prev + 1)
-        setData17(prev => prev + 1)
-      }
-      else if(docType === "Faculty Document" && Type === "Faculty Workload"){
-        setData7(prev => prev + 1)
-        setData17(prev => prev + 1)
-      }
-      else if(docType === "Faculty Document" && Type === "Application for Leave"){
-        setData8(prev => prev + 1)
-        setData17(prev => prev + 1)
+      if(docType === "Faculty Document" && Type === "Application for Leave"){
         const existing = leaveData.findIndex((item) => item.name == doc.fromPer)
         if(existing !== -1){
           leaveData[existing].count += 1
@@ -151,8 +116,6 @@ function Dashboard() {
         }
       }
       else if(docType === "Faculty Document" && Type === "Training Request Form"){
-        setData9(prev => prev + 1)
-        setData17(prev => prev + 1)
         const existing = trainingData.findIndex((item) => item.name == doc.fromPer)
         if(existing !== -1){
           trainingData[existing].count += 1
@@ -160,24 +123,7 @@ function Dashboard() {
           trainingData.push({name: doc.fromPer, count: 1})
         }
       }
-      else if(docType === "New Hire Document" && Type === "Personel Requisition Form"){
-        setData10(prev => prev + 1)
-        setData18(prev => prev + 1)
-      }
-      else if(docType === "New Hire Document" && Type === "Contract"){
-        setData11(prev => prev + 1)
-        setData18(prev => prev + 1)
-      }
-      else if(docType === "IPCR/OPCR" && Type === "IPCR"){
-        setData12(prev => prev + 1)
-        setData19(prev => prev + 1)
-      }
-      else if(docType === "IPCR/OPCR" && Type === "OPCR"){
-        setData13(prev => prev + 1)
-        setData19(prev => prev + 1)
-      }
       else if(docType === "Travel Order"){
-        setData14(prev => prev + 1)
         const existing = travelOrderData.findIndex((item) => item.name == doc.fromPer)
         if(existing !== -1){
           travelOrderData[existing].count += 1
@@ -185,10 +131,16 @@ function Dashboard() {
           travelOrderData.push({name: doc.fromPer, count: 1})
         }
       }
-      else if(docType === "Meeting Request"){
-        setData15(prev => prev + 1)
-      }
     })
+
+    const docTypeValues = data.data.filter(item => item.document_Type !== null).map(item => item.document_Type)
+    const docTypeCount = docTypeValues.reduce((acc, document_Type) => {
+      acc[document_Type] = (acc[document_Type] || 0) + 1;
+      return acc;
+    }, {});
+    const sortedDocType = Object.keys(docTypeCount).sort((a, b) => docTypeCount[b] - docTypeCount[a]);
+    const topSets = Array.from(sortedDocType).slice(0, 15);
+    setTypeSets(topSets)
   };
 
   useEffect(() => {
@@ -228,27 +180,11 @@ function Dashboard() {
   };
 
   const total_Data = {
-    labels:[
-      "Communication Letter",
-      "Memorandum",
-      "Completion Form",
-      "Correction of Grades",
-      "Estimates of Honoraria",
-      "Faculty Teaching Load",
-      "Faculty Workload",
-      "Application for Leave",
-      "Training Request Form",
-      "Personel Requisition Form",
-      "Contract",
-      "IPCR",
-      "OPCR",
-      "Travel Order",
-      "Meeting request",
-    ],
+    labels: typeSets,
     datasets: [
       {
         label: "Number of Documents",
-        data: [data1, data2, data3, data4, data5, data6, data7, data8, data9, data10, data11, data12, data13, data14, data15],
+        data: typeSets.map(item => officeData.filter(docs => docs.document_Type == item).length),
         backgroundColor: [
           "#FF6701",
           "#FEA82F",
@@ -265,6 +201,56 @@ function Dashboard() {
           "#A1CCD1",
           "#CECE5A",
           "#FFD6A5"
+        ],
+        borderWidth: 0,
+      },
+    ],
+  };
+
+  const Baroption = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        position: "top",
+        align: "center",
+        labels: {
+          usePointStyle: true,
+          responsive: true,
+          fontSize: 16,
+          pointStyle: "rectRounded",
+          fontColor: "#888"
+        },
+      },
+    },
+    scales: {
+      xAxes: [
+        {
+          ticks: {
+            maxRotation: -90,
+            minRotation: -90,
+          },
+        },
+      ],
+    },
+  };
+  const bar_Data = {
+    labels: fiveOffice,
+    datasets: [
+      {
+        label: "Incoming",
+        data: fiveOffice.map(office => officeData.filter(item => (item.fromDep == office && item.Remark == "Incoming")).length),
+        backgroundColor: [
+          "#FFC288",
+        ],
+        borderWidth: 0,
+      },
+      {
+        label: "Outgoing",
+        data: fiveOffice.map(office => officeData.filter(item =>  (item.fromDep == office && item.Remark == "Outgoing")).length),
+        backgroundColor: [
+          "#9FB8AD",
         ],
         borderWidth: 0,
       },
@@ -313,23 +299,16 @@ function Dashboard() {
   const getMonthYearData = async () => {
     const yearMonthData = await axios.get(`${port}/requests`)
     setYearMonth(yearMonthData.data);
-    let i = 0;
-    let x = 0;
-    let y = 0;
     yearMonth.map((yearMonth) => {
       if (dayjs().isSame(yearMonth.date_Received, "year")) {
-        
-        i += 1;
+        setYearData(prev => prev + 1)
       }
       if (dayjs().isSame(yearMonth.date_Received, "month")) {
-        x += 1;
+        setMonthData(prev => prev + 1)
       }
       if (dayjs().isSame(yearMonth.date_Received, "day")) {
-        y += 1;
+        setDayData(prev => prev + 1)
       }
-      document.getElementById("total2").innerHTML = y;
-      document.getElementById("total3").innerHTML = x;
-      document.getElementById("total4").innerHTML = i;
     });
   };
 
@@ -630,7 +609,7 @@ function Dashboard() {
                   </div>
                   <div className="dash-total-title">
                     <p>Docs this day</p>
-                    <h2 id="total2">0</h2>
+                    <h2 id="total2">{dayData}</h2>
                   </div>
                 </div>
               </Card>
@@ -643,7 +622,7 @@ function Dashboard() {
                   </div>
                   <div className="dash-total-title">
                     <p>Docs this month</p>
-                    <h2 id="total3">0</h2>
+                    <h2 id="total3">{monthData}</h2>
                   </div>
                 </div>
               </Card>
@@ -656,7 +635,7 @@ function Dashboard() {
                   </div>
                   <div className="dash-total-title">
                     <p>Docs this year</p>
-                    <h2 id="total4">0</h2>
+                    <h2 id="total4">{yearData}</h2>
                   </div>
                 </div>
               </Card>
@@ -671,7 +650,7 @@ function Dashboard() {
           </Grid>
           <Grid item xs={12} sm={12} md={6} lg={6} xl= {6}>
             {user != undefined && users.find(item => item.UID == user.uID)?.role !== "Faculty" ? (<>
-              <Typography sx={{fontSize: "1.2rem", fontWeight: "bold"}} className="type-title"><Typewriter words={['Document Types']} typeSpeed={40}/></Typography>
+              <Typography sx={{fontSize: "1.2rem", fontWeight: "bold", ml: windowWidth >= 1024 ? '11.6px' : 0}} className="type-title"><Typewriter words={['Document Types']} typeSpeed={40}/></Typography>
               <Card sx={{height: "400px", maxHeight: "400px", maxWidth: "1000px", display:"flex", flexDirection: "column", justifyContent: "center", alignItems: "center", p: "21.6px", ml: windowWidth >= 1024 ? '11.6px' : 0}} className="dash-cards">
                   <div className="size" style={{width: "100%", maxWidth: "500px", height: "100%", display: "flex", justifyContent: "center", alignItems: "center"}}>
                     <Doughnut
@@ -696,9 +675,52 @@ function Dashboard() {
         </Grid>
         {user != undefined && users.find(item => item.UID == user.uID)?.role !== "Faculty" && (
           <Grid container xs={12} sx={{pr: "21.6px", pl: "21.6px", pb: "21.6px"}} gap={2} flexWrap={windowWidth >= 1024 ? "noWrap" : ''} overflow={"hidden"}>
-          <Grid container item>
-            <Grid item xs={12}>
-              <Card sx={{width: "100%", height:"250px", p: '21.6px', mb: "11.6px", maxHeight: '300px'}}>
+          <Grid item xs={12} sm={12} md={6} lg={6} xl= {6}>
+            <Typography sx={{fontSize: "1.2rem", fontWeight: "bold"}} className="type-title"><Typewriter words={['Documents per Office']} typeSpeed={40}/></Typography>
+              <Card sx={{height: "470px", maxHeight: "470px", maxWidth: "1000px", display:"flex", flexDirection: "column", justifyContent: "center", alignItems: "center", p: "21.6px"}} className="dash-cards">
+                  <div className="size" style={{width: "100%", maxWidth: "500px", height: "100%", display: "flex", justifyContent: "center", alignItems: "center"}}>
+                    <Bar
+                          data={bar_Data}
+                          options={Baroption}
+                          style={{width: "100%"}}
+                        />
+                  </div>
+              </Card>
+          </Grid>
+          
+          <Grid item xs={12} sm={12} md={6} lg={6} xl= {6}>
+              <Grid container sx={12} gap={2} wrap="noWrap">
+              <Grid item xs={12}>
+                <Card sx={{width: '100%',height: "50px", display:"flex", justifyContent: "center", alignItems: "center", p: "21.6px", mb: "21.8px", maxHeight: '100px', userSelect: 'none'}} className="dash-gradient">
+                {user != undefined && user.role === "Dean" && (
+                  <div className="welcome-holder2" onClick={openLogs} style={{cursor: "pointer", userSelect: "none"}}>
+                    <div className="logs-img">
+                      <img src={LogsPic}/>
+                    </div>
+                    <div className="welcome-msg">
+                        <Typography className="welcome-hello2" sx={{ml: "50px"}}>
+                          <h1>Logs</h1>
+                        </Typography>
+                    </div>
+                  </div>
+                  )}
+                </Card>            
+              </Grid>         
+              </Grid>
+           
+            <Typography sx={{fontSize: "1.2rem", fontWeight: "bold"}} className="type-title"><Typewriter words={['Schedules']} typeSpeed={40}/></Typography>
+            <Grid item xs={12} sm={12}>
+              <Card sx={{height: windowWidth > 768 ? "450px" : "500px",maxHeight: "400px", display:"flex", justifyContent: "center", alignItems: "center", p:windowWidth > 768 ? "21.6px" : 0}} className="dash-cards">
+                <iframe src="https://calendar.google.com/calendar/embed?src=carpio.johnjazpher.dc.3188%40gmail.com&ctz=Asia%2FManila" style={{border: 0}} width={'550'} height="350" frameborder="0" scrolling="no"></iframe>
+              </Card>
+            </Grid>
+            </Grid>
+        </Grid>
+        )}
+        {user != undefined && users.find(item => item.UID == user.uID)?.role !== "Faculty" && (
+          <Grid container xs={12} sx={{pr: "21.6px", pl: "21.6px", pb: "21.6px"}} gap={2} flexWrap={windowWidth >= 1024 ? "noWrap" : ''} overflow={"hidden"}>
+            <Grid item xs={12} sm={12} md={4} lg={4} >
+              <Card sx={{width: "100%", height:"250px", p: '21.6px', maxHeight: '300px'}}>
                 <Box sx={{borderBottom: "1px solid #F0EFF6"}}>
                   <Typography className="type-title" sx={{fontWeight: "700", fontSize: "1.1rem"}}>Faculty Travel Orders</Typography>
                   <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: "center", mr: "54.7px", ml: "21.6px"}}>
@@ -722,8 +744,8 @@ function Dashboard() {
                 </Box>
               </Card>
             </Grid>
-            <Grid item xs={12} sm={12} md={5.9}>
-              <Card sx={{width: "100%", height:"240px", p: '21.6px', mb: windowWidth >= 1024 ? 0 : "11.6px", maxHeight: '300px' }}>
+            <Grid item xs={12} sm={12} md={4} lg={4} >
+              <Card sx={{width: "100%", height:"250px", p: '21.6px', maxHeight: '300px' }}>
                 <Box sx={{borderBottom: "1px solid #F0EFF6"}}>
                     <Typography className="type-title" sx={{fontWeight: "700", fontSize: "1.1rem"}}>Faculty Training</Typography>
                     <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: "center", mr: windowWidth >= 1980 ? "21.6px": "5px", ml: "21.6px"}}>
@@ -747,8 +769,8 @@ function Dashboard() {
                 </Box>
               </Card>
             </Grid>
-            <Grid item xs={12} sm={12} md={5.9} sx={{ml: windowWidth >= 1980 && windowWidth <= 2560 ? "10px" :windowWidth >= 1440 ? "5px" : 0}}>
-              <Card sx={{width: "100%", height:"240px", p: '21.6px', maxHeight: '300px'}}>
+            <Grid item xs={12} sm={12} md={4} lg={4} >
+              <Card sx={{width: "100%", height:"250px", p: '21.6px', maxHeight: '300px'}}>
                 <Box sx={{borderBottom: "1px solid #F0EFF6"}}>
                     <Typography className="type-title" sx={{fontWeight: "700", fontSize: "1.1rem"}}>Faculty Leave</Typography>
                     <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: "center", mr: windowWidth >= 1980 ? "21.6px": "5px", ml: "21.6px"}}>
@@ -773,38 +795,7 @@ function Dashboard() {
               </Card>
             </Grid>
           </Grid>
-          
-          <Grid container item >
-           
-              <Grid container sx={12} gap={2} wrap="noWrap">
-              <Grid item xs={12}>
-                <Card sx={{width: '100%',height: "50px", display:"flex", justifyContent: "center", alignItems: "center", p: "21.6px", mb: "21.8px", maxHeight: '100px', userSelect: 'none'}} className="dash-gradient">
-                {user != undefined && user.role === "Dean" && (
-                  <div className="welcome-holder2" onClick={openLogs} style={{cursor: "pointer", userSelect: "none"}}>
-                    <div className="welcome-img">
-                      <img src={LogsPic}/>
-                    </div>
-                    <div className="welcome-msg">
-                        <Typography className="welcome-hello2" sx={{ml: "50px"}}>
-                          <h1>Logs</h1>
-                        </Typography>
-                    </div>
-                  </div>
-                  )}
-                </Card>            
-              </Grid>         
-              </Grid>
-           
-            <Typography sx={{fontSize: "1.2rem", fontWeight: "bold"}} className="type-title"><Typewriter words={['Schedules']} typeSpeed={40}/></Typography>
-            <Grid item xs={12} sm={12}>
-              <Card sx={{height: windowWidth > 768 ? "450px" : "500px",maxHeight: "400px", display:"flex", justifyContent: "center", alignItems: "center", p:windowWidth > 768 ? "21.6px" : 0}} className="dash-cards">
-                <iframe src="https://calendar.google.com/calendar/embed?src=carpio.johnjazpher.dc.3188%40gmail.com&ctz=Asia%2FManila" style={{border: 0}} width={'550'} height="350" frameborder="0" scrolling="no"></iframe>
-              </Card>
-            </Grid>
-            </Grid>
-        </Grid>
         )}
-        
             
             
          

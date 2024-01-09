@@ -191,7 +191,7 @@ export default function StickyHeadTable() {
             setNewFromPer("")
             setNewType("")
             setNewDescription("")
-            setNewIncomingOutgoing("")
+            setNewIncomingOutgoing("Incoming")
             setNewStatus("Pending")
             setImageUpload("")
             setEmptyResult(false);
@@ -217,7 +217,7 @@ export default function StickyHeadTable() {
       setNewFromPer("")
       setNewType("")
       setNewDescription("")
-      setNewIncomingOutgoing("")
+      setNewIncomingOutgoing("Incoming")
       setNewStatus("Pending")
       setImageUpload("")
       setEmptyResult(false);
@@ -421,12 +421,20 @@ export default function StickyHeadTable() {
 
     formData.append('uID', documentsToBeAdded.uID);
     try{
-      await axios.post(`${port}/documentFiles?docID=${documentsToBeAdded.uID}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      await axios.post(`${port}/documents`, documentsToBeAdded)  
+      await axios.post(`${port}/documents`, documentsToBeAdded).then( async(data) => {
+        if(data.data.success == false){
+          toast.error("There was an error while adding the document. Try Again")
+        }
+        else{
+          await axios.post(`${port}/documentFiles?docID=${documentsToBeAdded.uID}`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
+          getSignInMethods("add", documentsToBeAdded.document_Name, documentsToBeAdded.document_Type);
+          toast.success("Successfully uploaded a file.")
+        }
+      })  
       setNewDateReceived("")
       setNewDocumentName("")
       setNewComment("")
@@ -444,13 +452,11 @@ export default function StickyHeadTable() {
       setImageUpload("")
       setImageDis("")
       setOpenAdd(false)
-      getSignInMethods("add", documentsToBeAdded.document_Name, documentsToBeAdded.document_Type);
       setEmptyResult(false);
       setSumbmit(false);
       setUrgent(false)
       getIncoming();
       setCategory("")
-      toast.success("Successfully uploaded a file.")
     }catch(e){
       console.log(e);
     }
@@ -520,11 +526,16 @@ export default function StickyHeadTable() {
   const [isListenerActive, setIsListenerActive] = useState(false);
   const getIncoming = async () => {
     const data = await axios.get(`${port}/documents?type=Other`)
-    setRows(data.data);
-    setLoading(false);
-    if (data.data.length == 0) {
-      setEmptyResult(true);
+    if(data.data.success == false){
+      toast.error("There was an error while retrieving the documents")
+    }else{
+      setRows(data.data);
+      setLoading(false);
+      if (data.data.length == 0) {
+        setEmptyResult(true);
+      }
     }
+    
   };
 
   // useEffect(() =>{
@@ -578,10 +589,17 @@ export default function StickyHeadTable() {
           }).then(async (result) => {
           if(result.isConfirmed) {
               try{
-                await axios.post(`${port}/archiveFile?id=${id}&user=${user.uID}`)
-                toast.success("File has been archived")
-                getSignInMethods("archive", name, docType)
-                getIncoming();
+                await axios.post(`${port}/archiveFile?id=${id}&user=${user.uID}`).then((data) => {
+                  if(data.data.success == false){
+                    toast.error("An error has occured while archiving the file.")
+                  }
+                  else{
+                    toast.success("File has been archived")
+                    getSignInMethods("archive", name, docType)
+                    getIncoming();
+                  }
+                })
+                
               }catch(e){
                 console.log(e);
               }
@@ -758,7 +776,6 @@ export default function StickyHeadTable() {
           size: fileSize
         }]});
     }); 
-    
     const data = {
       id: id,
       fromDep: fromDep,
@@ -780,7 +797,9 @@ export default function StickyHeadTable() {
       tracking: tracking
     };
     setFormID(data);
-    handleEditOpen();
+    setTimeout(() => {
+      handleEditOpen();
+    }, 100)
   };
 
   const formatDateBack = (date) => {
@@ -794,6 +813,7 @@ export default function StickyHeadTable() {
   useEffect(() => {
     setEditImage(editImageHolder)
   },[editImageHolder])
+
   useEffect(() => {
     setEditDateReceived(formatDateBack(formID.date_Received))
     setEditTimeReceived(formatTimeBack(formID.time_Received))
@@ -898,25 +918,71 @@ export default function StickyHeadTable() {
         Comment: editComment,
         tracking: editTracking
       };
+      const editFields7 = {
+        document_Name: editDocName,
+        fromDep: editFromDep,
+        fromPer: editFromPer,
+        received_By: editReceivedBy,
+        date_Received: formatDate(editDateReceived),
+        time_Received: formatTime(editTimeReceived),
+        uID: formID.uID,
+        Type: editType,
+        Status: editStatus,
+        Description: editDescription,
+        Comment: editComment,
+        tracking: editTracking
+      };
+    let errorHap = null;
     if (!imageUpload) {
         try{
           if(editDocType == "Student Document"){
-            await axios.put(`${port}/update`, editFields)
+            await axios.put(`${port}/update`, editFields).then((data) => {
+              if(data.data.success == false){
+                errorHap = "error"
+              }
+            })
           }
           else if(editDocType == "Faculty Document"){
-              await axios.put(`${port}/update`, editFields2)
+              await axios.put(`${port}/update`, editFields2).then((data) => {
+              if(data.data.success == false){
+                errorHap = "error"
+              }
+            })
           }
           else if(editDocType == "New Hire Document"){
-              await axios.put(`${port}/update`, editFields3)
+              await axios.put(`${port}/update`, editFields3).then((data) => {
+              if(data.data.success == false){
+                errorHap = "error"
+              }
+            })
           }
           else if(editDocType == "IPCR/OPCR"){
-              await axios.put(`${port}/update`, editFields4)
+              await axios.put(`${port}/update`, editFields4).then((data) => {
+              if(data.data.success == false){
+                errorHap = "error"
+              }
+            })
           }
           else if(editDocType == "Travel Order"){
-              await axios.put(`${port}/update`, editFields5)
+              await axios.put(`${port}/update`, editFields5).then((data) => {
+              if(data.data.success == false){
+                errorHap = "error"
+              }
+            })
           }
           else if(editDocType == "Meeting Request"){
-              await axios.put(`${port}/update`, editFields6)
+              await axios.put(`${port}/update`, editFields6).then((data) => {
+              if(data.data.success == false){
+                errorHap = "error"
+              }
+            })
+          }
+          else{
+              await axios.put(`${port}/update`, editFields7).then((data) => {
+              if(data.data.success == false){
+                errorHap = "error"
+              }
+            })
           }
           setSumbmit(false);
         }catch(e){
@@ -931,27 +997,53 @@ export default function StickyHeadTable() {
       formData.append(`uID`, formID.uID)
       try{
         if(editDocType == "Student Document"){
-          await axios.put(`${port}/update`, editFields)
+          await axios.put(`${port}/update`, editFields).then((data) => {
+              if(data.data.success == false){
+                errorHap = "error"
+              }
+            })
         }
         else if(editDocType == "Faculty Document"){
-  
-            await axios.put(`${port}/update`, editFields2)
+            await axios.put(`${port}/update`, editFields2).then((data) => {
+              if(data.data.success == false){
+                errorHap = "error"
+              }
+            })
         }
         else if(editDocType == "New Hire Document"){
-  
-            await axios.put(`${port}/update`, editFields3)
+            await axios.put(`${port}/update`, editFields3).then((data) => {
+              if(data.data.success == false){
+                errorHap = "error"
+              }
+            })
         }
         else if(editDocType == "IPCR/OPCR"){
-  
-            await axios.put(`${port}/update`, editFields4)
+            await axios.put(`${port}/update`, editFields4).then((data) => {
+              if(data.data.success == false){
+                errorHap = "error"
+              }
+            })
         }
         else if(editDocType == "Travel Order"){
-  
-            await axios.put(`${port}/update`, editFields5)
+            await axios.put(`${port}/update`, editFields5).then((data) => {
+              if(data.data.success == false){
+                errorHap = "error"
+              }
+            })
         }
         else if(editDocType == "Meeting Request"){
-  
-            await axios.put(`${port}/update`, editFields6)
+            await axios.put(`${port}/update`, editFields6).then((data) => {
+              if(data.data.success == false){
+                errorHap = "error"
+              }
+            })
+        }
+        else{
+          await axios.put(`${port}/update`, editFields7).then((data) => {
+            if(data.data.success == false){
+              errorHap = "error"
+            }
+          })
         }
         await axios.put(`${port}/updateFile?docID=${formID.uID}`, formData)
         setSumbmit(false);
@@ -960,12 +1052,18 @@ export default function StickyHeadTable() {
         console.log(e);
       }
     }
-
-    getSignInMethods("edit", editDocName, editDocType);
-    getIncoming();
-    handleEditClose();
-    setIsListenerActive(false)
-    toast.success("Successfully Edited.")
+    if(errorHap == "error"){
+      getIncoming();
+      handleEditClose();
+      toast.error("There was an error while editing the document. Try Again.")
+    }
+    else{
+      getSignInMethods("edit", editDocName, editDocType);
+      getIncoming();
+      handleEditClose();
+      setIsListenerActive(false)
+      toast.success("Successfully Edited.")
+    }
   };
 
   //bytes converter
@@ -1541,12 +1639,12 @@ export default function StickyHeadTable() {
                 <Typography sx={{
                   fontWeight: "bold",
                   fontFamily: "Lato",
-                  fontSize: "1rem",
+                  fontSize: "0.85rem",
                   display: "flex",
                   justifyContent: "space-around",
                   alignItems: "center",
                   padding: "0"
-                }}> {filter2 ?  limitFilterText(filter2, 14): "Received By"}<FilterAltIcon className={filter2|| open3 ? "filter-icon active" : "filter-icon"} aria-label="filter1"  aria-controls={open3 ? 'filter1' : undefined}
+                }}> {filter2 ?  limitFilterText(filter2, 14): "Received / Forwarded By"}<FilterAltIcon className={filter2|| open3 ? "filter-icon active" : "filter-icon"} aria-label="filter1"  aria-controls={open3 ? 'filter1' : undefined}
                 aria-haspopup="true"
                 aria-expanded={open3 ? 'true' : undefined}
                 onClick={(e) => handleFilter(e, 3)}/></Typography>
@@ -1922,6 +2020,7 @@ export default function StickyHeadTable() {
                 <FormControl fullWidth className="Select-input">
                   <InputLabel id="demo-simple-select-label">Incoming / Outgoing</InputLabel>
                   <Select
+                    required
                     className="Select-input-button"
                     labelId="demo-simple-select-label"
                     id="demo-simple-select"
@@ -1942,39 +2041,39 @@ export default function StickyHeadTable() {
                 options={users.filter(item => item.role != "Dean" && item.role != "Faculty")}
                 getOptionLabel={user =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={newReceivedBy} className="auto-complete-text" onChange={(e) => setNewReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
-                <TextField className="Text-input" id="fromPer" label="Student Name" variant="outlined" onChange={(e) => setNewFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
+                renderInput={(params) => <TextField required value={newReceivedBy} className="auto-complete-text" onChange={(e) => setNewReceivedBy(e.target.value)} {...params} placeholder={newIncomingOutgoing == "Incoming" ? "Received By" : "Forwarded By"} label={newIncomingOutgoing == "Incoming" ? "Received By" : "Forwarded By"} inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                <TextField required className="Text-input" id="fromPer" label="Student Name" variant="outlined" onChange={(e) => setNewFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
                 <Autocomplete
                 className="auto-complete"
-  
                 value={newType}
                 onSelect={(e) => setNewType(e.target.value)}
                 id="combo-box-demo"
                 options={student}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={newType} className="auto-complete-text" onChange={(e) => setNewType(e.target.value)} {...params} placeholder="Document Type" label="Document Type" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                renderInput={(params) => <TextField required value={newType} className="auto-complete-text" onChange={(e) => setNewType(e.target.value)} {...params} placeholder="Document Type" label="Document Type" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
                 <TextField required className="Text-input" id="fromPer" label="Short Description" variant="outlined" onChange={(e) => setNewDescription(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                 <TextField className="Text-input" id="fromPer" label="Comment/Note" variant="outlined" onChange={(e) => setNewComment(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                 <Autocomplete
                 className="auto-complete"
-  
                 value={newStatus ? newStatus : null}
                 onSelect={(e) => setNewStatus(e.target.value)}
                 id="combo-box-demo"
                 options={["Completed","Pending", "Rejected", "Cancelled"]}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField value={newStatus ? newStatus : null} className="auto-complete-text" onChange={(e) => setNewStatus(e.target.value)} {...params} placeholder="Status" label="Status" inputProps={{ ...params.inputProps,maxLength: 20 }}/>}/>
-                <Autocomplete
-                className="auto-complete"
-                onChange={(e, newValue) => {
-                  setNewForwardTo(newValue ? newValue.uID : "")
-                }}
-                value={users.find(item => item.uID == newForwardTo) || null}
-                id="combo-box-demo"
-                options={users.filter(item => item.uID != user.uID)}
-                getOptionLabel={(user) =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
-                sx={{ width: "100%"}}
-                renderInput={(params) => <TextField className="auto-complete-text" {...params} placeholder="Forward To" label="Forward To"/>}/>
+                {newIncomingOutgoing == "Incoming" ? (
+                  <Autocomplete
+                  className="auto-complete"
+                  onChange={(e, newValue) => {
+                    setNewForwardTo(newValue ? newValue.uID : "")
+                  }}
+                  value={users.find(item => item.uID == newForwardTo) || null}
+                  id="combo-box-demo"
+                  options={users.filter(item => item.uID != user.uID)}
+                  getOptionLabel={(user) =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
+                  sx={{ width: "100%"}}
+                  renderInput={(params) => <TextField required={newIncomingOutgoing == "Incoming"} className="auto-complete-text" {...params} placeholder="Forward To" label="Forward To"/>}/>
+                ): ""}
                 
                 </>)
                 
@@ -2017,7 +2116,7 @@ export default function StickyHeadTable() {
                 options={users.filter(item => item.role != "Dean" && item.role != "Faculty")}
                 getOptionLabel={user =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={newReceivedBy} className="auto-complete-text" onChange={(e) => setNewReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                renderInput={(params) => <TextField required value={newReceivedBy} className="auto-complete-text" onChange={(e) => setNewReceivedBy(e.target.value)} {...params} placeholder={newIncomingOutgoing == "Incoming" ? "Received By" : "Forwarded By"} label={newIncomingOutgoing == "Incoming" ? "Received By" : "Forwarded By"} inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
                 <Autocomplete
                   className="auto-complete"
                   value={newFromDep ? newFromDep : null}
@@ -2025,17 +2124,16 @@ export default function StickyHeadTable() {
                   id="combo-box-demo"
                   options={office}
                   sx={{ width: "100%"}}
-                  renderInput={(params) => <TextField value={newFromDep ? newFromDep : null} className="auto-complete-text" onChange={(e) => setNewFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
-                <TextField className="Text-input" id="fromPer" label="Faculty Name" variant="outlined" onChange={(e) => setNewFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
+                  renderInput={(params) => <TextField required value={newFromDep ? newFromDep : null} className="auto-complete-text" onChange={(e) => setNewFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
+                <TextField required className="Text-input" id="fromPer" label="Faculty Name" variant="outlined" onChange={(e) => setNewFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
                 <Autocomplete
                 className="auto-complete"
-  
                 value={newType}
                 onSelect={(e) => setNewType(e.target.value)}
                 id="combo-box-demo"
                 options={faculty}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={newType} className="auto-complete-text" onChange={(e) => setNewType(e.target.value)} {...params} placeholder="Document Type" label="Document Type" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                renderInput={(params) => <TextField required value={newType} className="auto-complete-text" onChange={(e) => setNewType(e.target.value)} {...params} placeholder="Document Type" label="Document Type" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
                 <TextField required className="Text-input" id="fromPer" label="Short Description" variant="outlined" onChange={(e) => setNewDescription(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                 <TextField className="Text-input" id="fromPer" label="Comment/Note" variant="outlined" onChange={(e) => setNewComment(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                 <Autocomplete
@@ -2046,17 +2144,19 @@ export default function StickyHeadTable() {
                 options={["Completed","Pending", "Rejected", "Cancelled"]}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField value={newStatus ? newStatus : null} className="auto-complete-text" onChange={(e) => setNewStatus(e.target.value)} {...params} placeholder="Status" label="Status" inputProps={{ ...params.inputProps,maxLength: 20 }}/>}/>
-                <Autocomplete
-                className="auto-complete"
-                onChange={(e, newValue) => {
-                  setNewForwardTo(newValue ? newValue.uID : "")
-                }}
-                value={users.find(item => item.uID == newForwardTo) || null}
-                id="combo-box-demo"
-                options={users.filter(item => item.uID != user.uID)}
-                getOptionLabel={(user) =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
-                sx={{ width: "100%"}}
-                renderInput={(params) => <TextField className="auto-complete-text" {...params} placeholder="Forward To" label="Forward To"/>}/>
+                {newIncomingOutgoing == "Incoming" ? (
+                  <Autocomplete
+                  className="auto-complete"
+                  onChange={(e, newValue) => {
+                    setNewForwardTo(newValue ? newValue.uID : "")
+                  }}
+                  value={users.find(item => item.uID == newForwardTo) || null}
+                  id="combo-box-demo"
+                  options={users.filter(item => item.uID != user.uID)}
+                  getOptionLabel={(user) =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
+                  sx={{ width: "100%"}}
+                  renderInput={(params) => <TextField required={newIncomingOutgoing == "Incoming"} className="auto-complete-text" {...params} placeholder="Forward To" label="Forward To"/>}/>
+                ): ""}
                 </>) 
                 : 
                 category === "New Hire Document" ? (
@@ -2097,7 +2197,7 @@ export default function StickyHeadTable() {
                 options={users.filter(item => item.role != "Dean" && item.role != "Faculty")}
                 getOptionLabel={user =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={newReceivedBy} className="auto-complete-text" onChange={(e) => setNewReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                renderInput={(params) => <TextField required value={newReceivedBy} className="auto-complete-text" onChange={(e) => setNewReceivedBy(e.target.value)} {...params} placeholder={newIncomingOutgoing == "Incoming" ? "Received By" : "Forwarded By"} label={newIncomingOutgoing == "Incoming" ? "Received By" : "Forwarded By"} inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
                 <Autocomplete
                   className="auto-complete"
                   value={newFromDep ? newFromDep : null}
@@ -2105,8 +2205,8 @@ export default function StickyHeadTable() {
                   id="combo-box-demo"
                   options={office}
                   sx={{ width: "100%"}}
-                  renderInput={(params) => <TextField value={newFromDep ? newFromDep : null} className="auto-complete-text" onChange={(e) => setNewFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
-                <TextField className="Text-input" id="fromPer" label="Applicant Name" variant="outlined" onChange={(e) => setNewFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
+                  renderInput={(params) => <TextField required value={newFromDep ? newFromDep : null} className="auto-complete-text" onChange={(e) => setNewFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
+                <TextField required className="Text-input" id="fromPer" label="Applicant Name" variant="outlined" onChange={(e) => setNewFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
                 <Autocomplete
                 className="auto-complete"
   
@@ -2115,7 +2215,7 @@ export default function StickyHeadTable() {
                 id="combo-box-demo"
                 options={hire}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={newType} className="auto-complete-text" onChange={(e) => setNewType(e.target.value)} {...params} placeholder="Document Type" label="Document Type" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                renderInput={(params) => <TextField required value={newType} className="auto-complete-text" onChange={(e) => setNewType(e.target.value)} {...params} placeholder="Document Type" label="Document Type" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
                 <TextField required className="Text-input" id="fromPer" label="Short Description" variant="outlined" onChange={(e) => setNewDescription(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                 <TextField className="Text-input" id="fromPer" label="Comment/Note" variant="outlined" onChange={(e) => setNewComment(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                 <Autocomplete
@@ -2126,17 +2226,19 @@ export default function StickyHeadTable() {
                 options={["Completed","Pending", "Rejected", "Cancelled"]}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField value={newStatus ? newStatus : null} className="auto-complete-text" onChange={(e) => setNewStatus(e.target.value)} {...params} placeholder="Status" label="Status" inputProps={{ ...params.inputProps,maxLength: 20 }}/>}/>
-                <Autocomplete
-                className="auto-complete"
-                onChange={(e, newValue) => {
-                  setNewForwardTo(newValue ? newValue.uID : "")
-                }}
-                value={users.find(item => item.uID == newForwardTo) || null}
-                id="combo-box-demo"
-                options={users.filter(item => item.uID != user.uID)}
-                getOptionLabel={(user) =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
-                sx={{ width: "100%"}}
-                renderInput={(params) => <TextField className="auto-complete-text" {...params} placeholder="Forward To" label="Forward To"/>}/>
+                {newIncomingOutgoing == "Incoming" ? (
+                  <Autocomplete
+                  className="auto-complete"
+                  onChange={(e, newValue) => {
+                    setNewForwardTo(newValue ? newValue.uID : "")
+                  }}
+                  value={users.find(item => item.uID == newForwardTo) || null}
+                  id="combo-box-demo"
+                  options={users.filter(item => item.uID != user.uID)}
+                  getOptionLabel={(user) =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
+                  sx={{ width: "100%"}}
+                  renderInput={(params) => <TextField required={newIncomingOutgoing == "Incoming"} className="auto-complete-text" {...params} placeholder="Forward To" label="Forward To"/>}/>
+                ): ""}
                 </>) 
                 : 
                 category === "IPCR/OPCR" ? (
@@ -2156,6 +2258,7 @@ export default function StickyHeadTable() {
                 <FormControl fullWidth className="Select-input">
                   <InputLabel id="demo-simple-select-label">Incoming / Outgoing</InputLabel>
                   <Select
+                    required
                     className="Select-input-button"
                     labelId="demo-simple-select-label"
                     id="demo-simple-select"
@@ -2176,7 +2279,7 @@ export default function StickyHeadTable() {
                 options={users.filter(item => item.role != "Dean" && item.role != "Faculty")}
                 getOptionLabel={user =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={newReceivedBy} className="auto-complete-text" onChange={(e) => setNewReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                renderInput={(params) => <TextField required value={newReceivedBy} className="auto-complete-text" onChange={(e) => setNewReceivedBy(e.target.value)} {...params} placeholder={newIncomingOutgoing == "Incoming" ? "Received By" : "Forwarded By"} label={newIncomingOutgoing == "Incoming" ? "Received By" : "Forwarded By"} inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
                 <Autocomplete
                   className="auto-complete"
                   value={newFromDep ? newFromDep : null}
@@ -2184,7 +2287,7 @@ export default function StickyHeadTable() {
                   id="combo-box-demo"
                   options={office}
                   sx={{ width: "100%"}}
-                  renderInput={(params) => <TextField value={newFromDep ? newFromDep : null} className="auto-complete-text" onChange={(e) => setNewFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
+                  renderInput={(params) => <TextField required value={newFromDep ? newFromDep : null} className="auto-complete-text" onChange={(e) => setNewFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
                 <TextField className="Text-input" id="fromPer" label="Ratee Name" variant="outlined" onChange={(e) => setNewFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
                 <Autocomplete
                 className="auto-complete"
@@ -2194,7 +2297,7 @@ export default function StickyHeadTable() {
                 id="combo-box-demo"
                 options={["IPCR", "OPCR"]}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={newType} className="auto-complete-text" onChange={(e) => setNewType(e.target.value)} {...params} placeholder="Document Type" label="Document Type" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                renderInput={(params) => <TextField required value={newType} className="auto-complete-text" onChange={(e) => setNewType(e.target.value)} {...params} placeholder="Document Type" label="Document Type" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
                 <TextField required className="Text-input" id="fromPer" label="Short Description" variant="outlined" onChange={(e) => setNewDescription(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                 <TextField className="Text-input" id="fromPer" label="Comment/Note" variant="outlined" onChange={(e) => setNewComment(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                 <Autocomplete
@@ -2205,17 +2308,19 @@ export default function StickyHeadTable() {
                 options={["Completed","Pending", "Rejected", "Cancelled"]}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField value={newStatus ? newStatus : null}className="auto-complete-text" onChange={(e) => setNewStatus(e.target.value)} {...params} placeholder="Status" label="Status" inputProps={{ ...params.inputProps,maxLength: 20 }}/>}/>
-                <Autocomplete
-                className="auto-complete"
-                onChange={(e, newValue) => {
-                  setNewForwardTo(newValue ? newValue.uID : "")
-                }}
-                value={users.find(item => item.uID == newForwardTo) || null}
-                id="combo-box-demo"
-                options={users.filter(item => item.uID != user.uID)}
-                getOptionLabel={(user) =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
-                sx={{ width: "100%"}}
-                renderInput={(params) => <TextField className="auto-complete-text" {...params} placeholder="Forward To" label="Forward To"/>}/>
+                {newIncomingOutgoing == "Incoming" ? (
+                  <Autocomplete
+                  className="auto-complete"
+                  onChange={(e, newValue) => {
+                    setNewForwardTo(newValue ? newValue.uID : "")
+                  }}
+                  value={users.find(item => item.uID == newForwardTo) || null}
+                  id="combo-box-demo"
+                  options={users.filter(item => item.uID != user.uID)}
+                  getOptionLabel={(user) =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
+                  sx={{ width: "100%"}}
+                  renderInput={(params) => <TextField required={newIncomingOutgoing == "Incoming"} className="auto-complete-text" {...params} placeholder="Forward To" label="Forward To"/>}/>
+                ): ""}
                 </>)
                 :
                 category === "Travel Order" ? (
@@ -2235,6 +2340,7 @@ export default function StickyHeadTable() {
                 <FormControl fullWidth className="Select-input">
                   <InputLabel id="demo-simple-select-label">Incoming / Outgoing</InputLabel>
                   <Select
+                    required
                     className="Select-input-button"
                     labelId="demo-simple-select-label"
                     id="demo-simple-select"
@@ -2255,7 +2361,7 @@ export default function StickyHeadTable() {
                 options={users.filter(item => item.role != "Dean" && item.role != "Faculty")}
                 getOptionLabel={user =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={newReceivedBy} className="auto-complete-text" onChange={(e) => setNewReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                renderInput={(params) => <TextField required value={newReceivedBy} className="auto-complete-text" onChange={(e) => setNewReceivedBy(e.target.value)} {...params} placeholder={newIncomingOutgoing == "Incoming" ? "Received By" : "Forwarded By"} label={newIncomingOutgoing == "Incoming" ? "Received By" : "Forwarded By"} inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
                 <Autocomplete
                   className="auto-complete"
                   value={newFromDep ? newFromDep : null}
@@ -2263,7 +2369,7 @@ export default function StickyHeadTable() {
                   id="combo-box-demo"
                   options={office}
                   sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={newFromDep ? newFromDep : null} className="auto-complete-text" onChange={(e) => setNewFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
+                renderInput={(params) => <TextField required value={newFromDep ? newFromDep : null} className="auto-complete-text" onChange={(e) => setNewFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
                 <TextField className="Text-input" id="fromPer" label="Contact Person" variant="outlined" onChange={(e) => setNewFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
                 <TextField required className="Text-input" id="fromPer" label="Short Description" variant="outlined" onChange={(e) => setNewDescription(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                 <TextField className="Text-input" id="fromPer" label="Comment/Note" variant="outlined" onChange={(e) => setNewComment(e.target.value)} inputProps={{ maxLength: 1000 }}/>
@@ -2275,17 +2381,19 @@ export default function StickyHeadTable() {
                 options={["Completed","Pending", "Rejected", "Cancelled"]}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField value={newStatus ? newStatus : null} className="auto-complete-text" onChange={(e) => setNewStatus(e.target.value)} {...params} placeholder="Status" label="Status" inputProps={{ ...params.inputProps,maxLength: 20 }}/>}/>
-                <Autocomplete
-                className="auto-complete"
-                onChange={(e, newValue) => {
-                  setNewForwardTo(newValue ? newValue.uID : "")
-                }}
-                value={users.find(item => item.uID == newForwardTo) || null}
-                id="combo-box-demo"
-                options={users.filter(item => item.uID != user.uID)}
-                getOptionLabel={(user) =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
-                sx={{ width: "100%"}}
-                renderInput={(params) => <TextField className="auto-complete-text" {...params} placeholder="Forward To" label="Forward To"/>}/>
+                {newIncomingOutgoing == "Incoming" ? (
+                  <Autocomplete
+                  className="auto-complete"
+                  onChange={(e, newValue) => {
+                    setNewForwardTo(newValue ? newValue.uID : "")
+                  }}
+                  value={users.find(item => item.uID == newForwardTo) || null}
+                  id="combo-box-demo"
+                  options={users.filter(item => item.uID != user.uID)}
+                  getOptionLabel={(user) =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
+                  sx={{ width: "100%"}}
+                  renderInput={(params) => <TextField required={newIncomingOutgoing == "Incoming"} className="auto-complete-text" {...params} placeholder="Forward To" label="Forward To"/>}/>
+                ): ""}
                 </>) 
                 : 
                 category === "Meeting Request" ? (
@@ -2305,6 +2413,7 @@ export default function StickyHeadTable() {
                 <FormControl fullWidth className="Select-input">
                   <InputLabel id="demo-simple-select-label">Incoming / Outgoing</InputLabel>
                   <Select
+                    required
                     className="Select-input-button"
                     labelId="demo-simple-select-label"
                     id="demo-simple-select"
@@ -2325,7 +2434,7 @@ export default function StickyHeadTable() {
                 options={users.filter(item => item.role != "Dean" && item.role != "Faculty")}
                 getOptionLabel={user =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={newReceivedBy} className="auto-complete-text" onChange={(e) => setNewReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                renderInput={(params) => <TextField required value={newReceivedBy} className="auto-complete-text" onChange={(e) => setNewReceivedBy(e.target.value)} {...params} placeholder={newIncomingOutgoing == "Incoming" ? "Received By" : "Forwarded By"} label={newIncomingOutgoing == "Incoming" ? "Received By" : "Forwarded By"} inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
                 <Autocomplete
                 className="auto-complete"
                 value={newFromDep ? newFromDep : null}
@@ -2333,7 +2442,7 @@ export default function StickyHeadTable() {
                 id="combo-box-demo"
                 options={office}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={newFromDep ? newFromDep : null} className="auto-complete-text" onChange={(e) => setNewFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                renderInput={(params) => <TextField required value={newFromDep ? newFromDep : null} className="auto-complete-text" onChange={(e) => setNewFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
                 <TextField className="Text-input" id="fromPer" label="Contact Person" variant="outlined" onChange={(e) => setNewFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
                 <TextField required className="Text-input" id="fromPer" label="Short Description" variant="outlined" onChange={(e) => setNewDescription(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                 <DatePicker required format="MM/DD/YYYY" className="date-pick2" label=" Schedule Date" onChange={(e) => setNewSched_Date(e)} slotProps={{
@@ -2351,17 +2460,19 @@ export default function StickyHeadTable() {
                 options={["Completed","Pending", "Rejected", "Cancelled"]}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField value={newStatus ? newStatus : null} className="auto-complete-text" onChange={(e) => setNewStatus(e.target.value)} {...params} placeholder="Status" label="Status" inputProps={{ ...params.inputProps,maxLength: 20 }}/>}/>
-                <Autocomplete
-                className="auto-complete"
-                onChange={(e, newValue) => {
-                  setNewForwardTo(newValue ? newValue.uID : "")
-                }}
-                value={users.find(item => item.uID == newForwardTo) || null}
-                id="combo-box-demo"
-                options={users.filter(item => item.uID != user.uID)}
-                getOptionLabel={(user) =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
-                sx={{ width: "100%"}}
-                renderInput={(params) => <TextField className="auto-complete-text" {...params} placeholder="Forward To" label="Forward To"/>}/>
+                {newIncomingOutgoing == "Incoming" ? (
+                  <Autocomplete
+                  className="auto-complete"
+                  onChange={(e, newValue) => {
+                    setNewForwardTo(newValue ? newValue.uID : "")
+                  }}
+                  value={users.find(item => item.uID == newForwardTo) || null}
+                  id="combo-box-demo"
+                  options={users.filter(item => item.uID != user.uID)}
+                  getOptionLabel={(user) =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
+                  sx={{ width: "100%"}}
+                  renderInput={(params) => <TextField required={newIncomingOutgoing == "Incoming"} className="auto-complete-text" {...params} placeholder="Forward To" label="Forward To"/>}/>
+                ): ""}
                 </>) 
                 :
                 (
@@ -2381,6 +2492,7 @@ export default function StickyHeadTable() {
                   <FormControl fullWidth className="Select-input">
                   <InputLabel id="demo-simple-select-label">Incoming / Outgoing</InputLabel>
                   <Select
+                    required
                     className="Select-input-button"
                     labelId="demo-simple-select-label"
                     id="demo-simple-select"
@@ -2401,7 +2513,7 @@ export default function StickyHeadTable() {
                 options={users.filter(item => item.role != "Dean" && item.role != "Faculty")}
                 getOptionLabel={user =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={newReceivedBy} className="auto-complete-text" onChange={(e) => setNewReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                renderInput={(params) => <TextField required value={newReceivedBy} className="auto-complete-text" onChange={(e) => setNewReceivedBy(e.target.value)} {...params} placeholder={newIncomingOutgoing == "Incoming" ? "Received By" : "Forwarded By"} label={newIncomingOutgoing == "Incoming" ? "Received By" : "Forwarded By"} inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
                   <Autocomplete
                   className="auto-complete"
                   value={newFromDep ? newFromDep : null}
@@ -2409,9 +2521,9 @@ export default function StickyHeadTable() {
                   id="combo-box-demo"
                   options={office}
                   sx={{ width: "100%"}}
-                  renderInput={(params) => <TextField value={newFromDep ? newFromDep : null} className="auto-complete-text" onChange={(e) => setNewFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
+                  renderInput={(params) => <TextField required value={newFromDep ? newFromDep : null} className="auto-complete-text" onChange={(e) => setNewFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
                   <TextField className="Text-input" id="fromPer" label="Contact Person" variant="outlined" onChange={(e) => setNewFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
-                  <TextField className="Text-input" onChange={(e) => setNewType(e.target.value)}placeholder="Document Type" label="Document Type" inputProps={{ maxLength: 50 }}/>
+                  <TextField required className="Text-input" onChange={(e) => setNewType(e.target.value)}placeholder="Document Type" label="Document Type" inputProps={{ maxLength: 50 }}/>
                   <TextField required className="Text-input" id="fromPer" label="Short Description" variant="outlined" onChange={(e) => setNewDescription(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                   <TextField className="Text-input" id="fromPer" label="Comment/Note" variant="outlined" onChange={(e) => setNewComment(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                   <Autocomplete
@@ -2422,17 +2534,19 @@ export default function StickyHeadTable() {
                   options={["Completed","Pending", "Rejected", "Cancelled"]}
                   sx={{ width: "100%"}}
                   renderInput={(params) => <TextField value={newStatus ? newStatus : null} onChange={(e) => setNewStatus(e.target.value)} {...params} placeholder="Status" label="Status" inputProps={{ ...params.inputProps,maxLength: 20 }}/>}/>
+                  {newIncomingOutgoing == "Incoming" ? (
                   <Autocomplete
-                className="auto-complete"
-                onChange={(e, newValue) => {
-                  setNewForwardTo(newValue ? newValue.uID : "")
-                }}
-                value={users.find(item => item.uID == newForwardTo) || null}
-                id="combo-box-demo"
-                options={users.filter(item => item.uID != user.uID)}
-                getOptionLabel={(user) =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
-                sx={{ width: "100%"}}
-                renderInput={(params) => <TextField className="auto-complete-text" {...params} placeholder="Forward To" label="Forward To"/>}/>
+                  className="auto-complete"
+                  onChange={(e, newValue) => {
+                    setNewForwardTo(newValue ? newValue.uID : "")
+                  }}
+                  value={users.find(item => item.uID == newForwardTo) || null}
+                  id="combo-box-demo"
+                  options={users.filter(item => item.uID != user.uID)}
+                  getOptionLabel={(user) =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
+                  sx={{ width: "100%"}}
+                  renderInput={(params) => <TextField required={newIncomingOutgoing == "Incoming"} className="auto-complete-text" {...params} placeholder="Forward To" label="Forward To"/>}/>
+                ): ""}
                   </>) 
             }
             <input style={{display: 'none'}} value={newFromPer} type="text" name="from_name" />
@@ -2494,9 +2608,12 @@ export default function StickyHeadTable() {
                     )}
                     
                   </div>
-                <Box sx={{width: '100%', display: 'flex', justifyContent: 'center', bgcolor: "#CA3433", pr: "16px", pl: "16px", borderRadius: "10px", m: "5px", color: "#fff"}}>
-                  <FormControlLabel labelPlacement="start" control={<Switch color="warning" onChange={(e) => setUrgent(!urgent)}/>} label={<Typography sx={{fontSize: "0.8rem"}}>Urgent? (An email will be sent to the recipient)</Typography>} />
-                </Box>
+                  {newIncomingOutgoing == "Incoming" ? (
+                    <Box sx={{width: '100%', display: 'flex', justifyContent: 'center', bgcolor: "#CA3433", pr: "16px", pl: "16px", borderRadius: "10px", m: "5px", color: "#fff"}}>
+                      <FormControlLabel labelPlacement="start" control={<Switch color="warning" onChange={(e) => setUrgent(!urgent)}/>} label={<Typography sx={{fontSize: "0.8rem"}}>Urgent? (An email will be sent to the recipient)</Typography>} />
+                    </Box>
+                  ): ""}
+                
                 </div>
                 <div className="form-bottom">
                   <div className="form-submit-cancel">
@@ -2556,15 +2673,14 @@ export default function StickyHeadTable() {
                 <TextField required className="Text-input" id="fromPer" value={editDocName} label="Document name" variant="outlined" onChange={(e) => setEditDocName(e.target.value)} inputProps={{ maxLength: 50 }}/>
                 <Autocomplete
                 className="auto-complete"
-  
                 onChange={(e, newVlaue) => { setEditReceivedBy( newVlaue ? `(${newVlaue.role}) - ${newVlaue.full_Name}`: '')}}
                 value={editReceivedBy != null && editReceivedBy != undefined ? users.find(item => item.role == (editReceivedBy.slice(editReceivedBy.indexOf("(") + 1, editReceivedBy.indexOf(")")))  && item.full_Name == (editReceivedBy.slice(editReceivedBy.indexOf(")")).replace(") - ", ""))): ''}
                 id="combo-box-demo"
                 options={users.filter(item => item.role != "Dean" && item.role != "Faculty")}
                 getOptionLabel={user =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={editReceivedBy} className="auto-complete-text" onChange={(e) => setEditReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
-                <TextField value={editFromPer} className="Text-input" id="fromPer" label="Student Name" variant="outlined" onChange={(e) => setEditFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
+                renderInput={(params) => <TextField required value={editReceivedBy} className="auto-complete-text" onChange={(e) => setEditReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                <TextField required value={editFromPer} className="Text-input" id="fromPer" label="Student Name" variant="outlined" onChange={(e) => setEditFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
                 <Autocomplete
                 defaultValue={editType}
                 className="auto-complete"
@@ -2573,19 +2689,19 @@ export default function StickyHeadTable() {
                 id="combo-box-demo"
                 options={student}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={editType} className="auto-complete-text" onChange={(e) => setEditType(e.target.value)} {...params} placeholder="Document Type" label="Document Type" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                renderInput={(params) => <TextField required value={editType} className="auto-complete-text" onChange={(e) => setEditType(e.target.value)} {...params} placeholder="Document Type" label="Document Type" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
                 <TextField required value={editDescription} className="Text-input" id="fromPer" label="Short Description" variant="outlined" onChange={(e) => setEditDescription(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                 <TextField value={editComment} className="Text-input" id="fromPer" label="Comment/Note" variant="outlined" onChange={(e) => setEditComment(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                 <Autocomplete
+                value={editStatus}
                 className="auto-complete"
-                defaultValue={editStatus}
   
                 onSelect={(e) => setEditStatus(e.target.value)}
                 id="combo-box-demo"
-                options={["Completed","Pending", "Rejected"]}
+                options={["Completed","Pending", "Rejected", "Cancelled"]}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={editStatus} className="auto-complete-text" onChange={(e) => setEditStatus(e.target.value)} {...params} placeholder="Status" label="Status" inputProps={{ ...params.inputProps,maxLength: 20 }}/>}/>
-                <TextField required value={editTracking} className="Text-input" id="fromPer" label="Tracking(Separate by comma)" variant="outlined" onChange={(e) => setEditTracking(e.target.value)}/>
+                renderInput={(params) => <TextField required value={editStatus} className="auto-complete-text" onChange={(e) => setEditStatus(e.target.value)} {...params} placeholder="Status" label="Status" inputProps={{ ...params.inputProps,maxLength: 20 }}/>}/>
+                <TextField value={editTracking} className="Text-input" id="fromPer" label="Tracking(Separate by comma)" variant="outlined" onChange={(e) => setEditTracking(e.target.value)}/>
                 </>) : ''
             }
             {editDocType === "Faculty Document" ? (
@@ -2605,14 +2721,13 @@ export default function StickyHeadTable() {
                 <TextField required value={editDocName} className="Text-input" id="fromPer" label="Document name" variant="outlined" onChange={(e) => setEditDocName(e.target.value)} inputProps={{ maxLength: 50 }}/>
                 <Autocomplete
                 className="auto-complete"
-  
                 onChange={(e, newVlaue) => { setEditReceivedBy( newVlaue ? `(${newVlaue.role}) - ${newVlaue.full_Name}`: '')}}
                 value={editReceivedBy != null && editReceivedBy != undefined ? users.find(item => item.role == (editReceivedBy.slice(editReceivedBy.indexOf("(") + 1, editReceivedBy.indexOf(")")))  && item.full_Name == (editReceivedBy.slice(editReceivedBy.indexOf(")")).replace(") - ", ""))): ''}
                 id="combo-box-demo"
                 options={users.filter(item => item.role != "Dean" && item.role != "Faculty")}
                 getOptionLabel={user =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={editReceivedBy} className="auto-complete-text" onChange={(e) => setEditReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                renderInput={(params) => <TextField required value={editReceivedBy} className="auto-complete-text" onChange={(e) => setEditReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
                 <Autocomplete
                 value={editFromDep}
                 className="auto-complete"
@@ -2621,8 +2736,8 @@ export default function StickyHeadTable() {
                 id="combo-box-demo"
                 options={office}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={editFromDep} className="auto-complete-text" onChange={(e) => setEditFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
-                <TextField value={editFromPer} className="Text-input" id="fromPer" label="Faculty Name" variant="outlined" onChange={(e) => setEditFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
+                renderInput={(params) => <TextField required value={editFromDep} className="auto-complete-text" onChange={(e) => setEditFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                <TextField required value={editFromPer} className="Text-input" id="fromPer" label="Faculty Name" variant="outlined" onChange={(e) => setEditFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
                 <Autocomplete
                 value={editType}
                 className="auto-complete"
@@ -2631,7 +2746,7 @@ export default function StickyHeadTable() {
                 id="combo-box-demo"
                 options={faculty}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={editType} className="auto-complete-text" onChange={(e) => setEditType(e.target.value)} {...params} placeholder="Document Type" label="Document Type" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                renderInput={(params) => <TextField required value={editType} className="auto-complete-text" onChange={(e) => setEditType(e.target.value)} {...params} placeholder="Document Type" label="Document Type" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
                 <TextField required value={editDescription} className="Text-input" id="fromPer" label="Short Description" variant="outlined" onChange={(e) => setEditDescription(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                 <TextField value={editComment} className="Text-input" id="fromPer" label="Comment/Note" variant="outlined" onChange={(e) => setEditComment(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                 <Autocomplete
@@ -2640,9 +2755,9 @@ export default function StickyHeadTable() {
   
                 onSelect={(e) => setEditStatus(e.target.value)}
                 id="combo-box-demo"
-                options={["Completed","Pending", "Rejected"]}
+                options={["Completed","Pending", "Rejected", "Cancelled"]}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={editStatus} className="auto-complete-text" onChange={(e) => setEditStatus(e.target.value)} {...params} placeholder="Status" label="Status" inputProps={{ ...params.inputProps,maxLength: 20 }}/>}/>
+                renderInput={(params) => <TextField required value={editStatus} className="auto-complete-text" onChange={(e) => setEditStatus(e.target.value)} {...params} placeholder="Status" label="Status" inputProps={{ ...params.inputProps,maxLength: 20 }}/>}/>
                 <TextField required value={editTracking} className="Text-input" id="fromPer" label="Tracking(Separate by comma)" variant="outlined" onChange={(e) => setEditTracking(e.target.value)}/>
                 </>) : ''
             }
@@ -2663,14 +2778,13 @@ export default function StickyHeadTable() {
                 <TextField required value={editDocName} className="Text-input" id="fromPer" label="Document name" variant="outlined" onChange={(e) => setEditDocName(e.target.value)} inputProps={{ maxLength: 50 }}/>
                 <Autocomplete
                 className="auto-complete"
-  
                 onChange={(e, newVlaue) => { setEditReceivedBy( newVlaue ? `(${newVlaue.role}) - ${newVlaue.full_Name}`: '')}}
                 value={editReceivedBy != null && editReceivedBy != undefined ? users.find(item => item.role == (editReceivedBy.slice(editReceivedBy.indexOf("(") + 1, editReceivedBy.indexOf(")")))  && item.full_Name == (editReceivedBy.slice(editReceivedBy.indexOf(")")).replace(") - ", ""))): ''}
                 id="combo-box-demo"
                 options={users.filter(item => item.role != "Dean" && item.role != "Faculty")}
                 getOptionLabel={user =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={editReceivedBy} className="auto-complete-text" onChange={(e) => setEditReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                renderInput={(params) => <TextField required value={editReceivedBy} className="auto-complete-text" onChange={(e) => setEditReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
                 <Autocomplete
                 value={editFromDep}
                 className="auto-complete"
@@ -2679,8 +2793,8 @@ export default function StickyHeadTable() {
                 id="combo-box-demo"
                 options={office}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={editFromDep} className="auto-complete-text" onChange={(e) => setEditFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
-                <TextField value={editFromPer} className="Text-input" id="fromPer" label="Applicant Name" variant="outlined" onChange={(e) => setEditFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
+                renderInput={(params) => <TextField required value={editFromDep} className="auto-complete-text" onChange={(e) => setEditFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                <TextField required value={editFromPer} className="Text-input" id="fromPer" label="Applicant Name" variant="outlined" onChange={(e) => setEditFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
                 <Autocomplete
                 value={editType}
                 className="auto-complete"
@@ -2689,18 +2803,18 @@ export default function StickyHeadTable() {
                 id="combo-box-demo"
                 options={hire}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={editType} className="auto-complete-text" onChange={(e) => setEditType(e.target.value)} {...params} placeholder="Document Type" label="Document Type" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                renderInput={(params) => <TextField required value={editType} className="auto-complete-text" onChange={(e) => setEditType(e.target.value)} {...params} placeholder="Document Type" label="Document Type" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
                 <TextField required value={editDescription} className="Text-input" id="fromPer" label="Short Description" variant="outlined" onChange={(e) => setEditDescription(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                 <TextField value={editComment} className="Text-input" id="fromPer" label="Comment/Note" variant="outlined" onChange={(e) => setEditComment(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                 <Autocomplete
-                className="auto-complete"
                 value={editStatus}
+                className="auto-complete"
   
                 onSelect={(e) => setEditStatus(e.target.value)}
                 id="combo-box-demo"
-                options={["Completed","Pending", "Rejected"]}
+                options={["Completed","Pending", "Rejected", "Cancelled"]}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={editStatus} className="auto-complete-text" onChange={(e) => setEditStatus(e.target.value)} {...params} placeholder="Status" label="Status" inputProps={{ ...params.inputProps,maxLength: 20 }}/>}/>
+                renderInput={(params) => <TextField required value={editStatus} className="auto-complete-text" onChange={(e) => setEditStatus(e.target.value)} {...params} placeholder="Status" label="Status" inputProps={{ ...params.inputProps,maxLength: 20 }}/>}/>
                 <TextField required value={editTracking} className="Text-input" id="fromPer" label="Tracking(Separate by comma)" variant="outlined" onChange={(e) => setEditTracking(e.target.value)}/>
                 </>) : ''
             }
@@ -2721,14 +2835,13 @@ export default function StickyHeadTable() {
                 <TextField required value={editDocName} className="Text-input" id="fromPer" label="Document name" variant="outlined" onChange={(e) => setEditDocName(e.target.value)} inputProps={{ maxLength: 50 }}/>
                 <Autocomplete
                 className="auto-complete"
-  
                 onChange={(e, newVlaue) => { setEditReceivedBy( newVlaue ? `(${newVlaue.role}) - ${newVlaue.full_Name}`: '')}}
                 value={editReceivedBy != null && editReceivedBy != undefined ? users.find(item => item.role == (editReceivedBy.slice(editReceivedBy.indexOf("(") + 1, editReceivedBy.indexOf(")")))  && item.full_Name == (editReceivedBy.slice(editReceivedBy.indexOf(")")).replace(") - ", ""))): ''}
                 id="combo-box-demo"
                 options={users.filter(item => item.role != "Dean" && item.role != "Faculty")}
                 getOptionLabel={user =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={editReceivedBy} className="auto-complete-text" onChange={(e) => setEditReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                renderInput={(params) => <TextField required value={editReceivedBy} className="auto-complete-text" onChange={(e) => setEditReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
                 <Autocomplete
                 value={editFromDep}
                 className="auto-complete"
@@ -2737,8 +2850,8 @@ export default function StickyHeadTable() {
                 id="combo-box-demo"
                 options={office}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={editFromDep} className="auto-complete-text" onChange={(e) => setEditFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
-                <TextField value={editFromPer} className="Text-input" id="fromPer" label="Ratee Name" variant="outlined" onChange={(e) => setEditFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
+                renderInput={(params) => <TextField required value={editFromDep} className="auto-complete-text" onChange={(e) => setEditFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                <TextField required value={editFromPer} className="Text-input" id="fromPer" label="Ratee Name" variant="outlined" onChange={(e) => setEditFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
                 <Autocomplete
                 value={editType}
                 className="auto-complete"
@@ -2747,18 +2860,18 @@ export default function StickyHeadTable() {
                 id="combo-box-demo"
                 options={["IPCR", "OPCR"]}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={editType} className="auto-complete-text" onChange={(e) => setEditType(e.target.value)} {...params} placeholder="Document Type" label="Document Type" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                renderInput={(params) => <TextField required value={editType} className="auto-complete-text" onChange={(e) => setEditType(e.target.value)} {...params} placeholder="Document Type" label="Document Type" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
                 <TextField required value={editDescription} className="Text-input" id="fromPer" label="Short Description" variant="outlined" onChange={(e) => setEditDescription(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                 <TextField value={editComment} className="Text-input" id="fromPer" label="Comment/Note" variant="outlined" onChange={(e) => setEditComment(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                 <Autocomplete
-                className="auto-complete"
                 value={editStatus}
+                className="auto-complete"
   
                 onSelect={(e) => setEditStatus(e.target.value)}
                 id="combo-box-demo"
-                options={["Completed","Pending", "Rejected"]}
+                options={["Completed","Pending", "Rejected", "Cancelled"]}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={editStatus} className="auto-complete-text" onChange={(e) => setEditStatus(e.target.value)} {...params} placeholder="Status" label="Status" inputProps={{ ...params.inputProps,maxLength: 20 }}/>}/>
+                renderInput={(params) => <TextField required value={editStatus} className="auto-complete-text" onChange={(e) => setEditStatus(e.target.value)} {...params} placeholder="Status" label="Status" inputProps={{ ...params.inputProps,maxLength: 20 }}/>}/>
                 <TextField required value={editTracking} className="Text-input" id="fromPer" label="Tracking(Separate by comma)" variant="outlined" onChange={(e) => setEditTracking(e.target.value)}/>
                 </>) : ''
             }
@@ -2779,26 +2892,34 @@ export default function StickyHeadTable() {
                 <TextField required value={editDocName} className="Text-input" id="fromPer" label="Document name" variant="outlined" onChange={(e) => setEditDocName(e.target.value)} inputProps={{ maxLength: 50 }}/>
                 <Autocomplete
                 className="auto-complete"
-  
                 onChange={(e, newVlaue) => { setEditReceivedBy( newVlaue ? `(${newVlaue.role}) - ${newVlaue.full_Name}`: '')}}
                 value={editReceivedBy != null && editReceivedBy != undefined ? users.find(item => item.role == (editReceivedBy.slice(editReceivedBy.indexOf("(") + 1, editReceivedBy.indexOf(")")))  && item.full_Name == (editReceivedBy.slice(editReceivedBy.indexOf(")")).replace(") - ", ""))): ''}
                 id="combo-box-demo"
                 options={users.filter(item => item.role != "Dean" && item.role != "Faculty")}
                 getOptionLabel={user =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={editReceivedBy} className="auto-complete-text" onChange={(e) => setEditReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                renderInput={(params) => <TextField required value={editReceivedBy} className="auto-complete-text" onChange={(e) => setEditReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                <Autocomplete
+                value={editFromDep}
+                className="auto-complete"
+  
+                onSelect={(e) => setEditFromDep(e.target.value)}
+                id="combo-box-demo"
+                options={office}
+                sx={{ width: "100%"}}
+                renderInput={(params) => <TextField required value={editFromDep} className="auto-complete-text" onChange={(e) => setEditFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
                 <TextField value={editFromPer} className="Text-input" id="fromPer" label="Contact Person" variant="outlined" onChange={(e) => setEditFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
                 <TextField required value={editDescription} className="Text-input" id="fromPer" label="Short Description" variant="outlined" onChange={(e) => setEditDescription(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                 <TextField value={editComment} className="Text-input" id="fromPer" label="Comment/Note" variant="outlined" onChange={(e) => setEditComment(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                 <Autocomplete
-                className="auto-complete"
                 value={editStatus}
+                className="auto-complete"
   
                 onSelect={(e) => setEditStatus(e.target.value)}
                 id="combo-box-demo"
-                options={["Completed","Pending", "Rejected"]}
+                options={["Completed","Pending", "Rejected", "Cancelled"]}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={editStatus} className="auto-complete-text" onChange={(e) => setEditStatus(e.target.value)} {...params} placeholder="Status" label="Status" inputProps={{ ...params.inputProps,maxLength: 20 }}/>}/>
+                renderInput={(params) => <TextField required value={editStatus} className="auto-complete-text" onChange={(e) => setEditStatus(e.target.value)} {...params} placeholder="Status" label="Status" inputProps={{ ...params.inputProps,maxLength: 20 }}/>}/>
                 <TextField required value={editTracking} className="Text-input" id="fromPer" label="Tracking(Separate by comma)" variant="outlined" onChange={(e) => setEditTracking(e.target.value)}/>
                 </>) : ''
             }
@@ -2819,14 +2940,13 @@ export default function StickyHeadTable() {
                 <TextField required value={editDocName} className="Text-input" id="fromPer" label="Document name" variant="outlined" onChange={(e) => setEditDocName(e.target.value)} inputProps={{ maxLength: 50 }}/>
                 <Autocomplete
                 className="auto-complete"
-  
                 onChange={(e, newVlaue) => { setEditReceivedBy( newVlaue ? `(${newVlaue.role}) - ${newVlaue.full_Name}`: '')}}
                 value={editReceivedBy != null && editReceivedBy != undefined ? users.find(item => item.role == (editReceivedBy.slice(editReceivedBy.indexOf("(") + 1, editReceivedBy.indexOf(")")))  && item.full_Name == (editReceivedBy.slice(editReceivedBy.indexOf(")")).replace(") - ", ""))): ''}
                 id="combo-box-demo"
                 options={users.filter(item => item.role != "Dean" && item.role != "Faculty")}
                 getOptionLabel={user =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={editReceivedBy} className="auto-complete-text" onChange={(e) => setEditReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                renderInput={(params) => <TextField required value={editReceivedBy} className="auto-complete-text" onChange={(e) => setEditReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
                 <Autocomplete
                 value={editFromDep}
                 className="auto-complete"
@@ -2835,7 +2955,7 @@ export default function StickyHeadTable() {
                 id="combo-box-demo"
                 options={office}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={editFromDep} className="auto-complete-text" onChange={(e) => setEditFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                renderInput={(params) => <TextField required value={editFromDep} className="auto-complete-text" onChange={(e) => setEditFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
                 <TextField value={editFromPer} className="Text-input" id="fromPer" label="Contact Person" variant="outlined" onChange={(e) => setEditFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
                 <TextField required value={editDescription} className="Text-input" id="fromPer" label="Short Description" variant="outlined" onChange={(e) => setEditDescription(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                 <DatePicker required value={editSched_Date} format="MM/DD/YYYY" className="date-pick2" label=" Schedule Date" onChange={(e) => setEditSched_Date(e)} slotProps={{
@@ -2846,71 +2966,63 @@ export default function StickyHeadTable() {
                 <TextField required value={editSched} className="Text-input" id="fromPer" label="Meeting Details" variant="outlined" onChange={(e) => setEditSched(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                 <TextField value={editComment} className="Text-input" id="fromPer" label="Comment/Note" variant="outlined" onChange={(e) => setEditComment(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                 <Autocomplete
-                className="auto-complete"
                 value={editStatus}
+                className="auto-complete"
   
                 onSelect={(e) => setEditStatus(e.target.value)}
                 id="combo-box-demo"
-                options={["Completed","Pending", "Rejected"]}
+                options={["Completed","Pending", "Rejected", "Cancelled"]}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={editStatus} className="auto-complete-text" onChange={(e) => setEditStatus(e.target.value)} {...params} placeholder="Status" label="Status" inputProps={{ ...params.inputProps,maxLength: 20 }}/>}/>
+                renderInput={(params) => <TextField required value={editStatus} className="auto-complete-text" onChange={(e) => setEditStatus(e.target.value)} {...params} placeholder="Status" label="Status" inputProps={{ ...params.inputProps,maxLength: 20 }}/>}/>
                 <TextField required value={editTracking} className="Text-input" id="fromPer" label="Tracking(Separate by comma)" variant="outlined" onChange={(e) => setEditTracking(e.target.value)}/>
                 </>) 
-                : editDocType != "Student Document" && editDocType != "Faculty Document" && editDocType != "New Hire Document" && editDocType != "IPCR/OPCR" && editDocType != "Travel Order" && editDocType != "Meeting Request" ? (
+                : (editDocType != "Student Document" && editDocType != "Faculty Document" && editDocType != "New Hire Document" && editDocType != "IPCR/OPCR" && editDocType != "Travel Order" && editDocType != "Meeting Request") ? (
                   <>
                   <DemoContainer components={['DatePicker', 'TimePicker',]}>
                       <DatePicker required format="MM/DD/YYYY" className="date-pick" label="Date Received" value={editDateReceived} onChange={(e) => setEditDateReceived(e)} slotProps={{
-                  textField: {
-                      required: true,
-                  },
+                        textField: {
+                          required: true,
+                        },
                   }}/>
                       <TimePicker required format="hh:mm A" className="date-pick" label="Time Received" value={editTimeReceived} onChange={(e) => setEditTimeReceived(e)} slotProps={{
-                  textField: {
-                      required: true,
-                  },
+                        textField: {
+                          required: true,
+                        },
                   }}/>
                   </DemoContainer>
                   <TextField required className="Text-input" id="fromPer" value={editDocName} label="Document name" variant="outlined" onChange={(e) => setEditDocName(e.target.value)} inputProps={{ maxLength: 50 }}/>
                   <Autocomplete
-                className="auto-complete"
-  
-                onChange={(e, newVlaue) => { setEditReceivedBy( newVlaue ? `(${newVlaue.role}) - ${newVlaue.full_Name}`: '')}}
-                value={editReceivedBy != null && editReceivedBy != undefined ? users.find(item => item.role == (editReceivedBy.slice(editReceivedBy.indexOf("(") + 1, editReceivedBy.indexOf(")")))  && item.full_Name == (editReceivedBy.slice(editReceivedBy.indexOf(")")).replace(") - ", ""))): ''}
-                id="combo-box-demo"
-                options={users.filter(item => item.role != "Dean" && item.role != "Faculty")}
-                getOptionLabel={user =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
-                sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={editReceivedBy} className="auto-complete-text" onChange={(e) => setEditReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                    className="auto-complete"
+                    onChange={(e, newVlaue) => { setEditReceivedBy( newVlaue ? `(${newVlaue.role}) - ${newVlaue.full_Name}`: '')}}
+                    value={editReceivedBy != null && editReceivedBy != undefined ? users.find(item => item.role == (editReceivedBy.slice(editReceivedBy.indexOf("(") + 1, editReceivedBy.indexOf(")")))  && item.full_Name == (editReceivedBy.slice(editReceivedBy.indexOf(")")).replace(") - ", ""))): ''}
+                    id="combo-box-demo"
+                    options={users.filter(item => item.role != "Dean" && item.role != "Faculty")}
+                    getOptionLabel={user =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
+                    sx={{ width: "100%"}}
+                    renderInput={(params) => <TextField required value={editReceivedBy} className="auto-complete-text" onChange={(e) => setEditReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}
+                  />
                   <Autocomplete
-                value={editFromDep}
-                className="auto-complete"
-  
-                onSelect={(e) => setEditFromDep(e.target.value)}
-                id="combo-box-demo"
-                options={office}
-                sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={editFromDep} className="auto-complete-text" onChange={(e) => setEditFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                    value={editFromDep}
+                    className="auto-complete"
+                    onSelect={(e) => setEditFromDep(e.target.value)}
+                    id="combo-box-demo"
+                    options={office}
+                    sx={{ width: "100%"}}
+                    renderInput={(params) => <TextField required value={editFromDep} className="auto-complete-text" onChange={(e) => setEditFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}
+                  />
                   <TextField value={editFromPer} className="Text-input" id="fromPer" label="Contact Person" variant="outlined" onChange={(e) => setEditFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
-                  <Autocomplete
-                  defaultValue={editType}
-                  className="auto-complete"
-    
-                  onSelect={(e) => setEditType(e.target.value)}
-                  id="combo-box-demo"
-                  options={student}
-                  sx={{ width: "100%"}}
-                  renderInput={(params) => <TextField value={editType} className="auto-complete-text" onChange={(e) => setEditType(e.target.value)} {...params} placeholder="Document Type" label="Document Type" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                  <TextField required value={editType} className="Text-input" onChange={(e) => setEditType(e.target.value)} placeholder="Document Type" label="Document Type" inputProps={{ maxLength: 50 }}/>
                   <TextField required value={editDescription} className="Text-input" id="fromPer" label="Short Description" variant="outlined" onChange={(e) => setEditDescription(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                   <TextField value={editComment} className="Text-input" id="fromPer" label="Comment/Note" variant="outlined" onChange={(e) => setEditComment(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                   <Autocomplete
-                  className="auto-complete"
-                  defaultValue={editStatus}
-    
-                  onSelect={(e) => setEditStatus(e.target.value)}
-                  id="combo-box-demo"
-                  options={["Completed","Pending", "Rejected"]}
-                  sx={{ width: "100%"}}
-                  renderInput={(params) => <TextField value={editStatus} className="auto-complete-text" onChange={(e) => setEditStatus(e.target.value)} {...params} placeholder="Status" label="Status" inputProps={{ ...params.inputProps,maxLength: 20 }}/>}/>
+                value={editStatus}
+                className="auto-complete"
+  
+                onSelect={(e) => setEditStatus(e.target.value)}
+                id="combo-box-demo"
+                options={["Completed","Pending", "Rejected", "Cancelled"]}
+                sx={{ width: "100%"}}
+                renderInput={(params) => <TextField required value={editStatus} className="auto-complete-text" onChange={(e) => setEditStatus(e.target.value)} {...params} placeholder="Status" label="Status" inputProps={{ ...params.inputProps,maxLength: 20 }}/>}/>
                   <TextField required value={editTracking} className="Text-input" id="fromPer" label="Tracking(Separate by comma)" variant="outlined" onChange={(e) => setEditTracking(e.target.value)}/>
                   </>) : ''
             }
@@ -3028,7 +3140,7 @@ export default function StickyHeadTable() {
         </DialogContent>
       </Dialog>
       <div style={{ display: "none" }}>
-        <ComponentToPrint ref={componentRef} dataFromParent="Others" filtered={filteredData}/>
+        <ComponentToPrint ref={componentRef} dataFromParent="Other" filtered={filteredData}/>
       </div>
 
       <Dialog open={openShowFile} fullWidth maxWidth="xl">

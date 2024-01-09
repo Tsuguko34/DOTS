@@ -22,6 +22,7 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import { collection, getDocs, onSnapshot, query, where } from 'firebase/firestore';
 import { auth, db } from '../firebase';
+import MenuIcon from '@mui/icons-material/Menu';
 import Overlay from '../pages/Overlay';
 import axios from 'axios';
 function Sidebar() {

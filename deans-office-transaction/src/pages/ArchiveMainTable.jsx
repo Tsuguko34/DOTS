@@ -61,10 +61,14 @@ function ArchiveMainTable() {
     const getArchive = async() => {
         const data = await axios.get(`${port}/getFilteredArchives?documentType=${documentType.replace('%20', ' ').replace('IPCR-OPCR', 'IPCR/OPCR')}&year=${year}`)
         const images = await axios.get(`${port}/getArchiveFiles`)
-        console.log(data.data);
-        setArchiveImage(images.data)
-        setArchiveData(data.data)
-        setLoading(false)
+        if(data.data.success == false){
+          toast.error("There was an error while retrieving the documents")
+        }else{
+          setArchiveImage(images.data)
+          setArchiveData(data.data)
+          setLoading(false)
+        }
+        
     }
 
     useEffect(() => {
@@ -904,6 +908,8 @@ function ArchiveMainTable() {
                 <SwipeableDrawer
                   anchor={'right'}
                   open={openPull}
+                  onOpen={openPullTab}
+                  onClose={closePullTab}
                 >
                   <Box sx={{padding: "10px", display: "flex", justifyContent: 'start'}}><ClearIcon sx={{fontSize: "3rem"}} onClick={closePullTab}/></Box>
                   <Card className='dash-cards2' sx={{height: "100vh", padding: "20px", overflowY: "auto"}}>
@@ -949,11 +955,11 @@ function ArchiveMainTable() {
                                     <Typography sx={{fontWeight: "300", fontSize: "0.8rem", color: "#888888"}}>Description</Typography>
                                     <Typography sx={{fontWeight: "300", fontSize: "0.9rem"}}>{fileDesc}</Typography>
                                 </Box>
-                                {user.role == "Dean" && (
+                                {/* {user.role == "Dean" && (
                                   <Box sx={{display: "flex", justifyContent: "space-around", alignItems: "center", mt: "20px"}}>
                                     <Button startIcon={<RestorePageIcon/>} variant='outlined' color='success' sx={{textTransform: "none"}} onClick={() => restoreDoc(fileInfo.uID)}>Restore</Button>
                                   </Box>
-                                )}
+                                )} */}
                                 
                             </CardContent></>): 
                             (<div className="nothing-holder">
@@ -1010,11 +1016,11 @@ function ArchiveMainTable() {
                                     <Typography sx={{fontWeight: "300", fontSize: "0.8rem", color: "#888888"}}>Description</Typography>
                                     <Typography sx={{fontWeight: "300", fontSize: "0.9rem"}}>{fileDesc}</Typography>
                                 </Box>
-                                {user.role == "Dean" && (
+                                {/* {user.role == "Dean" && (
                                   <Box sx={{display: "flex", justifyContent: "space-around", alignItems: "center", mt: "20px"}}>
                                     <Button startIcon={<RestorePageIcon/>} variant='outlined' color='success' sx={{textTransform: "none"}} onClick={() => restoreDoc(fileInfo.uID)}>Restore</Button>
                                   </Box>
-                                )}
+                                )} */}
                                 
                             </CardContent></>): 
                             (<div className="nothing-holder">

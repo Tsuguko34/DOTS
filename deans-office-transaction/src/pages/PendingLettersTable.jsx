@@ -357,13 +357,18 @@ export default function StickyHeadTable() {
             const fetchDataInterval = setInterval( async() => {
               try{
                 const updatedData = await axios.get(`${port}/getPending?userID=${data.data[0].uID}`)
-                setRows(updatedData.data)
-                setLoading(false)
-                if (updatedData.data.length == 0) {
-                  setEmptyResult(true);
+                if(updatedData.data.success == false){
+                  toast.error("There was an error while retrieving the documents")
                 }else{
-                  setEmptyResult(false);
+                  setRows(updatedData.data)
+                  setLoading(false)
+                  if (updatedData.data.length == 0) {
+                    setEmptyResult(true);
+                  }else{
+                    setEmptyResult(false);
+                  }
                 }
+                
               }catch(e){
                 console.log(e.message);
               }
@@ -1636,6 +1641,7 @@ export default function StickyHeadTable() {
                 onChange={(e, newValue) => {
                   setForward(newValue ? newValue.uID : "")
                 }}
+                disabled = {allFaculty || allClerks || allUsers}
                 value={users.find(item => item.uID == forward) || null}
                 id="combo-box-demo"
                 options={users.filter(item => item.uID != user.uID)}

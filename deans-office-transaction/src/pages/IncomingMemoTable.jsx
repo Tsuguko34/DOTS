@@ -263,12 +263,20 @@ export default function StickyHeadTable() {
 
     formData.append('uID', documentsToBeAdded.uID);
     try{
-      await axios.post(`${port}/documentFiles?docID=${documentsToBeAdded.uID}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      await axios.post(`${port}/documents`, documentsToBeAdded)  
+      await axios.post(`${port}/documents`, documentsToBeAdded).then(async(data) => {
+        if(data.data.success == false){
+          toast.error("There was an error while adding the document. Try Again")
+        }
+        else{
+          await axios.post(`${port}/documentFiles?docID=${documentsToBeAdded.uID}`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
+          getSignInMethods("add", documentsToBeAdded.document_Name, documentsToBeAdded.document_Type);
+          toast.success("Successfully uploaded a file.")
+        }
+      })  
       setNewDateReceived("")
       setNewDocuName("")
       setNewComment("")
@@ -283,12 +291,10 @@ export default function StickyHeadTable() {
       setImageUpload("")
       setImageDis("")
       setOpenAdd(false)
-      getSignInMethods("add", documentsToBeAdded.document_Name);
       setEmptyResult(false);
       setSumbmit(false);
       setUrgent(false)
       getIncoming();
-      toast.success("Successfully uploaded a file.")
     }catch(e){
       console.log(e);
     }
@@ -358,10 +364,14 @@ export default function StickyHeadTable() {
 
   const getIncoming = async () => {
     const data = await axios.get(`${port}/documents?remark=Incoming&type=Memorandum`)
-    setRows(data.data);
-    setLoading(false);
-    if (data.data.length == 0) {
-      setEmptyResult(true);
+    if(data.data.success == false){
+      toast.error("There was an error while retrieving the documents")
+    }else{
+      setRows(data.data);
+      setLoading(false);
+      if (data.data.length == 0) {
+        setEmptyResult(true);
+      }
     }
   };
 
@@ -393,10 +403,16 @@ export default function StickyHeadTable() {
           }).then(async (result) => {
           if(result.isConfirmed) {
               try{
-                await axios.post(`${port}/archiveFile?id=${id}&user=${user.uID}`)
-                toast.success("File has been archived")
-                getSignInMethods("archive", name)
-                getIncoming();
+                await axios.post(`${port}/archiveFile?id=${id}&user=${user.uID}`).then((data) => {
+                  if(data.data.success == false){
+                    toast.error("An error has occured while archiving the file.")
+                  }
+                  else{
+                    toast.success("File has been archived")
+                    getSignInMethods("archive", name)
+                    getIncoming();
+                  }
+                })
               }catch(e){
                 console.log(e);
               }
@@ -599,7 +615,9 @@ export default function StickyHeadTable() {
       tracking: tracking
     };
     setFormID(data);
-    handleEditOpen();
+    setTimeout(() => {
+      handleEditOpen();
+    }, 100)
   };
 
   const formatDateBack = (date) => {
@@ -644,9 +662,14 @@ export default function StickyHeadTable() {
       document_Name: editDocuName,
       tracking: editTracking
     };
+    let errorHap = null
     if (!imageUpload) {
       try{
-        await axios.put(`${port}/update`, editFields)
+        await axios.put(`${port}/update`, editFields).then((data) => {
+          if(data.data.success == false){
+            errorHap = "error"
+          }
+        })
         setSumbmit(false);
       }catch(e){
         console.log(e);
@@ -660,7 +683,11 @@ export default function StickyHeadTable() {
       })
       formData.append(`uID`, formID.uID)
       try{
-        await axios.put(`${port}/update`, editFields)
+        await axios.put(`${port}/update`, editFields).then((data) => {
+          if(data.data.success == false){
+            errorHap = "error"
+          }
+        })
         await axios.put(`${port}/updateFile?docID=${formID.uID}`, formData)
         setSumbmit(false);
         setImageUpload([])
@@ -668,11 +695,17 @@ export default function StickyHeadTable() {
         console.log(e);
       }
     }
-
-    getSignInMethods("edit", editDocuName);
-    getIncoming();
-    handleEditClose();
-    toast.success("Successfully Edited.")
+    if(errorHap == "error"){
+      getIncoming();
+      handleEditClose();
+      toast.error("There was an error while editing the document. Try Again.")
+    }
+    else{
+      getSignInMethods("edit", editDocuName);
+      getIncoming();
+      handleEditClose();
+      toast.success("Successfully Edited.")
+    }
   };
 
   const [imageDis, setImageDis] = useState([]);
@@ -1559,7 +1592,7 @@ export default function StickyHeadTable() {
                 options={users.filter(item => item.role != "Dean" && item.role != "Faculty")}
                 getOptionLabel={user =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={newReceivedBy} className="auto-complete-text" onChange={(e) => setNewReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                renderInput={(params) => <TextField required value={newReceivedBy} className="auto-complete-text" onChange={(e) => setNewReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
             <Autocomplete
               className="auto-complete"
               disablePortal
@@ -1568,7 +1601,7 @@ export default function StickyHeadTable() {
               id="combo-box-demo"
               options={office}
               sx={{ width: "100%"}}
-              renderInput={(params) => <TextField value={newFromDep ? newFromDep : null} className="auto-complete-text" onChange={(e) => setNewFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept" inputProps={{ ...params.inputProps,maxLength: 50 }}/> }/>
+              renderInput={(params) => <TextField required value={newFromDep ? newFromDep : null} className="auto-complete-text" onChange={(e) => setNewFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept" inputProps={{ ...params.inputProps,maxLength: 50 }}/> }/>
             <TextField className="Text-input" id="fromPer" label="Contact Person" variant="outlined" onChange={(e) => setNewFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
             <TextField required className="Text-input" id="fromPer" label="Short Description" variant="outlined" onChange={(e) => setNewDescription(e.target.value)} inputProps={{ maxLength: 1000 }}/>
             <TextField className="Text-input" id="fromPer" label="Comment/Note" variant="outlined" onChange={(e) => setNewComment(e.target.value)} inputProps={{ maxLength: 1000 }}/>
@@ -1580,7 +1613,7 @@ export default function StickyHeadTable() {
                 id="combo-box-demo"
                 options={["Completed","Pending", "Rejected", "Cancelled"]}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={newStatus ? newStatus : null} className="auto-complete-text" onChange={(e) => setNewStatus(e.target.value)} {...params} placeholder="Status" label="Status" inputProps={{ ...params.inputProps,maxLength: 20 }}/>}/>
+                renderInput={(params) => <TextField required value={newStatus ? newStatus : null} className="auto-complete-text" onChange={(e) => setNewStatus(e.target.value)} {...params} placeholder="Status" label="Status" inputProps={{ ...params.inputProps,maxLength: 20 }}/>}/>
                 <Autocomplete
                 className="auto-complete"
                 onChange={(e, newValue) => {
@@ -1591,7 +1624,7 @@ export default function StickyHeadTable() {
                 options={users.filter(item => item.uID != user.uID)}
                 getOptionLabel={(user) =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField className="auto-complete-text" {...params} placeholder="Forward To" label="Forward To"/>}/>
+                renderInput={(params) => <TextField required className="auto-complete-text" {...params} placeholder="Forward To" label="Forward To"/>}/>
             </div>
             <input style={{display: 'none'}} value={newFromPer} type="text" name="from_name" />
             <input style={{display: 'none'}} value={newDocuName} type="text" name="document_Name" />
@@ -1718,7 +1751,7 @@ export default function StickyHeadTable() {
                 options={users.filter(item => item.role != "Dean" && item.role != "Faculty")}
                 getOptionLabel={user =>(user.role != undefined && user.full_Name != undefined) ? `(${user.role}) - ${user.full_Name}` : ''}
                 sx={{ width: "100%"}}
-                renderInput={(params) => <TextField value={editReceivedBy} className="auto-complete-text" onChange={(e) => setEditReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+                renderInput={(params) => <TextField required value={editReceivedBy} className="auto-complete-text" onChange={(e) => setEditReceivedBy(e.target.value)} {...params} placeholder="Received By" label="Received By" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
             <Autocomplete
               className="auto-complete"
               disablePortal
@@ -1727,7 +1760,7 @@ export default function StickyHeadTable() {
               id="combo-box-demo"
               options={office}
               sx={{ width: "100%"}}
-              renderInput={(params) => <TextField value={editFromDep} className="auto-complete-text" onChange={(e) => setEditFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
+              renderInput={(params) => <TextField required value={editFromDep} className="auto-complete-text" onChange={(e) => setEditFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
             <TextField value={editFromPer} className="Text-input" id="fromPer" label="Contact Person" variant="outlined" onChange={(e) => setEditFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
             <TextField required value={editDescription} className="Text-input" id="fromPer" label="Short Description" variant="outlined" onChange={(e) => setEditDescription(e.target.value)} inputProps={{ maxLength: 1000 }}/>
             <TextField value={editComment} className="Text-input" id="fromPer" label="Comment/Note" variant="outlined" onChange={(e) => setEditComment(e.target.value)} inputProps={{ maxLength: 1000 }}/>
@@ -1739,7 +1772,7 @@ export default function StickyHeadTable() {
             id="combo-box-demo"
             options={["Completed","Pending", "Rejected", "Cancelled"]}
             sx={{ width: "100%"}}
-            renderInput={(params) => <TextField value={editStatus} className="auto-complete-text"{...params} placeholder="Status" label="Status" inputProps={{ ...params.inputProps,maxLength: 20 }}/>}/> </>): ''}
+            renderInput={(params) => <TextField required value={editStatus} className="auto-complete-text"{...params} placeholder="Status" label="Status" inputProps={{ ...params.inputProps,maxLength: 20 }}/>}/> </>): ''}
             <TextField required value={editTracking} className="Text-input" id="fromPer" label="Tracking(Separate by comma)" variant="outlined" onChange={(e) => setEditTracking(e.target.value)}/>
             </div>
             <div className="right-holder">
@@ -1854,7 +1887,7 @@ export default function StickyHeadTable() {
         </DialogContent>
       </Dialog>
       <div style={{ display: "none" }}>
-        <ComponentToPrint ref={componentRef} dataFromParent="Memorandum" filtered={filteredData}/>
+        <ComponentToPrint ref={componentRef} dataFromParent="Incoming Memorandum" filtered={filteredData}/>
       </div>
 
       <Dialog open={openShowFile} fullWidth maxWidth="xl">

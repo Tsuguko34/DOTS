@@ -196,89 +196,92 @@ function DateandProfile() {
     <>
       <div className="date-time"  style={{marginTop: windowWidth <= 375 && "7vh"}}>
         <p>{date}</p>
-        <Box component={"div"}  sx={{margin: "0px 10px"}}>
-          <IconButton onClick={handleOpenMenu}>
-            <Badge badgeContent={"content"} color="error" variant="dot" invisible={notif.length == 0}>
-              <NotificationsActiveIcon color="action"/>
-            </Badge>
-          </IconButton>
-        </Box>
-        <Menu
-        anchorEl={anchorElNotif}
-        open={Boolean(anchorElNotif)}
-        onClose={handleCloseMenu}
-        PaperProps={{
-          className:"menu-drop",
-          elevation: 0,
-          sx: {
-            overflow: "visible",
-            filter: "drop-shadow(0px 2px 8px rgba(0,0,0,0.32))",
-            mt: 1.5,
-            "& .MuiAvatar-root": {
-              width: 32,
-              height: 32,
-              ml: -0.5,
-              mr: 1,
+        <Box sx={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+          <Box component={"div"}  sx={{margin: "0px 10px"}}>
+            <IconButton onClick={handleOpenMenu}>
+              <Badge badgeContent={"content"} color="error" variant="dot" invisible={notif.length == 0}>
+                <NotificationsActiveIcon color="action"/>
+              </Badge>
+            </IconButton>
+          </Box>
+          <Menu
+          anchorEl={anchorElNotif}
+          open={Boolean(anchorElNotif)}
+          onClose={handleCloseMenu}
+          PaperProps={{
+            className:"menu-drop",
+            elevation: 0,
+            sx: {
+              overflow: "visible",
+              filter: "drop-shadow(0px 2px 8px rgba(0,0,0,0.32))",
+              mt: 1.5,
+              "& .MuiAvatar-root": {
+                width: 32,
+                height: 32,
+                ml: -0.5,
+                mr: 1,
+              },
+              "&:before": {
+                content: '""',
+                display: "block",
+                position: "absolute",
+                top: 0,
+                right: 14,
+                width: 10,
+                height: 10,
+                transform: "translateY(-50%) rotate(45deg)",
+                zIndex: 0,
+              },
             },
-            "&:before": {
-              content: '""',
-              display: "block",
-              position: "absolute",
-              top: 0,
-              right: 14,
-              width: 10,
-              height: 10,
-              transform: "translateY(-50%) rotate(45deg)",
-              zIndex: 0,
-            },
-          },
-        }}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-       
-        >
-          
-          {notif.length > 0 ? notif.map((notif) => {
-            return(
-                <MenuItem onClick={handleNotificationClick}  sx={{minWidth: "250px", maxWidth: "300px"}}>
-                  <Box component={"div"} sx={{display: "flex", justifyContent: "start", alignItems: "center"}}>
-                    <RadioButtonCheckedIcon className="dialog-radio" sx={{marginRight: "5px"}}/>
-                    <Box component={"div"} sx={{display: "flex", flexDirection: "column", justifyContent: "start", alignItems: "center"}}>
-                      
-                        <Typography sx={{maxWidth: "300px"}}>
-                          <Typography sx={{fontWeight: "bold"}}>{notif.document_Name}</Typography> pending for the last {Math.floor((new Date() - new Date(notif.date_Received)) / (1000 * 60 * 60 * 24))} days.
-                        </Typography>
-                      
-                    </Box>
-                  </Box>
-                </MenuItem>
-            )
-          }): (
-            <MenuItem>
-              No new notification.
-            </MenuItem>
-          )}
-          
-        </Menu>
-        <Typography component={"div"} sx={{fontWeight: "bold", color: "#FF7F50"}}>{user.role}</Typography>
-        <Tooltip title="Account settings">
-          <IconButton
-            onClick={handleClick}
-            size="small"
-            sx={{ ml:windowWidth >=768 && 2, mr:windowWidth >=768 && "2vh" }}
-            aria-controls={open ? "account-menu" : undefined}
-            aria-haspopup="true"
-            aria-expanded={open ? "true" : undefined}
+          }}
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'right',
+          }}
+          transformOrigin={{
+            vertical: 'top',
+            horizontal: 'right',
+          }}
+        
           >
-            <Avatar src={user ? `${port}/profile_Pictures/${user.profilePic}` : profilePic} sx={{border: "1px solid #212121",width: 45, height: 45}}/>
-          </IconButton>
-        </Tooltip>
+            
+            {notif.length > 0 ? notif.map((notif) => {
+              return(
+                  <MenuItem onClick={handleNotificationClick}  sx={{minWidth: "250px", maxWidth: "300px"}}>
+                    <Box component={"div"} sx={{display: "flex", justifyContent: "start", alignItems: "center"}}>
+                      <RadioButtonCheckedIcon className="dialog-radio" sx={{marginRight: "5px"}}/>
+                      <Box component={"div"} sx={{display: "flex", flexDirection: "column", justifyContent: "start", alignItems: "center"}}>
+                        
+                          <Typography sx={{maxWidth: "300px"}}>
+                            <Typography sx={{fontWeight: "bold"}}>{notif.document_Name}</Typography> pending for the last {Math.floor((new Date() - new Date(notif.date_Received)) / (1000 * 60 * 60 * 24))} days.
+                          </Typography>
+                        
+                      </Box>
+                    </Box>
+                  </MenuItem>
+              )
+            }): (
+              <MenuItem>
+                No new notification.
+              </MenuItem>
+            )}
+            
+          </Menu>
+          <Typography component={"div"} sx={{fontWeight: "bold", color: "#FF7F50"}}>{user.role}</Typography>
+          <Tooltip title="Account settings">
+            <IconButton
+              onClick={handleClick}
+              size="small"
+              sx={{ ml:windowWidth >=768 && 2, mr:windowWidth >=768 && "2vh" }}
+              aria-controls={open ? "account-menu" : undefined}
+              aria-haspopup="true"
+              aria-expanded={open ? "true" : undefined}
+            >
+              <Avatar src={user ? `${port}/profile_Pictures/${user.profilePic}` : profilePic} sx={{border: "1px solid #212121",width: 45, height: 45}}/>
+            </IconButton>
+          </Tooltip>
+        </Box>
+        
       </div>
       <Menu
         anchorEl={anchorEl}
