@@ -195,6 +195,7 @@ function ArchiveTable() {
 
   const [search, setSearch] = useState('')
 
+
   return (
     <>
     <Toaster position='bottom-center'/>
@@ -230,11 +231,11 @@ function ArchiveTable() {
         {yearData.map((year) => {
           return(
             <>
-              <Typography sx={{fontSize:'1.2rem', fontWeight:'bold'}}>{year}</Typography>
+              <Typography sx={{fontSize:'1.5rem', fontWeight:'bold', color: "#FF9944", borderBottom: "3px solid", borderImage: "linear-gradient(to right, #FF9944 30%, transparent 100%)", borderImageSlice: "1"}}>{year}</Typography>
               <Grid container xs={12} sx={{width: "100%", padding: "20px", zIndex: "2", position: "relative"}}>
                 {buttonData.filter(item => item.Type.toLowerCase().includes(search.toLowerCase())).filter(item => item.Year == year).map((buttonData) => {
                   return(
-                      <Grid item xs={windowWidth >= 375 ? 6 : 12} sm={4} md={3} lg={3} sx={{mt: "50px"}}>
+                      <Grid item xs={windowWidth >= 375 ? 6 : 12} sm={4} md={3} lg={3} sx={{mt: "20px"}}>
                         <Link to={`./pages/ArchiveMaintable/${buttonData.Type == "IPCR/OPCR" ? "IPCR-OPCR": buttonData.Type}/${year}`}>
                           <Card sx={{backgroundColor: "transparent", boxShadow: "none", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", cursor: "pointer", userSelect: "none"}}>
                             <div className="archive-image">

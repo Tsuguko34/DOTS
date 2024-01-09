@@ -499,31 +499,31 @@ function ArchiveMainTable() {
     anchor.style.display = 'none';
     document.body.appendChild(anchor);
     
-    if (type === "docx" || type === "xlsx") {
-      const fileName = name.substring(37)
-      const fileURL = `${port}/document_Files/${name}`;
-      fetch(fileURL)
-        .then(response => response.blob())
-        .then(blob => {
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = fileName;
-          a.target = '_blank';
-          a.rel = 'noopener noreferrer';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          window.URL.revokeObjectURL(url);
-        })
-        .catch(error => console.error('Error downloading file:', error));
-    }
+      if (type === "docx" || type === "xlsx") {
+        const fileName = name.substring(37)
+        const fileURL = `${port}/document_Files/${name}`;
+        fetch(fileURL)
+          .then(response => response.blob())
+          .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+          })
+          .catch(error => console.error('Error downloading file:', error));
+      }
     else if(type == "image"){
       if(imageList.length > 1){
         const zip = new JSZip()
         const promises = imageList.map((image, index) => {
           const imageUrl = `${port}/document_Files/${image}`;
-          const filename = `${image}`;
+          const filename = image.substring(37);
   
           return fetch(imageUrl)
             .then(response => response.blob())
@@ -551,7 +551,7 @@ function ArchiveMainTable() {
             .then(blob => {
               const objectUrl = URL.createObjectURL(blob);
               anchor.href = objectUrl;
-              anchor.download = image;
+              anchor.download = image.substring(37);
               anchor.target = '_blank';
               anchor.click();
               URL.revokeObjectURL(objectUrl);
@@ -1087,193 +1087,231 @@ function ArchiveMainTable() {
                             </div>
                             </div>
                             <div className="view-img">
-                        { [imageList, filePDF, fileDocx, fileXlsx].filter(arr => arr.length > 0).length >=2?(
-                          <TabContext value={tabValue}>
-                            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                              <TabList onChange={handleTabChange} aria-label="lab API tabs example">
-                                {imageList.some(item => item.includes(".jpg") || item.includes(".jpeg") || item.includes(".png")) && <Tab sx={{textTransform: "none", fontSize: "1rem"}} label="Image/s" value="1" />}
-                                {filePDF.length != 0  && <Tab sx={{textTransform: "none", fontSize: "1rem"}} label="PDF" value="2" />}
-                                {fileDocx.length != 0  && <Tab sx={{textTransform: "none", fontSize: "1rem"}} label="Docx" value="3" />}
-                                {fileXlsx.length != 0  && <Tab sx={{textTransform: "none", fontSize: "1rem"}} label="Excel" value="4" />}
-                              </TabList>
-                            </Box>
-                            <TabPanel value="1">
-                            <Grid container xs={12}>
-                                <Button component="label" onClick={(e) => handleDownload("image")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none", marginBottom: "10px"}}>
-                                        Download Image/s
-                                </Button>
-                                {imageList.some(item => item.includes(".jpg") || item.includes(".jpeg") || item.includes(".png")) &&(
-                                      <ImageList variant="masonry" cols={windowWidth <= 375 ? 1 : windowWidth <=576 && windowWidth > 375? 2 : 3} gap={8}>
-                                        {imageList.map((url, index) => (
-                                              <ImageListItem key={url}>
-                                                <img loading="eager" srcSet={`${port}/document_Files/${url}?w=248&fit=crop&auto=format&dpr=2 2x`} src={`${port}/document_Files/${url}?w=248&fit=crop&auto=format`} onClick={(e) => openLightbox(index)}/>
-                                              </ImageListItem>                                  
-                                        ))}
-                                    </ImageList>
-                                  )}
-                              </Grid>
-                            </TabPanel>
-                            <TabPanel value="2">
-                              {
-                                filePDF.length != 0 && (
+                      { [imageList, filePDF, fileDocx, fileXlsx].filter(arr => arr.length > 0).length >=2?(
+                        <TabContext value={tabValue}>
+                          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                            <TabList onChange={handleTabChange} aria-label="lab API tabs example" variant="scrollable">
+                              {imageList.some(item => item.includes(".jpg") || item.includes(".jpeg") || item.includes(".png")) && <Tab sx={{textTransform: "none", fontSize: "1rem"}} label="Image/s" value="1" />}
+                              {filePDF.length != 0  && <Tab sx={{textTransform: "none", fontSize: "1rem"}} label="PDF" value="2" />}
+                              {fileDocx.length != 0  && <Tab sx={{textTransform: "none", fontSize: "1rem"}} label="Docx" value="3" />}
+                              {fileXlsx.length != 0  && <Tab sx={{textTransform: "none", fontSize: "1rem"}} label="Excel" value="4" />}
+                            </TabList>
+                          </Box>
+                          <TabPanel value="1">
+                          <Grid container xs={12}>
+                              <Button component="label" onClick={(e) => handleDownload("image")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none", marginBottom: "10px"}}>
+                                      Download Image/s
+                              </Button>
+                              {imageList.some(item => item.includes(".jpg") || item.includes(".jpeg") || item.includes(".png")) &&(
+                                    <ImageList variant="masonry" cols={windowWidth <= 375 ? 1 : windowWidth <=576 && windowWidth > 375? 2 : 3} gap={8}>
+                                      {imageList.map((url, index) => (
+                                            <ImageListItem key={url}>
+                                              <img loading="eager" srcSet={`${port}/document_Files/${url}?w=248&fit=crop&auto=format&dpr=2 2x`} src={`${port}/document_Files/${url}?w=248&fit=crop&auto=format`} onClick={(e) => openLightbox(index)}/>
+                                            </ImageListItem>                                  
+                                      ))}
+                                  </ImageList>
+                                )}
+                            </Grid>
+                          </TabPanel>
+                          <TabPanel value="2">
+                            {
+                              filePDF.length != 0 && (
+                                <>
+                                {windowWidth >= 768 ? (
                                   <>
-                                  <TabContext value={currentPDF}>
-                                    <TabList onChange={handlePDFChange} aria-label="lab API tabs example">
+                                    <TabContext value={currentPDF}>
+                                    <TabList onChange={handlePDFChange} aria-label="lab API tabs example" variant="scrollable">
                                       {filePDF.map((pdf) => {
                                         return(
                                           <Tab sx={{textTransform: "none", fontSize: "1rem"}} label={pdf.file_Name.substring(37)} value={pdf}/>
                                         )
                                       })}
                                     </TabList>
-                                  </TabContext>
-                                  <Worker workerUrl="https://unpkg.com/pdfjs-dist@2.4.456/build/pdf.worker.js">
-                                    <>
-                                      
-                                      {imageList && (
-                                        <Box sx={{marginInline: "20px"}}>
-                                          <Viewer fileUrl={`${port}/document_Files/${currentPDF && currentPDF.file_Name}`} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark"/>
-                                        </Box>
-                                      )}  
-                                      {!imageList && <>No PDF</>}
-                                    </>
-                                  </Worker>
+                                    </TabContext>
+                                    <Worker workerUrl="https://unpkg.com/pdfjs-dist@2.4.456/build/pdf.worker.js">
+                                      <>
+                                        
+                                        {imageList && (
+                                          <Box>
+                                            <Viewer fileUrl={`${port}/document_Files/${currentPDF && currentPDF.file_Name}`} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark"/>
+                                          </Box>
+                                        )}  
+                                        {!imageList && <>No PDF</>}
+                                      </>
+                                    </Worker>
                                   </>
-                                )
-                              }
-                            </TabPanel>
-                            <TabPanel value="3">
-                              {
-                                fileDocx.length != 0 && (
+                                ) : (
                                   <Box sx={{width: "100%", height: '100%', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
-                                    {fileDocx.map((file) => {
-                                      return(
-                                          <>
-                                            <img src={docxViewIcon} style={{width: "150px", height: '150px'}}></img>
-                                            <Typography sx={{mt: "5vh"}}>{file.file_Name.substring(37)}</Typography>
-                                            <Button component="label" onClick={(e) => handleDownload("docx", file.file_Name)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none", marginBottom: "20px"}}>
-                                              Download .docx File
-                                            </Button>
-                                          </>
-                                      )
-                                          
-                                    })}
+                                  {filePDF.map((file) => {
+                                    return(
+                                        <>
+                                          <img src={pdfIcon} style={{width: "150px", height: '150px'}}></img>
+                                          <Typography sx={{mt: "5vh"}}>{file.file_Name.substring(37)}</Typography>
+                                          <Button component="label" onClick={(e) => handleDownload("docx", file.file_Name)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#ff3232", textTransform: "none", marginBottom: "20px"}}>
+                                            Download .pdf File
+                                          </Button>
+                                        </>
+                                    )
+                                        
+                                  })}
                                   </Box>
-                                )
-                              }
-                            </TabPanel>
-                            <TabPanel value="4">
-                              {
-                                fileXlsx.length != 0 && (
-                                  <Box sx={{width: "100%", height: '100%', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
-                                    {fileXlsx.map((file) => {
-                                      return(
-                                          <>
-                                            <img src={xlsxViewIcon} style={{width: "150px", height: '150px'}}></img>
-                                            <Typography sx={{mt: "5vh"}}>{file.file_Name.substring(37)}</Typography>
-                                            <Button component="label" onClick={(e) => handleDownload("xlsx", file.file_Name)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "hsl(126, 49%, 36%)", textTransform: "none", marginBottom: "20px"}}>
-                                              Download .xlsx File
-                                            </Button>
-                                          </>
-                                      )
-                                          
-                                    })}
-                                  </Box>
-                                )
-                              }
-                            </TabPanel>
-                        </TabContext>  
-                        )
-                        :
-                        imageList.some(item => item.includes(".jpg") || item.includes(".jpeg") || item.includes(".png")) ?(
-                          <Grid container xs={12}>
-                          <Button component="label" onClick={(e) => handleDownload("image")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none", marginBottom: "10px"}}>
-                                    Download Image/s
-                          </Button>
-                          {imageList.some(item => item.includes(".jpg") || item.includes(".jpeg") || item.includes(".png")) &&(
-                                <ImageList variant="masonry" cols={windowWidth <= 375 ? 1 : windowWidth <=576 && windowWidth > 375? 2 : 3} gap={8}>
-                                  {imageList.map((url, index) => (
-                                        <ImageListItem key={url}>
-                                          <img loading="eager" srcSet={`${port}/document_Files/${url}?w=248&fit=crop&auto=format&dpr=2 2x`} src={`${port}/document_Files/${url}?w=248&fit=crop&auto=format`} onClick={(e) => openLightbox(index)}/>
-                                        </ImageListItem>                                  
-                                  ))}
-                              </ImageList>
-                            )}
-                        </Grid>
-                        ) 
-                        :
-                        filePDF.length != 0 ? (
-                          <>
-                          <TabContext value={currentPDF}>
-                            <TabList onChange={handlePDFChange} aria-label="lab API tabs example">
-                              {filePDF.map((pdf) => {
-                                return(
-                                  <Tab sx={{textTransform: "none", fontSize: "1rem"}} label={pdf.file_Name.substring(37)} value={pdf}/>
-                                )
-                              })}
-                            </TabList>
-                          </TabContext>
-                          <Worker workerUrl="https://unpkg.com/pdfjs-dist@2.4.456/build/pdf.worker.js">
-                            <>
-                              
-                              {imageList && (
-                                <Box sx={{marginInline: "20px"}}>
-                                  <Viewer fileUrl={`${port}/document_Files/${currentPDF && currentPDF.file_Name}`} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark"/>
+                                )}
+                                </>
+                              )
+                            }
+                          </TabPanel>
+                          <TabPanel value="3">
+                            {
+                              fileDocx.length != 0 && (
+                                <Box sx={{width: "100%", height: '100%', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
+                                  {fileDocx.map((file) => {
+                                    return(
+                                        <>
+                                          <img src={docxViewIcon} style={{width: "150px", height: '150px'}}></img>
+                                          <Typography sx={{mt: "5vh"}}>{file.file_Name.substring(37)}</Typography>
+                                          <Button component="label" onClick={(e) => handleDownload("docx", file.file_Name)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none", marginBottom: "20px"}}>
+                                            Download .docx File
+                                          </Button>
+                                        </>
+                                    )
+                                        
+                                  })}
                                 </Box>
-                              )}  
-                              {!imageList && <>No PDF</>}
+                              )
+                            }
+                          </TabPanel>
+                          <TabPanel value="4">
+                            {
+                              fileXlsx.length != 0 && (
+                                <Box sx={{width: "100%", height: '100%', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
+                                  {fileXlsx.map((file) => {
+                                    return(
+                                        <>
+                                          <img src={xlsxViewIcon} style={{width: "150px", height: '150px'}}></img>
+                                          <Typography sx={{mt: "5vh"}}>{file.file_Name.substring(37)}</Typography>
+                                          <Button component="label" onClick={(e) => handleDownload("xlsx", file.file_Name)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "hsl(126, 49%, 36%)", textTransform: "none", marginBottom: "20px"}}>
+                                            Download .xlsx File
+                                          </Button>
+                                        </>
+                                    )
+                                        
+                                  })}
+                                </Box>
+                              )
+                            }
+                          </TabPanel>
+                      </TabContext>  
+                      )
+                      :
+                      imageList.some(item => item.includes(".jpg") || item.includes(".jpeg") || item.includes(".png")) ?(
+                        <Grid container xs={12}>
+                        <Button component="label" onClick={(e) => handleDownload("image")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none", marginBottom: "10px"}}>
+                                  Download Image/s
+                        </Button>
+                        {imageList.some(item => item.includes(".jpg") || item.includes(".jpeg") || item.includes(".png")) &&(
+                              <ImageList variant="masonry" cols={windowWidth <= 375 ? 1 : windowWidth <=576 && windowWidth > 375? 2 : 3} gap={8}>
+                                {imageList.map((url, index) => (
+                                      <ImageListItem key={url}>
+                                        <img loading="eager" srcSet={`${port}/document_Files/${url}?w=248&fit=crop&auto=format&dpr=2 2x`} src={`${port}/document_Files/${url}?w=248&fit=crop&auto=format`} onClick={(e) => openLightbox(index)}/>
+                                      </ImageListItem>                                  
+                                ))}
+                            </ImageList>
+                          )}
+                      </Grid>
+                      ) 
+                      :
+                      filePDF.length != 0 ? (
+                        <>
+                        {windowWidth >= 768 ? (
+                            <>
+                              <TabContext value={currentPDF}>
+                              <TabList onChange={handlePDFChange} aria-label="lab API tabs example" variant="scrollable">
+                                {filePDF.map((pdf) => {
+                                  return(
+                                    <Tab sx={{textTransform: "none", fontSize: "1rem"}} label={pdf.file_Name.substring(37)} value={pdf}/>
+                                  )
+                                })}
+                              </TabList>
+                              </TabContext>
+                              <Worker workerUrl="https://unpkg.com/pdfjs-dist@2.4.456/build/pdf.worker.js">
+                                <>
+                                  
+                                  {imageList && (
+                                    <Box>
+                                      <Viewer fileUrl={`${port}/document_Files/${currentPDF && currentPDF.file_Name}`} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark"/>
+                                    </Box>
+                                  )}  
+                                  {!imageList && <>No PDF</>}
+                                </>
+                              </Worker>
                             </>
-                          </Worker>
-                          </>
-                        )
-                        : fileDocx.length !=0 ? (
-                          <Box sx={{width: "100%", height: '100%', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
-                            {fileDocx.map((file) => {
+                          ) : (
+                            <Box sx={{width: "100%", height: '100%', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
+                            {filePDF.map((file) => {
                               return(
                                   <>
-                                    <img src={docxViewIcon} style={{width: "150px", height: '150px'}}></img>
+                                    <img src={pdfIcon} style={{width: "150px", height: '150px'}}></img>
                                     <Typography sx={{mt: "5vh"}}>{file.file_Name.substring(37)}</Typography>
-                                    <Button component="label" onClick={(e) => handleDownload("docx", file.file_Name)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none", marginBottom: "20px"}}>
-                                      Download .docx File
+                                    <Button component="label" onClick={(e) => handleDownload("docx", file.file_Name)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#ff3232", textTransform: "none", marginBottom: "20px"}}>
+                                      Download .pdf File
+                                    </Button>
+                                  </>
+                              )
+                                  
+                            })}
+                            </Box>
+                          )}
+                        </>
+                      )
+                      : fileDocx.length !=0 ? (
+                        <Box sx={{width: "100%", height: '100%', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
+                          {fileDocx.map((file) => {
+                            return(
+                                <>
+                                  <img src={docxViewIcon} style={{width: "150px", height: '150px'}}></img>
+                                  <Typography sx={{mt: "5vh"}}>{file.file_Name.substring(37)}</Typography>
+                                  <Button component="label" onClick={(e) => handleDownload("docx", file.file_Name)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none", marginBottom: "20px"}}>
+                                    Download .docx File
+                                  </Button>
+                                </>
+                            )
+                                
+                          })}
+                        </Box>
+                      ) : fileXlsx.length !=0 ? (
+                          <Box sx={{width: "100%", height: '100%', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
+                            {fileXlsx.map((file) => {
+                              return(
+                                  <>
+                                    <img src={xlsxViewIcon} style={{width: "150px", height: '150px'}}></img>
+                                    <Typography sx={{mt: "5vh"}}>{file.file_Name.substring(37)}</Typography>
+                                    <Button component="label" onClick={(e) => handleDownload("xlsx", file.file_Name)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "hsl(126, 49%, 36%)", textTransform: "none", marginBottom: "20px"}}>
+                                      Download .xlsx File
                                     </Button>
                                   </>
                               )
                                   
                             })}
                           </Box>
-                        ) : fileXlsx.length !=0 ? (
-                            <Box sx={{width: "100%", height: '100%', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
-                              {fileXlsx.map((file) => {
-                                return(
-                                    <>
-                                      <img src={xlsxViewIcon} style={{width: "150px", height: '150px'}}></img>
-                                      <Typography sx={{mt: "5vh"}}>{file.file_Name.substring(37)}</Typography>
-                                      <Button component="label" onClick={(e) => handleDownload("xlsx", file.file_Name)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "hsl(126, 49%, 36%)", textTransform: "none", marginBottom: "20px"}}>
-                                        Download .xlsx File
-                                      </Button>
-                                    </>
-                                )
-                                    
-                              })}
-                            </Box>
-                        )
-                        :
-                        (
-                          <div className="load-containerImage">
-                            <span className="loader"></span>
-                          </div>
-                        )}
-                        {isLightboxOpen && (
-                          <Lightbox
-                            mainSrc={`${port}/document_Files/${imageList[lightboxIndex]}`}
-                            nextSrc={imageList[(lightboxIndex + 1) % imageList.length]}
-                            prevSrc={imageList[(lightboxIndex + imageList.length - 1) % imageList.length]}
-                            onCloseRequest={closeLightbox}
-                            onMovePrevRequest={() => setLightboxIndex((lightboxIndex + imageList.length - 1) % imageList.length)}
-                            onMoveNextRequest={() => setLightboxIndex((lightboxIndex + 1) % imageList.length)}
-                            reactModalStyle={{ overlay: { zIndex: 9999 }, content: { zIndex: 9999 } }}
-                          />
-                        )}
-                      </div>
+                      )
+                      :
+                      (
+                        <div className="load-containerImage">
+                          <span className="loader"></span>
+                        </div>
+                      )}
+                      {isLightboxOpen && (
+                        <Lightbox
+                          mainSrc={`${port}/document_Files/${imageList[lightboxIndex]}`}
+                          nextSrc={imageList[(lightboxIndex + 1) % imageList.length]}
+                          prevSrc={imageList[(lightboxIndex + imageList.length - 1) % imageList.length]}
+                          onCloseRequest={closeLightbox}
+                          onMovePrevRequest={() => setLightboxIndex((lightboxIndex + imageList.length - 1) % imageList.length)}
+                          onMoveNextRequest={() => setLightboxIndex((lightboxIndex + 1) % imageList.length)}
+                          reactModalStyle={{ overlay: { zIndex: 9999 }, content: { zIndex: 9999 } }}
+                        />
+                      )}
+                            </div>
                           </div>
                           );
                       })}

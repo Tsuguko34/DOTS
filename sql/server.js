@@ -105,7 +105,6 @@ app.post("/registerTemp", async(req, res) => {
     ]
     db.query(registerQ, [values], (err, regData) => {
         if (err){
-            return res.json({success : false})
             return res.status(200).json({success: false})
         }
         return res.status(200).json({success: true})
@@ -126,7 +125,7 @@ app.post("/completeRegister", uploadProfile.single('files'), async(req, res) => 
     ]
     db.query(registerQ, [...values, req.query.uID], (err, regData) => {
         if (err) return res.json({success : false})
-        // sendVerificationEmail(req.body.email, verificationToken)
+        sendVerificationEmail(req.body.email, verificationToken)
         return res.json({success: true})
     })
     
@@ -248,6 +247,75 @@ app.put("/handleDeactivate", (req, res) => {
             return res.status(200).json({success : true})
         })
     }
+})
+
+app.post("/resetPassEmail", async(req,res) => {
+    const q = `SELECT * FROM users WHERE email = '${req.query.email}'`
+    db.query(q, async(err, data) => {
+        if (err)return res.json({success : false})
+
+        if(data.length == 0){
+            return res.json({email : false})
+        }else if (data.length > 0){
+            const resetToken = crypto.randomBytes(32).toString('hex');
+            const transporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: {
+                    user: 'wp3deansofficetransaction@gmail.com',
+                    pass: 'ezoc sbde vuui qgqc'
+                }
+            })
+            const verificationLink = `http://localhost:3000/resetPass/${req.query.email}/${resetToken}`;
+            const mailOptions = {
+                from: 'wp3deansofficetransaction@gmail.com',
+                to: req.query.email,
+                subject: 'Reset Your Password',
+                text: 'Password Reset Link',
+                html: `Click <a href="${verificationLink}">here</a> to reset your password.`,
+            };
+            const addToken = "INSERT INTO reset_password (`email`, `resetToken`) VALUES (?)"
+            const values = [
+                req.query.email,
+                resetToken
+            ]
+            db.query(addToken, [values], (err, reset) => {
+                if(err) return res.json({success : false})
+                return res.json({email : true})
+            })
+            await transporter.sendMail(mailOptions)
+        }
+    })
+})
+
+app.get("/checkResetToken", (req,res) => {
+    const q = `SELECT * FROM reset_password WHERE email = '${req.query.email}' AND resetToken = '${req.query.token}'`
+
+    db.query(q, (err, data) => {
+        if(err) return res.json({success : false})
+        if(data.length == 0){
+            return res.json({exist : false})
+        }else if(data.length == 1){
+            return res.json({exist : true})
+        }
+    })
+})
+
+app.put("/completeResetPass", async(req, res) => {
+    console.log(req.body);
+    console.log(req.query);
+    const q = "UPDATE users SET `password` = ? WHERE email = ?"
+    const hashedPassword = await bcrypt.hash(req.query.password, 10)
+    const values = [
+        hashedPassword
+    ]
+    db.query(q, [...values, req.query.email], (err, data) => {
+        if(err)return res.json({success : false})
+        const deleteToken = `DELETE FROM reset_password WHERE email = '${req.query.email}' AND resetToken = '${req.query.token}'`
+        db.query(deleteToken, (err, deleteData) => {
+            if(err) return res.json({success : false})
+            return res.json({success : true})
+        })
+    })
 })
 
 //Documents
@@ -378,7 +446,7 @@ app.post("/addDropdowns", (req, res) => {
 const templateStorage = multer.diskStorage({
     destination: "../templates",
     filename: function (req, file, cb) {
-        return cb(null, `${new Date().getFullYear()}-${file.originalname}`)
+        return cb(null, `${req.query.uID}-${file.originalname}`)
     }
 })
 const uploadTemplate = multer({storage: templateStorage})
@@ -388,8 +456,8 @@ app.post("/addTemplate", uploadTemplate.single("files"),(req, res) => {
 
     const values = [
         req.body.name,
-        req.body.uID,
-        `${new Date().getFullYear()}-${req.file.originalname}`,
+        req.query.uID,
+        `${req.query.uID}-${req.file.originalname}`,
         new Date().toLocaleDateString(),
         req.body.type
     ]

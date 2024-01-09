@@ -27,7 +27,7 @@ import LockResetIcon from '@mui/icons-material/LockReset';
 import VideoLabelIcon from '@mui/icons-material/VideoLabel';
 import StepConnector, { stepConnectorClasses } from '@mui/material/StepConnector';
 import CircularProgress from '@mui/material/CircularProgress';
-import { Toaster } from 'react-hot-toast';
+import toast, { Toaster } from 'react-hot-toast';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import bild from '../Images/BiLD.png'
@@ -295,14 +295,24 @@ import axios from "axios";
     
     const resetPass = async(e) => {
         e.preventDefault()
-        await fetchSignInMethodsForEmail(auth, resetEmail).then(async(signInMethods) => {
-            if(signInMethods.length){
-                handleNext()
-            }else{
-                setExist(false)
-                setNotExist(true)
+        try{
+          await axios.post(`${port}/resetPassEmail?email=${resetEmail}`).then((data) => {
+            console.log(data.data);
+            if(data.data.email == true){
+              handleNext()
             }
-        })
+            else if(data.data.email == false){
+              setExist(false)
+              setNotExist(true)
+            }
+            else if(data.data.success = false){
+              toast.error("An error has occured. Try again.")
+            }
+          })
+         
+        }catch(e){
+          console.log(e.message);
+        }
         
     }
 
@@ -422,7 +432,7 @@ import axios from "axios";
                       Dean's Office Transaction
                     </Typography>
                     <Typography sx={{fontWeight: 'bold', fontSize: "1.4rem",mb: "20px", display: 'flex', width: "100%", justifyContent: 'start', color: "#555", height: "2rem", alignItems: "center" }}>
-                      Welcome,&nbsp; <Typography sx={{fontWeight: 'bold', fontSize: "1.5rem", color: "#FF9944"}}><Typewriter words={['Dean', 'Clerk', 'Faculty']} loop typeSpeed={40}/></Typography> 
+                      Welcome,&nbsp; <Typography sx={{fontWeight: 'bold', fontSize: "1.5rem", color: "#FF9944"}}><Typewriter words={['Dean', 'Clerk', 'Faculty', 'Secretary', 'Student Assistant']} loop typeSpeed={40}/></Typography> 
                     </Typography>
                       <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
                       <Typography sx={{fontWeight: '300', color: "#888", display: 'flex', width: "100%", justifyContent: 'start', fontSize: "0.8rem"}}>
@@ -550,108 +560,112 @@ import axios from "axios";
                     </Box>
                 </Box>
                     : 
-                <Box component="form" onSubmit={resetPassNew} sx={{width: "100%"}}>
-                  <FormControl sx={{width: '100%', mb: "1vh" }} variant="outlined">
-                  <InputLabel htmlFor="outlined-adornment-password">Old Password</InputLabel>
-                  <OutlinedInput
-                    id="outlined-adornment-password"
-                    onChange={(e) => setOldPassword(e.target.value)}
-                    required
-                    type={showPassword ? 'text' : 'password'}
-                    endAdornment={
-                      <InputAdornment position="end">
-                        <IconButton
-                          aria-label="toggle password visibility"
-                          onClick={handleClickShowPassword}
-                          onMouseDown={handleMouseDownPassword}
-                          edge="end"
-                        >
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    }
-                    label="Old Password"
-                  />
-                </FormControl>
-                <FormControl sx={{width: '100%', mb: "1vh" }} variant="outlined">
-                  <InputLabel htmlFor="outlined-adornment-password">New Password</InputLabel>
-                  <OutlinedInput
-                    id="outlined-adornment-password"
-                    required
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    type={showPassword ? 'text' : 'password'}
-                    endAdornment={
-                      <InputAdornment position="end">
-                        <IconButton
-                          aria-label="toggle password visibility"
-                          onClick={handleClickShowPassword}
-                          onMouseDown={handleMouseDownPassword}
-                          edge="end"
-                        >
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    }
-                    label="New Password"
-                  />
-                </FormControl>
-                <FormControl sx={{width: '100%', mb: "1vh" }} variant="outlined">
-                  <InputLabel htmlFor="outlined-adornment-password">Confirm New Password</InputLabel>
-                  <OutlinedInput
-                    id="outlined-adornment-password"
-                    required
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    type={showPassword ? 'text' : 'password'}
-                    endAdornment={
-                      <InputAdornment position="end">
-                        <IconButton
-                          aria-label="toggle password visibility"
-                          onClick={handleClickShowPassword}
-                          onMouseDown={handleMouseDownPassword}
-                          edge="end"
-                        >
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    }
-                    label="Confirm New Password"
-                  />
-                </FormControl>
-                    {samePass ? <Typography component='div' sx={{width: "100%", display: "flex", justifyContent: "center", alignItems: "center", backgroundColor: "#FAA0A0", border: '2px solid red', padding: '10px', color: "white", fontWeight: "bold"}}>
-                        Old Password and New password cannot be the same
-                    </Typography>: ''}
-                    {wrongPass ? <Typography component='div' sx={{width: "100%", display: "flex", justifyContent: "center", alignItems: "center", backgroundColor: "#FAA0A0", border: '2px solid red', padding: '10px', color: "white", fontWeight: "bold"}}>
-                        Old Password is not correct.
-                    </Typography>: ''}
-                    {notSame ? <Typography component='div' sx={{width: "100%", display: "flex", justifyContent: "center", alignItems: "center", backgroundColor: "#FAA0A0", border: '2px solid red', padding: '10px', color: "white", fontWeight: "bold"}}>
-                        New password and Corfirm Password are not the same
-                    </Typography>: ''}
-                    {resetSuccess ? <Typography component='div' sx={{width: "100%", display: "flex", justifyContent: "center", alignItems: "center", backgroundColor: "#C1E1C1", border: '2px solid green', padding: '10px', color: "white", fontWeight: "bold"}}>
-                        Password has been reset.
-                    </Typography>: ''}
-                    {changingPass ? <Box sx={{display: 'flex', width: "100%" , justifyContent: "center", alignItems: "center"}}><CircularProgress /></Box> : ''}
-                    <Box sx={{display: "flex", justifyContent: "space-between"}}>
-                        <Button
-                            fullWidth
-                            variant="contained"
-                            className='login-button'
-                            sx={{ mt: 3, mb: 2, bgcolor: "grey", width: "20%"}}
-                            onClick={handleBack}
-                        >
-                            Back
-                        </Button>
-                        <Button
-                            type="submit"
-                            fullWidth
-                            variant="contained"
-                            className='login-button'
-                            sx={{ mt: 3, mb: 2, bgcolor: "#FF9944", width: "20%"}}
-                        >
-                            Submit
-                        </Button>
-                    </Box>
+                  <Box sx={{width: "100%", display: "flex", justifyContent: "center", alignItems: "center", padding: "20px", fontWeight: "bold", color: "#FF9944"}}>
+                    Reset Link was sent to the email.
+                  </Box>
+                // <Box component="form" onSubmit={resetPassNew} sx={{width: "100%"}}>
+                //   <FormControl sx={{width: '100%', mb: "1vh" }} variant="outlined">
+                //   <InputLabel htmlFor="outlined-adornment-password">Old Password</InputLabel>
+                //   <OutlinedInput
+                //     id="outlined-adornment-password"
+                //     onChange={(e) => setOldPassword(e.target.value)}
+                //     required
+                //     type={showPassword ? 'text' : 'password'}
+                //     endAdornment={
+                //       <InputAdornment position="end">
+                //         <IconButton
+                //           aria-label="toggle password visibility"
+                //           onClick={handleClickShowPassword}
+                //           onMouseDown={handleMouseDownPassword}
+                //           edge="end"
+                //         >
+                //           {showPassword ? <VisibilityOff /> : <Visibility />}
+                //         </IconButton>
+                //       </InputAdornment>
+                //     }
+                //     label="Old Password"
+                //   />
+                // </FormControl>
+                // <FormControl sx={{width: '100%', mb: "1vh" }} variant="outlined">
+                //   <InputLabel htmlFor="outlined-adornment-password">New Password</InputLabel>
+                //   <OutlinedInput
+                //     id="outlined-adornment-password"
+                //     required
+                //     onChange={(e) => setNewPassword(e.target.value)}
+                //     type={showPassword ? 'text' : 'password'}
+                //     endAdornment={
+                //       <InputAdornment position="end">
+                //         <IconButton
+                //           aria-label="toggle password visibility"
+                //           onClick={handleClickShowPassword}
+                //           onMouseDown={handleMouseDownPassword}
+                //           edge="end"
+                //         >
+                //           {showPassword ? <VisibilityOff /> : <Visibility />}
+                //         </IconButton>
+                //       </InputAdornment>
+                //     }
+                //     label="New Password"
+                //   />
+                // </FormControl>
+                // <FormControl sx={{width: '100%', mb: "1vh" }} variant="outlined">
+                //   <InputLabel htmlFor="outlined-adornment-password">Confirm New Password</InputLabel>
+                //   <OutlinedInput
+                //     id="outlined-adornment-password"
+                //     required
+                //     onChange={(e) => setConfirmPassword(e.target.value)}
+                //     type={showPassword ? 'text' : 'password'}
+                //     endAdornment={
+                //       <InputAdornment position="end">
+                //         <IconButton
+                //           aria-label="toggle password visibility"
+                //           onClick={handleClickShowPassword}
+                //           onMouseDown={handleMouseDownPassword}
+                //           edge="end"
+                //         >
+                //           {showPassword ? <VisibilityOff /> : <Visibility />}
+                //         </IconButton>
+                //       </InputAdornment>
+                //     }
+                //     label="Confirm New Password"
+                //   />
+                // </FormControl>
+                //     {samePass ? <Typography component='div' sx={{width: "100%", display: "flex", justifyContent: "center", alignItems: "center", backgroundColor: "#FAA0A0", border: '2px solid red', padding: '10px', color: "white", fontWeight: "bold"}}>
+                //         Old Password and New password cannot be the same
+                //     </Typography>: ''}
+                //     {wrongPass ? <Typography component='div' sx={{width: "100%", display: "flex", justifyContent: "center", alignItems: "center", backgroundColor: "#FAA0A0", border: '2px solid red', padding: '10px', color: "white", fontWeight: "bold"}}>
+                //         Old Password is not correct.
+                //     </Typography>: ''}
+                //     {notSame ? <Typography component='div' sx={{width: "100%", display: "flex", justifyContent: "center", alignItems: "center", backgroundColor: "#FAA0A0", border: '2px solid red', padding: '10px', color: "white", fontWeight: "bold"}}>
+                //         New password and Corfirm Password are not the same
+                //     </Typography>: ''}
+                //     {resetSuccess ? <Typography component='div' sx={{width: "100%", display: "flex", justifyContent: "center", alignItems: "center", backgroundColor: "#C1E1C1", border: '2px solid green', padding: '10px', color: "white", fontWeight: "bold"}}>
+                //         Password has been reset.
+                //     </Typography>: ''}
+                //     {changingPass ? <Box sx={{display: 'flex', width: "100%" , justifyContent: "center", alignItems: "center"}}><CircularProgress /></Box> : ''}
+                //     <Box sx={{display: "flex", justifyContent: "space-between"}}>
+                //         <Button
+                //             fullWidth
+                //             variant="contained"
+                //             className='login-button'
+                //             sx={{ mt: 3, mb: 2, bgcolor: "grey", width: "20%"}}
+                //             onClick={handleBack}
+                //         >
+                //             Back
+                //         </Button>
+                //         <Button
+                //             type="submit"
+                //             fullWidth
+                //             variant="contained"
+                //             className='login-button'
+                //             sx={{ mt: 3, mb: 2, bgcolor: "#FF9944", width: "20%"}}
+                //         >
+                //             Submit
+                //         </Button>
+                //     </Box>
                     
-                </Box>}
+                // </Box>
+                }
             </DialogContent>
         </Dialog>
     </section>

@@ -942,7 +942,7 @@ export default function StickyHeadTable() {
         const zip = new JSZip()
         const promises = imageList.map((image, index) => {
           const imageUrl = `${port}/document_Files/${image}`;
-          const filename = `${image}`;
+          const filename = image.substring(37);
   
           return fetch(imageUrl)
             .then(response => response.blob())
@@ -970,7 +970,7 @@ export default function StickyHeadTable() {
             .then(blob => {
               const objectUrl = URL.createObjectURL(blob);
               anchor.href = objectUrl;
-              anchor.download = image;
+              anchor.download = image.substring(37);
               anchor.target = '_blank';
               anchor.click();
               URL.revokeObjectURL(objectUrl);
@@ -1480,7 +1480,7 @@ export default function StickyHeadTable() {
                         }}
                       />
                       </Tooltip>
-                      <Badge badgeContent={`${daysDifference} days left`} color="error" sx={{zIndex: "11", position:"relative", whiteSpace: 'nowrap'}} invisible={daysDifference > 7 || row.Status == "Pending" ? true : false}>
+                      <Badge badgeContent={`${daysDifference} days left`} color="error" sx={{whiteSpace: 'nowrap'}} invisible={daysDifference > 7 || row.Status == "Pending" ? true : false}>
                       <Tooltip title={<Typography sx={{fontSize: "0.8rem"}}>Archive Document</Typography>} arrow>
                           <ArchiveIcon
                             style={{
@@ -1489,7 +1489,6 @@ export default function StickyHeadTable() {
                               cursor: "pointer",
                               background: "#52E460",
                               borderRadius: "5px",
-                              zIndex: "2",
                             }}
                             onClick={() => {
                               deleteIncoming(row.uID, row.document_Name);
@@ -1658,7 +1657,7 @@ export default function StickyHeadTable() {
                     {
                       imageDis.map((url) => {
                         return(
-                          <Card sx={{ backgroundColor: '#F0EFF6',display: 'flex', maxWidth: windowWidth <= 576 ? "250px" : "350px", alignItems: "center", mb: "1vh", height: "70px", maxHeight: "100px", width: '100%', zIndex: "11"}}>
+                          <Card sx={{ backgroundColor: '#F0EFF6',display: 'flex', maxWidth: windowWidth <= 320 ? "200px" : windowWidth <= 576 ? "250px" : "350px", alignItems: "center", mb: "1vh", height: "70px", maxHeight: "100px", width: '100%', zIndex: "11"}}>
                             <CardMedia
                                 component="img"
                                 sx={{width: "100px", height: "70px", maxWidth: "100px", p: "5px",  maxHeight: "100px", objectFit: "contain", display: "flex", justifyContent: "center" }}
@@ -1795,7 +1794,7 @@ export default function StickyHeadTable() {
                       {
                         editImageHolder.map((url) => {
                           return(
-                            <Card sx={{ backgroundColor: '#F0EFF6',display: 'flex', maxWidth: windowWidth <= 576 ? "250px" : "350px", alignItems: "center", mb: "1vh", height: "70px", maxHeight: "100px", width: '100%', zIndex: "11"}}>
+                            <Card sx={{ backgroundColor: '#F0EFF6',display: 'flex', maxWidth: windowWidth <= 320 ? "200px" : windowWidth <= 576 ? "250px" : "350px", alignItems: "center", mb: "1vh", height: "70px", maxHeight: "100px", width: '100%', zIndex: "11"}}>
                               <CardMedia
                                   component="img"
                                   sx={{width: "100px", height: "70px", maxWidth: "100px", p: "5px",  maxHeight: "100px", objectFit: "contain", display: "flex", justifyContent: "center" }}
@@ -1832,7 +1831,7 @@ export default function StickyHeadTable() {
                     {
                       imageDis.map((url) => {
                         return(
-                          <Card sx={{ backgroundColor: '#F0EFF6',display: 'flex', maxWidth:windowWidth <= 576 ? "250px" : "350px", alignItems: "center", mb: "1vh", height: "70px", maxHeight: "100px", width: '100%', zIndex: "11"}}>
+                          <Card sx={{ backgroundColor: '#F0EFF6',display: 'flex', maxWidth:windowWidth <= 320 ? "200px" : windowWidth <= 576 ? "250px" : "350px", alignItems: "center", mb: "1vh", height: "70px", maxHeight: "100px", width: '100%', zIndex: "11"}}>
                             <CardMedia
                                 component="img"
                                 sx={{width: "100px", height: "70px", maxWidth: "100px", p: "5px",  maxHeight: "100px", objectFit: "contain", display: "flex", justifyContent: "center" }}
@@ -1956,7 +1955,7 @@ export default function StickyHeadTable() {
                       { [imageList, filePDF, fileDocx, fileXlsx].filter(arr => arr.length > 0).length >=2?(
                         <TabContext value={tabValue}>
                           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                            <TabList onChange={handleTabChange} aria-label="lab API tabs example">
+                            <TabList onChange={handleTabChange} aria-label="lab API tabs example" variant="scrollable">
                               {imageList.some(item => item.includes(".jpg") || item.includes(".jpeg") || item.includes(".png")) && <Tab sx={{textTransform: "none", fontSize: "1rem"}} label="Image/s" value="1" />}
                               {filePDF.length != 0  && <Tab sx={{textTransform: "none", fontSize: "1rem"}} label="PDF" value="2" />}
                               {fileDocx.length != 0  && <Tab sx={{textTransform: "none", fontSize: "1rem"}} label="Docx" value="3" />}
@@ -1983,26 +1982,45 @@ export default function StickyHeadTable() {
                             {
                               filePDF.length != 0 && (
                                 <>
-                                <TabContext value={currentPDF}>
-                                  <TabList onChange={handlePDFChange} aria-label="lab API tabs example">
-                                    {filePDF.map((pdf) => {
-                                      return(
-                                        <Tab sx={{textTransform: "none", fontSize: "1rem"}} label={pdf.file_Name.substring(37)} value={pdf}/>
-                                      )
-                                    })}
-                                  </TabList>
-                                </TabContext>
-                                <Worker workerUrl="https://unpkg.com/pdfjs-dist@2.4.456/build/pdf.worker.js">
+                                {windowWidth >= 768 ? (
                                   <>
-                                    
-                                    {imageList && (
-                                      <Box sx={{marginInline: "20px"}}>
-                                        <Viewer fileUrl={`${port}/document_Files/${currentPDF && currentPDF.file_Name}`} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark"/>
-                                      </Box>
-                                    )}  
-                                    {!imageList && <>No PDF</>}
+                                    <TabContext value={currentPDF}>
+                                    <TabList onChange={handlePDFChange} aria-label="lab API tabs example" variant="scrollable">
+                                      {filePDF.map((pdf) => {
+                                        return(
+                                          <Tab sx={{textTransform: "none", fontSize: "1rem"}} label={pdf.file_Name.substring(37)} value={pdf}/>
+                                        )
+                                      })}
+                                    </TabList>
+                                    </TabContext>
+                                    <Worker workerUrl="https://unpkg.com/pdfjs-dist@2.4.456/build/pdf.worker.js">
+                                      <>
+                                        
+                                        {imageList && (
+                                          <Box>
+                                            <Viewer fileUrl={`${port}/document_Files/${currentPDF && currentPDF.file_Name}`} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark"/>
+                                          </Box>
+                                        )}  
+                                        {!imageList && <>No PDF</>}
+                                      </>
+                                    </Worker>
                                   </>
-                                </Worker>
+                                ) : (
+                                  <Box sx={{width: "100%", height: '100%', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
+                                  {filePDF.map((file) => {
+                                    return(
+                                        <>
+                                          <img src={pdfIcon} style={{width: "150px", height: '150px'}}></img>
+                                          <Typography sx={{mt: "5vh"}}>{file.file_Name.substring(37)}</Typography>
+                                          <Button component="label" onClick={(e) => handleDownload("docx", file.file_Name)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#ff3232", textTransform: "none", marginBottom: "20px"}}>
+                                            Download .pdf File
+                                          </Button>
+                                        </>
+                                    )
+                                        
+                                  })}
+                                  </Box>
+                                )}
                                 </>
                               )
                             }
@@ -2069,26 +2087,45 @@ export default function StickyHeadTable() {
                       :
                       filePDF.length != 0 ? (
                         <>
-                        <TabContext value={currentPDF}>
-                          <TabList onChange={handlePDFChange} aria-label="lab API tabs example">
-                            {filePDF.map((pdf) => {
-                              return(
-                                <Tab sx={{textTransform: "none", fontSize: "1rem"}} label={pdf.file_Name.substring(37)} value={pdf}/>
-                              )
-                            })}
-                          </TabList>
-                        </TabContext>
-                        <Worker workerUrl="https://unpkg.com/pdfjs-dist@2.4.456/build/pdf.worker.js">
-                          <>
-                            
-                            {imageList && (
-                              <Box sx={{marginInline: "20px"}}>
-                                <Viewer fileUrl={`${port}/document_Files/${currentPDF && currentPDF.file_Name}`} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark"/>
-                              </Box>
-                            )}  
-                            {!imageList && <>No PDF</>}
-                          </>
-                        </Worker>
+                        {windowWidth >= 768 ? (
+                                  <>
+                                    <TabContext value={currentPDF}>
+                                    <TabList onChange={handlePDFChange} aria-label="lab API tabs example" variant="scrollable">
+                                      {filePDF.map((pdf) => {
+                                        return(
+                                          <Tab sx={{textTransform: "none", fontSize: "1rem"}} label={pdf.file_Name.substring(37)} value={pdf}/>
+                                        )
+                                      })}
+                                    </TabList>
+                                    </TabContext>
+                                    <Worker workerUrl="https://unpkg.com/pdfjs-dist@2.4.456/build/pdf.worker.js">
+                                      <>
+                                        
+                                        {imageList && (
+                                          <Box>
+                                            <Viewer fileUrl={`${port}/document_Files/${currentPDF && currentPDF.file_Name}`} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark"/>
+                                          </Box>
+                                        )}  
+                                        {!imageList && <>No PDF</>}
+                                      </>
+                                    </Worker>
+                                  </>
+                                ) : (
+                                  <Box sx={{width: "100%", height: '100%', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
+                                  {filePDF.map((file) => {
+                                    return(
+                                        <>
+                                          <img src={pdfIcon} style={{width: "150px", height: '150px'}}></img>
+                                          <Typography sx={{mt: "5vh"}}>{file.file_Name.substring(37)}</Typography>
+                                          <Button component="label" onClick={(e) => handleDownload("docx", file.file_Name)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#ff3232", textTransform: "none", marginBottom: "20px"}}>
+                                            Download .pdf File
+                                          </Button>
+                                        </>
+                                    )
+                                        
+                                  })}
+                                  </Box>
+                                )}
                         </>
                       )
                       : fileDocx.length !=0 ? (
@@ -2158,9 +2195,9 @@ export default function StickyHeadTable() {
         </DialogTitle>
         <DialogContent className="dialogDisplay">
           <Box sx={{width: "100%", height: "100%", padding: "10px",display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
-            <Box component={"div"} sx={{width: 500, height: 200, border: "#aeaeae 1px solid", borderRadius: '10px'}}>
+            <Box component={"div"} sx={{ width: windowWidth >= 590 ? 500 : windowWidth >= 425 ? 340: windowWidth >= 375 ? 280 : windowWidth >= 320 && 240 , height: 200, border: "#aeaeae 1px solid", borderRadius: '10px'}}>
               <SignatureCanvas
-                canvasProps={{ width: 500, height: 200}}
+                canvasProps={{  width: windowWidth >= 590 ? 500 : windowWidth >= 425 ? 340: windowWidth >= 375 ? 280 : windowWidth >= 320 && 240 , height: 200}}
                 ref={data => setSign(data)}
                 style
               />

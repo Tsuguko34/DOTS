@@ -31,12 +31,12 @@ function Verification() {
         <div style={{width: "100%", display:'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', padding: "2rem"}}>
             <div style={{display:'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', marginBottom: '30px'}}>
                 <img src={cictLogo} alt="logo" width={"100px"} style={{marginBottom: "1rem"}}/>
-                <div style={{display:'flex', flexDirection: 'column', alignItems: 'center'}}>
+                <div style={{display:'flex',justifyContent:"center", textAlign: "center", flexDirection: 'column', alignItems: 'center'}}>
                     <p style={{fontWeight: 'bold', marginBottom: '5px'}}>College of Information and Communications Technology</p>
                     <p style={{color: "#999999"}}>Dean's Office Transaction System</p>
                 </div>
             </div>
-            <img src={exist ? verifyIMG : noToken} alt="" height={"500px"}/>
+            <img src={exist ? verifyIMG : noToken} alt="" height={"300px"}/>
             <p style={{fontWeight: 'bold', marginBottom: '10px', fontSize: "2rem", color: '#FF9944'}}>{exist ? "Email Verified" : "Token does not exist"}</p>
             <Link to="/pages/Login" style={{color: "#888888"}}>Go to Login Page</Link>
         </div>

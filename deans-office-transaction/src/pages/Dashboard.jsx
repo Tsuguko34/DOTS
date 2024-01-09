@@ -15,6 +15,7 @@ import Welcome from '../Images/welcome2.png'
 import LogsPic from '../Images/Logs.png'
 import DeletePic from '../Images/delete.png'
 import { auth, db, firestore, storage } from "../firebase";
+import pdfIcon from '../Images/pdf.png'
 import {
   addDoc,
   collection,
@@ -68,6 +69,7 @@ import { CloudDownload } from "@mui/icons-material";
 import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
 import { pageNavigationPlugin } from "@react-pdf-viewer/page-navigation";
 import axios from "axios";
+import JSZip from "jszip";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 //sample comment hahaha
@@ -258,6 +260,26 @@ function Dashboard() {
   };
   //FIREBASE-------------------------------------------------
   //INPUTS
+  const [userHolder, setuserHolder] = useState(null);
+  const [googleName, setGoogleName] = useState("")
+  const [googleEmail, setGoogleEmail] = useState("")
+  const [users, setUsers] = useState([]);
+  const [user, setUser] = useState([]);
+  useEffect(() => {
+    const getUser = async() => {
+      try{
+        await axios.get(`${port}/getUser`).then((data) => {
+          setUser(data.data[0])
+        })
+        await axios.get(`${port}/getUsers`).then((data) => {
+          setUsers(data.data)
+        })
+      }catch(e){
+        console.log(e);
+      }
+    }
+    getUser()
+  }, []);
 
   const [emptyResult, setEmptyResult] = useState(false);
   const [dashboard, setDashboard] = useState([]);
@@ -273,10 +295,6 @@ function Dashboard() {
   let q2 = query(dashboardCollectionRef, orderBy("date_Received", "desc"));
   const getDashboard = async () => {
     const data = await axios.get(`${port}/requests`)
-    const archiveDocs = await axios.get(`${port}/getArchives`)
-    archiveDocs.data.forEach((doc) => {
-        setarchiveDoc(prev => prev + 1)
-    })
     setDashboard(data.data);
     
     if (data.data.length > 0) {
@@ -301,15 +319,47 @@ function Dashboard() {
     setYearMonth(yearMonthData.data);
     yearMonth.map((yearMonth) => {
       if (dayjs().isSame(yearMonth.date_Received, "year")) {
-        setYearData(prev => prev + 1)
+        if(user.role === "Faculty"){
+          if(yearMonth.forward_To.includes("Faculty") || (yearMonth.forward_To.includes("All") && !yearMonth.forward_To.includes(user.uID)) ||  yearMonth.forward_To == user.uID  || yearMonth.forwarded_By == user.uID  || yearMonth.accepted_Rejected_By == user.uID ){
+            setYearData(prev => prev + 1)
+          }
+        }else if(user.role !== "Faculty"){
+          setYearData(prev => prev + 1)
+        }
+        
       }
       if (dayjs().isSame(yearMonth.date_Received, "month")) {
-        setMonthData(prev => prev + 1)
+        if(user.role === "Faculty"){
+          if(yearMonth.forward_To.includes("Faculty") || (yearMonth.forward_To.includes("All") && !yearMonth.forward_To.includes(user.uID)) ||  yearMonth.forward_To == user.uID  || yearMonth.forwarded_By == user.uID  || yearMonth.accepted_Rejected_By == user.uID ){
+            setMonthData(prev => prev + 1)
+          }
+        }else if(user.role !== "Faculty"){
+          setMonthData(prev => prev + 1)
+        }
       }
       if (dayjs().isSame(yearMonth.date_Received, "day")) {
-        setDayData(prev => prev + 1)
+        if(user.role === "Faculty"){
+          if(yearMonth.forward_To.includes("Faculty") || (yearMonth.forward_To.includes("All") && !yearMonth.forward_To.includes(user.uID)) || yearMonth.forward_To == user.uID  || yearMonth.forwarded_By == user.uID  || yearMonth.accepted_Rejected_By == user.uID ){
+            setDayData(prev => prev + 1)
+          }
+        }else if(user.role !== "Faculty"){
+          setDayData(prev => prev + 1)
+        }
       }
     });
+
+    const archiveDocs = await axios.get(`${port}/getArchives`)
+    archiveDocs.data.forEach((doc) => {
+      if(user.role === "Faculty"){
+        if(doc.forward_To.includes("Faculty") || (doc.forward_To.includes("All") && !doc.forward_To.includes(user.uID)) ||  doc.forward_To == user.uID  || doc.forwarded_By == user.uID  || doc.accepted_Rejected_By == user.uID ){
+          setarchiveDoc(prev => prev + 1)
+          
+        }
+      }else if(user.role !== "Faculty"){
+        console.log(user.role);
+        setarchiveDoc(prev => prev + 1)
+      }
+    })
   };
 
   useEffect(() => {
@@ -328,26 +378,7 @@ function Dashboard() {
     setuserName(user.full_Name)
   };
 
-  const [userHolder, setuserHolder] = useState(null);
-  const [googleName, setGoogleName] = useState("")
-  const [googleEmail, setGoogleEmail] = useState("")
-  const [users, setUsers] = useState([]);
-  const [user, setUser] = useState([]);
-  useEffect(() => {
-    const getUser = async() => {
-      try{
-        await axios.get(`${port}/getUser`).then((data) => {
-          setUser(data.data[0])
-        })
-        await axios.get(`${port}/getUsers`).then((data) => {
-          setUsers(data.data)
-        })
-      }catch(e){
-        console.log(e);
-      }
-    }
-    getUser()
-  }, []);
+  
 
   const getSignInMethods = () => {
     if (userHolder) {
@@ -477,45 +508,48 @@ function Dashboard() {
   const [filePDF, setFilePDF] = useState([]);
   const [fileDocx, setFileDocx] = useState([]);
   const [fileXlsx, setFileXlsx] = useState([]);
-
+  const [currentPDF, setCurrentPDF] = useState([])
+  const [tabValue, setTabValue] = useState('1');
+  const [loading3, setLoading3] = useState(true);
   const openFile = (id) => {
+    setLoading3(true)
     setOpenShowFile(true);
     showFile(id);
   };
   const showFile = async (id) => {
-    let q = query(collection(db, "documents"), where("uID", "==", id));
-    const imageListRef = ref(storage, `DocumentsPic/${id}/`);
-    const data = await getDocs(q);
-    setDisplayFile(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
-    listAll(imageListRef).then((response) => {
-      response.items.forEach((item) => {
-        getMetadata(item).then((metadata) => {
-          if(metadata.contentType.startsWith('image/')){
-            getDownloadURL(item).then((url) => {
-              setImageList((prev) => [...prev, url]);
-            });
-          }
-          else if (metadata.contentType == "application/pdf"){
-              getDownloadURL(item).then(async(url) => {
-                 setFilePDF(url);
-                 console.log(url);
-              })
-          }
-          else if (metadata.contentType == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"){
-            getDownloadURL(item).then(async(url) => {
-                setFileDocx({name: metadata.name, url: url});
-            })
-          }
-          else if (metadata.contentType == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'){
-            getDownloadURL(item).then(async(url) => {
-                setFileXlsx({name: metadata.name, url: url});
-            })
-          }
-        })
-      });
+    const imageListRef = await axios.get(`${port}/getFile?id=${id}`);
+    const data = await axios.get(`${port}/openFile?id=${id}`);
+    setDisplayFile(data.data);
+    imageListRef.data.forEach((item) => {
+        if(item.file_Name.includes('.png') || item.file_Name.includes('.jpg') || item.file_Name.includes('.jpeg')){
+            setImageList((prev) => [...prev, item.file_Name]);
+        }
+        else if (item.file_Name.includes('.pdf')){
+            setFilePDF((prev) => [...prev, item]);
+        }
+        else if (item.file_Name.includes('.docx') || item.file_Name.includes('.doc')){
+            setFileDocx((prev) => [...prev, item]);
+        }
+        else if (item.file_Name.includes('.xlsx')){
+            setFileXlsx((prev) => [...prev, item]);
+        }
     });
     setLoading2(false);
+   
   };
+
+  const handlePDFChange = (event, newValue) => {
+    setCurrentPDF(newValue);
+  };
+  useEffect(() => {
+    setCurrentPDF(filePDF[0])
+    console.log(currentPDF);
+  }, [filePDF])
+
+  useEffect(() => {
+    setTabValue(imageList.length != 0 ? '1' : (imageList.length == 0 && filePDF.length != 0) ? '2' : (imageList.length == 0 && filePDF.length == 0 && fileDocx.length != 0) ? '3' : (imageList.length == 0 && filePDF.length == 0 && fileDocx.length == 0 && fileXlsx.length != 0) && '4')
+    console.log(tabValue);
+  }, [filePDF, imageList, fileDocx, fileXlsx])
 
   const closeFile = async () => {
     await setOpenShowFile(false);
@@ -541,24 +575,81 @@ function Dashboard() {
    };
  
    //Tab Pannel
-   const [tabValue, setTabValue] = useState('1');
    const handleTabChange = (event, newValue) => {
      setTabValue(newValue);
    };
  
-   const handleDownload = (type) => {
-       const anchor = document.createElement('a');
-       if (type == "docx"){
-         anchor.href = fileDocx.url;
-         anchor.download = fileDocx.name;
-       }
-       else if(type == "xlsx"){
-         anchor.href = fileXlsx.url;
-         anchor.download = fileXlsx.name;
-       }
-       anchor.target = '_blank';
-       anchor.click();
-   };
+   const handleDownload = (type, name) => {
+    const anchor = document.createElement('a');
+    anchor.style.display = 'none';
+    document.body.appendChild(anchor);
+    
+      if (type === "docx" || type === "xlsx") {
+        const fileName = name.substring(37)
+        const fileURL = `${port}/document_Files/${name}`;
+        fetch(fileURL)
+          .then(response => response.blob())
+          .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+          })
+          .catch(error => console.error('Error downloading file:', error));
+      }
+    else if(type == "image"){
+      if(imageList.length > 1){
+        const zip = new JSZip()
+        const promises = imageList.map((image, index) => {
+          const imageUrl = `${port}/document_Files/${image}`;
+          const filename = image.substring(37);
+  
+          return fetch(imageUrl)
+            .then(response => response.blob())
+            .then(blob => zip.file(filename, blob));
+        });
+  
+        Promise.all(promises).then(() => {
+          zip.generateAsync({ type: 'blob' }).then(blob => {
+            const url = URL.createObjectURL(blob);
+            anchor.href = url;
+            anchor.download = `${displayFile[0].document_Name}.zip`;
+  
+            anchor.target = '_blank';
+            anchor.click();
+  
+            URL.revokeObjectURL(url);
+          });
+        });
+       
+      }else{
+        for(const image of imageList){
+          const imageUrl = `${port}/document_Files/${image}`;
+          fetch(imageUrl)
+            .then(response => response.blob())
+            .then(blob => {
+              const objectUrl = URL.createObjectURL(blob);
+              anchor.href = objectUrl;
+              anchor.download = image.substring(37);
+              anchor.target = '_blank';
+              anchor.click();
+              URL.revokeObjectURL(objectUrl);
+              console.log(true);
+            })
+            .catch(error => {
+              console.error('Error fetching image:', error);
+            });
+        }
+      }
+    }
+    document.body.removeChild(anchor);
+};
 
    const newPlugin = defaultLayoutPlugin();
     const pagePlugin = pageNavigationPlugin();
@@ -649,7 +740,7 @@ function Dashboard() {
             </Card>
           </Grid>
           <Grid item xs={12} sm={12} md={6} lg={6} xl= {6}>
-            {user != undefined && users.find(item => item.UID == user.uID)?.role !== "Faculty" ? (<>
+            {user.role !== "Faculty" ? (<>
               <Typography sx={{fontSize: "1.2rem", fontWeight: "bold", ml: windowWidth >= 1024 ? '11.6px' : 0}} className="type-title"><Typewriter words={['Document Types']} typeSpeed={40}/></Typography>
               <Card sx={{height: "400px", maxHeight: "400px", maxWidth: "1000px", display:"flex", flexDirection: "column", justifyContent: "center", alignItems: "center", p: "21.6px", ml: windowWidth >= 1024 ? '11.6px' : 0}} className="dash-cards">
                   <div className="size" style={{width: "100%", maxWidth: "500px", height: "100%", display: "flex", justifyContent: "center", alignItems: "center"}}>
@@ -665,7 +756,7 @@ function Dashboard() {
               <>
               <Typography sx={{fontSize: "1.2rem", fontWeight: "bold"}} className="type-title"><Typewriter words={['Schedules']} typeSpeed={40}/></Typography>
               <Card sx={{height: windowWidth > 768 ? "400px" : "100%",maxHeight: "400px", display:"flex", justifyContent: "center", alignItems: "center", p:windowWidth > 768 ? "21.6px" : 0}} className="dash-cards">
-                <iframe src="https://calendar.google.com/calendar/embed?src=carpio.johnjazpher.dc.3188%40gmail.com&ctz=Asia%2FManila" style="border: 0" width="800" height="600" frameborder="0" scrolling="no"></iframe>
+                <iframe src="https://calendar.google.com/calendar/embed?src=carpio.johnjazpher.dc.3188%40gmail.com&ctz=Asia%2FManila" style={{border: 0}} width={windowWidth > 750 ?'550' : windowWidth > 375 ? '350' : windowWidth > 320 ? "300" : "250"} height="350" frameborder="0" scrolling="no"></iframe>
               </Card>
               </>
               
@@ -673,7 +764,7 @@ function Dashboard() {
             
           </Grid>
         </Grid>
-        {user != undefined && users.find(item => item.UID == user.uID)?.role !== "Faculty" && (
+        {user.role !== "Faculty" && (
           <Grid container xs={12} sx={{pr: "21.6px", pl: "21.6px", pb: "21.6px"}} gap={2} flexWrap={windowWidth >= 1024 ? "noWrap" : ''} overflow={"hidden"}>
           <Grid item xs={12} sm={12} md={6} lg={6} xl= {6}>
             <Typography sx={{fontSize: "1.2rem", fontWeight: "bold"}} className="type-title"><Typewriter words={['Documents per Office']} typeSpeed={40}/></Typography>
@@ -711,13 +802,13 @@ function Dashboard() {
             <Typography sx={{fontSize: "1.2rem", fontWeight: "bold"}} className="type-title"><Typewriter words={['Schedules']} typeSpeed={40}/></Typography>
             <Grid item xs={12} sm={12}>
               <Card sx={{height: windowWidth > 768 ? "450px" : "500px",maxHeight: "400px", display:"flex", justifyContent: "center", alignItems: "center", p:windowWidth > 768 ? "21.6px" : 0}} className="dash-cards">
-                <iframe src="https://calendar.google.com/calendar/embed?src=carpio.johnjazpher.dc.3188%40gmail.com&ctz=Asia%2FManila" style={{border: 0}} width={'550'} height="350" frameborder="0" scrolling="no"></iframe>
+                <iframe src="https://calendar.google.com/calendar/embed?src=carpio.johnjazpher.dc.3188%40gmail.com&ctz=Asia%2FManila" style={{border: 0}} width={windowWidth > 750 ?'550' : windowWidth > 375 ? '350' : windowWidth > 320 ? "300" : "250"} height="350" frameborder="0" scrolling="no"></iframe>
               </Card>
             </Grid>
             </Grid>
         </Grid>
         )}
-        {user != undefined && users.find(item => item.UID == user.uID)?.role !== "Faculty" && (
+        {user.role === "Dean" && (
           <Grid container xs={12} sx={{pr: "21.6px", pl: "21.6px", pb: "21.6px"}} gap={2} flexWrap={windowWidth >= 1024 ? "noWrap" : ''} overflow={"hidden"}>
             <Grid item xs={12} sm={12} md={4} lg={4} >
               <Card sx={{width: "100%", height:"250px", p: '21.6px', maxHeight: '300px'}}>
@@ -1127,10 +1218,10 @@ function Dashboard() {
                       </div>
                     </div>
                     <div className="view-img">
-                      { imageList.length !=0 && filePDF.length != 0 ?(
+                      { [imageList, filePDF, fileDocx, fileXlsx].filter(arr => arr.length > 0).length >=2?(
                         <TabContext value={tabValue}>
                           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                            <TabList onChange={handleTabChange} aria-label="lab API tabs example" variant="scrollable" allowScrollButtonsMobile>
+                            <TabList onChange={handleTabChange} aria-label="lab API tabs example" variant="scrollable">
                               {imageList.some(item => item.includes(".jpg") || item.includes(".jpeg") || item.includes(".png")) && <Tab sx={{textTransform: "none", fontSize: "1rem"}} label="Image/s" value="1" />}
                               {filePDF.length != 0  && <Tab sx={{textTransform: "none", fontSize: "1rem"}} label="PDF" value="2" />}
                               {fileDocx.length != 0  && <Tab sx={{textTransform: "none", fontSize: "1rem"}} label="Docx" value="3" />}
@@ -1139,11 +1230,14 @@ function Dashboard() {
                           </Box>
                           <TabPanel value="1">
                           <Grid container xs={12}>
+                              <Button component="label" onClick={(e) => handleDownload("image")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none", marginBottom: "10px"}}>
+                                      Download Image/s
+                              </Button>
                               {imageList.some(item => item.includes(".jpg") || item.includes(".jpeg") || item.includes(".png")) &&(
                                     <ImageList variant="masonry" cols={windowWidth <= 375 ? 1 : windowWidth <=576 && windowWidth > 375? 2 : 3} gap={8}>
                                       {imageList.map((url, index) => (
                                             <ImageListItem key={url}>
-                                              <img loading="eager" srcSet={`${url}?w=248&fit=crop&auto=format&dpr=2 2x`} src={`${url}?w=248&fit=crop&auto=format`} onClick={(e) => openLightbox(index)}/>
+                                              <img loading="eager" srcSet={`${port}/document_Files/${url}?w=248&fit=crop&auto=format&dpr=2 2x`} src={`${port}/document_Files/${url}?w=248&fit=crop&auto=format`} onClick={(e) => openLightbox(index)}/>
                                             </ImageListItem>                                  
                                       ))}
                                   </ImageList>
@@ -1154,14 +1248,45 @@ function Dashboard() {
                             {
                               filePDF.length != 0 && (
                                 <>
-                                <Worker workerUrl="https://unpkg.com/pdfjs-dist@2.4.456/build/pdf.worker.js">
-                                  {imageList && (
-                                    <>
-                                      <Viewer fileUrl={filePDF} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark" />
-                                    </>
-                                  )}  
-                                  {!imageList && <>No PDF</>}
-                                </Worker>
+                                {windowWidth >= 768 ? (
+                                  <>
+                                    <TabContext value={currentPDF}>
+                                    <TabList onChange={handlePDFChange} aria-label="lab API tabs example" variant="scrollable">
+                                      {filePDF.map((pdf) => {
+                                        return(
+                                          <Tab sx={{textTransform: "none", fontSize: "1rem"}} label={pdf.file_Name.substring(37)} value={pdf}/>
+                                        )
+                                      })}
+                                    </TabList>
+                                    </TabContext>
+                                    <Worker workerUrl="https://unpkg.com/pdfjs-dist@2.4.456/build/pdf.worker.js">
+                                      <>
+                                        
+                                        {imageList && (
+                                          <Box>
+                                            <Viewer fileUrl={`${port}/document_Files/${currentPDF && currentPDF.file_Name}`} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark"/>
+                                          </Box>
+                                        )}  
+                                        {!imageList && <>No PDF</>}
+                                      </>
+                                    </Worker>
+                                  </>
+                                ) : (
+                                  <Box sx={{width: "100%", height: '100%', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
+                                  {filePDF.map((file) => {
+                                    return(
+                                        <>
+                                          <img src={pdfIcon} style={{width: "150px", height: '150px'}}></img>
+                                          <Typography sx={{mt: "5vh"}}>{file.file_Name.substring(37)}</Typography>
+                                          <Button component="label" onClick={(e) => handleDownload("docx", file.file_Name)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#ff3232", textTransform: "none", marginBottom: "20px"}}>
+                                            Download .pdf File
+                                          </Button>
+                                        </>
+                                    )
+                                        
+                                  })}
+                                  </Box>
+                                )}
                                 </>
                               )
                             }
@@ -1169,30 +1294,40 @@ function Dashboard() {
                           <TabPanel value="3">
                             {
                               fileDocx.length != 0 && (
-                                <>
-                                <Box sx={{width: "100%", height: '300px', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
-                                  <img src={docxViewIcon} style={{width: "150px", height: '150px'}}></img>
-                                  <Typography sx={{mt: "54.7px"}}>{fileDocx.name}</Typography>
-                                  <Button component="label" onClick={(e) => handleDownload("docx")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none"}}>
-                                    Download .docx File
-                                  </Button>
+                                <Box sx={{width: "100%", height: '100%', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
+                                  {fileDocx.map((file) => {
+                                    return(
+                                        <>
+                                          <img src={docxViewIcon} style={{width: "150px", height: '150px'}}></img>
+                                          <Typography sx={{mt: "5vh"}}>{file.file_Name.substring(37)}</Typography>
+                                          <Button component="label" onClick={(e) => handleDownload("docx", file.file_Name)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none", marginBottom: "20px"}}>
+                                            Download .docx File
+                                          </Button>
+                                        </>
+                                    )
+                                        
+                                  })}
                                 </Box>
-                                </>
                               )
                             }
                           </TabPanel>
                           <TabPanel value="4">
                             {
                               fileXlsx.length != 0 && (
-                                <>
-                                <Box sx={{width: "100%", height: '300px', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
-                                  <img src={xlsxViewIcon} style={{width: "150px", height: '150px'}}></img>
-                                  <Typography sx={{mt: "54.7px"}}>{fileXlsx.name}</Typography>
-                                  <Button component="label" onClick={(e) => handleDownload("xlsx")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "hsl(126, 49%, 36%)", textTransform: "none"}}>
-                                    Download .xlsx File
-                                  </Button>
+                                <Box sx={{width: "100%", height: '100%', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
+                                  {fileXlsx.map((file) => {
+                                    return(
+                                        <>
+                                          <img src={xlsxViewIcon} style={{width: "150px", height: '150px'}}></img>
+                                          <Typography sx={{mt: "5vh"}}>{file.file_Name.substring(37)}</Typography>
+                                          <Button component="label" onClick={(e) => handleDownload("xlsx", file.file_Name)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "hsl(126, 49%, 36%)", textTransform: "none", marginBottom: "20px"}}>
+                                            Download .xlsx File
+                                          </Button>
+                                        </>
+                                    )
+                                        
+                                  })}
                                 </Box>
-                                </>
                               )
                             }
                           </TabPanel>
@@ -1201,11 +1336,14 @@ function Dashboard() {
                       :
                       imageList.some(item => item.includes(".jpg") || item.includes(".jpeg") || item.includes(".png")) ?(
                         <Grid container xs={12}>
+                        <Button component="label" onClick={(e) => handleDownload("image")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none", marginBottom: "10px"}}>
+                                  Download Image/s
+                        </Button>
                         {imageList.some(item => item.includes(".jpg") || item.includes(".jpeg") || item.includes(".png")) &&(
                               <ImageList variant="masonry" cols={windowWidth <= 375 ? 1 : windowWidth <=576 && windowWidth > 375? 2 : 3} gap={8}>
                                 {imageList.map((url, index) => (
                                       <ImageListItem key={url}>
-                                        <img loading="eager" srcSet={`${url}?w=248&fit=crop&auto=format&dpr=2 2x`} src={`${url}?w=248&fit=crop&auto=format`} onClick={(e) => openLightbox(index)}/>
+                                        <img loading="eager" srcSet={`${port}/document_Files/${url}?w=248&fit=crop&auto=format&dpr=2 2x`} src={`${port}/document_Files/${url}?w=248&fit=crop&auto=format`} onClick={(e) => openLightbox(index)}/>
                                       </ImageListItem>                                  
                                 ))}
                             </ImageList>
@@ -1215,42 +1353,87 @@ function Dashboard() {
                       :
                       filePDF.length != 0 ? (
                         <>
-                        <Worker workerUrl="https://unpkg.com/pdfjs-dist@2.4.456/build/pdf.worker.js">
-                          {imageList && (
+                        {windowWidth >= 768 ? (
                             <>
-                              <Viewer fileUrl={filePDF} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark" />
+                              <TabContext value={currentPDF}>
+                              <TabList onChange={handlePDFChange} aria-label="lab API tabs example" variant="scrollable">
+                                {filePDF.map((pdf) => {
+                                  return(
+                                    <Tab sx={{textTransform: "none", fontSize: "1rem"}} label={pdf.file_Name.substring(37)} value={pdf}/>
+                                  )
+                                })}
+                              </TabList>
+                              </TabContext>
+                              <Worker workerUrl="https://unpkg.com/pdfjs-dist@2.4.456/build/pdf.worker.js">
+                                <>
+                                  
+                                  {imageList && (
+                                    <Box>
+                                      <Viewer fileUrl={`${port}/document_Files/${currentPDF && currentPDF.file_Name}`} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark"/>
+                                    </Box>
+                                  )}  
+                                  {!imageList && <>No PDF</>}
+                                </>
+                              </Worker>
                             </>
-                          )}  
-                          {!imageList && <>No PDF</>}
-                        </Worker>
+                          ) : (
+                            <Box sx={{width: "100%", height: '100%', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
+                            {filePDF.map((file) => {
+                              return(
+                                  <>
+                                    <img src={pdfIcon} style={{width: "150px", height: '150px'}}></img>
+                                    <Typography sx={{mt: "5vh"}}>{file.file_Name.substring(37)}</Typography>
+                                    <Button component="label" onClick={(e) => handleDownload("docx", file.file_Name)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#ff3232", textTransform: "none", marginBottom: "20px"}}>
+                                      Download .pdf File
+                                    </Button>
+                                  </>
+                              )
+                                  
+                            })}
+                            </Box>
+                          )}
                         </>
                       )
                       : fileDocx.length !=0 ? (
-                          <>
-                            <Box sx={{width: "100%", height: '300px', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
-                              <img src={docxViewIcon} style={{width: "150px", height: '150px'}}></img>
-                              <Typography sx={{mt: "54.7px"}}>{fileDocx.name}</Typography>
-                              <Button component="label" onClick={(e) => handleDownload("docx")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none"}}>
-                                Download .docx File
-                              </Button>
-                            </Box>
-                            
-                          </> 
-                      ) : fileXlsx.length !=0 && (
-                        <>
-                          <Box sx={{width: "100%", height: '300px', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
-                            <img src={xlsxViewIcon} style={{width: "150px", height: '150px'}}></img>
-                            <Typography sx={{mt: "54.7px"}}>{fileXlsx.name}</Typography>
-                            <Button component="label" onClick={(e) => handleDownload("xlsx")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "hsl(126, 49%, 36%)", textTransform: "none"}}>
-                              Download .xlsx File
-                            </Button>
+                        <Box sx={{width: "100%", height: '100%', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
+                          {fileDocx.map((file) => {
+                            return(
+                                <>
+                                  <img src={docxViewIcon} style={{width: "150px", height: '150px'}}></img>
+                                  <Typography sx={{mt: "5vh"}}>{file.file_Name.substring(37)}</Typography>
+                                  <Button component="label" onClick={(e) => handleDownload("docx", file.file_Name)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none", marginBottom: "20px"}}>
+                                    Download .docx File
+                                  </Button>
+                                </>
+                            )
+                                
+                          })}
+                        </Box>
+                      ) : fileXlsx.length !=0 ? (
+                          <Box sx={{width: "100%", height: '100%', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
+                            {fileXlsx.map((file) => {
+                              return(
+                                  <>
+                                    <img src={xlsxViewIcon} style={{width: "150px", height: '150px'}}></img>
+                                    <Typography sx={{mt: "5vh"}}>{file.file_Name.substring(37)}</Typography>
+                                    <Button component="label" onClick={(e) => handleDownload("xlsx", file.file_Name)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "hsl(126, 49%, 36%)", textTransform: "none", marginBottom: "20px"}}>
+                                      Download .xlsx File
+                                    </Button>
+                                  </>
+                              )
+                                  
+                            })}
                           </Box>
-                        </> 
                       )
-                      }
+                      :
+                      (
+                        <div className="load-containerImage">
+                          <span className="loader"></span>
+                        </div>
+                      )}
                       {isLightboxOpen && (
                         <Lightbox
-                          mainSrc={imageList[lightboxIndex]}
+                          mainSrc={`${port}/document_Files/${imageList[lightboxIndex]}`}
                           nextSrc={imageList[(lightboxIndex + 1) % imageList.length]}
                           prevSrc={imageList[(lightboxIndex + imageList.length - 1) % imageList.length]}
                           onCloseRequest={closeLightbox}

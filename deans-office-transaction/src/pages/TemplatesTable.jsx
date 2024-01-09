@@ -55,6 +55,7 @@ import xlsxViewIcon from '../Images/xlsxView.png'
 import { CloudDownload } from "@mui/icons-material";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import axios from "axios";
+import JSZip from "jszip";
 
 export default function MediaCard() {
   const port = "http://localhost:3001"
@@ -136,7 +137,9 @@ export default function MediaCard() {
       if ([data.data.length] > 0) {
         setLoading(false);
         setEmptyResult(false);
-        setYearData(Array.from(yearSet))
+        const yearArray = Array.from(yearSet)
+        yearArray.sort((a, b) => b - a);
+        setYearData(yearArray)
         fileExt && setTemplate(data.data.map((doc) => ({...doc, year: new Date(doc.date_Added).getFullYear()})));
       } else {
         setLoading(false);
@@ -159,10 +162,9 @@ export default function MediaCard() {
     const formData = new FormData();
     formData.append(`files`, imageUpload)
     formData.append(`name`, newName)
-    formData.append(`uID`, uniqueID)
     formData.append(`type`, imageUpload.name.endsWith('.pdf') ? "pdf" : imageUpload.name.endsWith('.doc') ? "docx": imageUpload.name.endsWith('.docx') ? "docx": imageUpload.name.endsWith('.xls') ? "xlsx" : imageUpload.name.endsWith('.xlsx') && "xlsx")
     try{
-      await axios.post(`${port}/addTemplate`, formData, {
+      await axios.post(`${port}/addTemplate?uID=${uniqueID}`, formData, {
         headers: {
             'Content-Type': 'multipart/form-data',
         },
@@ -223,13 +225,13 @@ export default function MediaCard() {
     data.data.forEach((item) => {
       if(item.uID == id){
         if (item.file_Name.endsWith('.pdf')){
-          setFilePDF(`${port}/templates/${item.file_Name}`);
+          setFilePDF(item.file_Name);
         }
         else if (item.file_Name.endsWith('.docx') || item.file_Name.endsWith('.doc')){
-          setFileDocx({name: item.name, url: `${port}/templates/${item.file_Name}`});
+          setFileDocx(item.file_Name);
         }
         else if (item.file_Name.endsWith('.xlsx') || item.file_Name.endsWith('.xls')){
-          setFileXlsx({name: item.name, url: `${port}/templates/${item.file_Name}`});
+          setFileXlsx(item.file_Name);
         }
       }
     })
@@ -266,19 +268,77 @@ export default function MediaCard() {
      setTabValue(newValue);
    };
  
-   const handleDownload = (type) => {
-       const anchor = document.createElement('a');
-       if (type == "docx"){
-         anchor.href = fileDocx.url;
-         anchor.download = fileDocx.name;
-       }
-       else if(type == "xlsx"){
-         anchor.href = fileXlsx.url;
-         anchor.download = fileXlsx.name;
-       }
-       anchor.target = '_blank';
-       anchor.click();
-   };
+   const handleDownload = (type, name) => {
+    const anchor = document.createElement('a');
+    anchor.style.display = 'none';
+    document.body.appendChild(anchor);
+    
+      if (type === "docx" || type === "xlsx") {
+        const fileName = name.substring(37)
+        const fileURL = `${port}/document_Files/${name}`;
+        fetch(fileURL)
+          .then(response => response.blob())
+          .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+          })
+          .catch(error => console.error('Error downloading file:', error));
+      }
+    else if(type == "image"){
+      if(imageList.length > 1){
+        const zip = new JSZip()
+        const promises = imageList.map((image, index) => {
+          const imageUrl = `${port}/document_Files/${image}`;
+          const filename = image.substring(37);
+  
+          return fetch(imageUrl)
+            .then(response => response.blob())
+            .then(blob => zip.file(filename, blob));
+        });
+  
+        Promise.all(promises).then(() => {
+          zip.generateAsync({ type: 'blob' }).then(blob => {
+            const url = URL.createObjectURL(blob);
+            anchor.href = url;
+            anchor.download = `${displayFile[0].document_Name}.zip`;
+  
+            anchor.target = '_blank';
+            anchor.click();
+  
+            URL.revokeObjectURL(url);
+          });
+        });
+       
+      }else{
+        for(const image of imageList){
+          const imageUrl = `${port}/document_Files/${image}`;
+          fetch(imageUrl)
+            .then(response => response.blob())
+            .then(blob => {
+              const objectUrl = URL.createObjectURL(blob);
+              anchor.href = objectUrl;
+              anchor.download = image.substring(37);
+              anchor.target = '_blank';
+              anchor.click();
+              URL.revokeObjectURL(objectUrl);
+              console.log(true);
+            })
+            .catch(error => {
+              console.error('Error fetching image:', error);
+            });
+        }
+      }
+    }
+    document.body.removeChild(anchor);
+};
 
    const newPlugin = defaultLayoutPlugin();
     const pagePlugin = pageNavigationPlugin();
@@ -333,7 +393,7 @@ export default function MediaCard() {
       {yearData.map((year) => {
         return(
           <>
-            <Typography sx={{fontWeight: 'bold', fontSize: '1.2rem'}}>{year}</Typography>
+            <Typography sx={{fontSize:'1.5rem', fontWeight:'bold', color: "#FF9944", borderBottom: "3px solid", borderImage: "linear-gradient(to right, #FF9944 30%, transparent 100%)", borderImageSlice: "1"}}>{year}</Typography>
             <Grid container sx={{marginBottom: "30px"}}>
               {template
                 .filter((template) => {return search.toLowerCase() === '' ? template : template.name.toLowerCase().includes(search.toLowerCase())})
@@ -395,7 +455,7 @@ export default function MediaCard() {
                                 borderRadius: "10px",
                                 ":hover": { backgroundColor: "#212121" },
                               }}
-                              onClick={() => downloadTemp(template.uID, template.file_Name)}
+                              onClick={() => handleDownload("docx", template.file_Name)}
                             >
                               Download
                             </Button>
@@ -524,22 +584,38 @@ export default function MediaCard() {
         <DialogContent className="dialogDisplay" sx={{ mineight: "100%" }}>
                       {filePDF.length != 0 ? (
                         <>
-                        <Worker workerUrl="https://unpkg.com/pdfjs-dist@2.4.456/build/pdf.worker.js">
-                          {imageList && (
-                            <>
-                              <Viewer fileUrl={filePDF} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark" />
+                        {windowWidth >= 768 ? (
+                          <>
+                              <Worker workerUrl="https://unpkg.com/pdfjs-dist@2.4.456/build/pdf.worker.js">
+                                <>
+                                  {imageList && (
+                                    <Box>
+                                      <Viewer fileUrl={`${port}/templates/${filePDF}`} defaultScale={1} plugins={[newPlugin, pagePlugin]} theme="dark"/>
+                                    </Box>
+                                  )}  
+                                  {!imageList && <>No PDF</>}
+                                </>
+                              </Worker>
                             </>
-                          )}  
-                          {!imageList && <>No PDF</>}
-                        </Worker>
+                          ) : (
+                            <Box sx={{width: "100%", height: '100%', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
+                                  <>
+                                    <img src={pdfIcon} style={{width: "150px", height: '150px'}}></img>
+                                    <Typography sx={{mt: "5vh"}}>{filePDF.substring(37)}</Typography>
+                                    <Button component="label" onClick={(e) => handleDownload("docx", filePDF)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#ff3232", textTransform: "none", marginBottom: "20px"}}>
+                                      Download .pdf File
+                                    </Button>
+                                  </>
+                            </Box>
+                          )}
                         </>
                       )
                       : fileDocx.length !=0 ? (
                           <>
                             <Box sx={{width: "100%", height: '300px', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
                               <img src={docxViewIcon} style={{width: "150px", height: '150px'}}></img>
-                              <Typography sx={{mt: "5vh"}}>{fileDocx.name}</Typography>
-                              <Button component="label" onClick={(e) => handleDownload("docx")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none"}}>
+                              <Typography sx={{mt: "5vh"}}>{fileDocx.substring(37)}</Typography>
+                              <Button component="label" onClick={(e) => handleDownload("docx", fileDocx)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none"}}>
                                 Download .docx File
                               </Button>
                             </Box>
@@ -549,8 +625,8 @@ export default function MediaCard() {
                         <>
                           <Box sx={{width: "100%", height: '300px', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
                             <img src={xlsxViewIcon} style={{width: "150px", height: '150px'}}></img>
-                            <Typography sx={{mt: "5vh"}}>{fileXlsx.name}</Typography>
-                            <Button component="label" onClick={(e) => handleDownload("xlsx")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "hsl(126, 49%, 36%)", textTransform: "none"}}>
+                            <Typography sx={{mt: "5vh"}}>{fileXlsx.substring(37)}</Typography>
+                            <Button component="label" onClick={(e) => handleDownload("xlsx", fileXlsx)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "hsl(126, 49%, 36%)", textTransform: "none"}}>
                               Download .xlsx File
                             </Button>
                           </Box>

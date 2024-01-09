@@ -26,6 +26,7 @@ import Verification from '../pages/verification';
 import CompleteDetails from '../pages/CompleteDetails';
 import SysSettings from '../pages/SysSettings';
 import SysSettingsRoute from './SysSettingsRoute';
+import ResetPass from '../pages/resetPass';
 
 function Navpages() {
   return (
@@ -55,6 +56,7 @@ function Navpages() {
         <Route path='/pages/SignUp' element={<SignUp />}/>
         <Route path='/pages/CompleteDetails' element={<SettingsRoute><CompleteDetails /></SettingsRoute>} />
         <Route path='/verify/:token' element={<Verification />}/>
+        <Route path='/resetPass/:email/:token' element={<ResetPass />}/>
       </Routes>
     </AuthContextProvider>
     

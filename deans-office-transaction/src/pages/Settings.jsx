@@ -846,7 +846,7 @@ function Settings() {
                   onChange={(e) => setRole(e.target.value)}>
                   <FormControlLabel sx={{margin: "0px 10px"}} value="Secretary" control={<Radio />} label="Secretary" />
                   <FormControlLabel sx={{margin: "0px 10px"}} value="Clerk" control={<Radio />} label="Clerk" />
-                  <FormControlLabel sx={{margin: "0px 10px"}} value="SA" control={<Radio />} label="SA" />
+                  <FormControlLabel sx={{margin: "0px 10px"}} value="Student Assistant" control={<Radio />} label="SA" />
                 </RadioGroup>
               </FormControl>
               <TextField
