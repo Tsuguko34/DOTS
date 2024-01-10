@@ -116,7 +116,6 @@ function Sidebar() {
                             pendingArr.push(doc)
                         }
                         else if(doc.Status === "Completed"){
-                            console.log(true);
                             approvedArr.push(doc)
                         }
                         else if(doc.Status === "Rejected" || doc.Status === "Cancelled"){

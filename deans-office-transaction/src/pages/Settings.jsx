@@ -308,7 +308,6 @@ function Settings() {
                 await axios.post(`${port}/logout`).then((data) => {
                   
                   const success = data.data
-                  console.log(success.success);
                   if (success.success == true){
                     navigate("/pages/Login");
                   }
@@ -366,7 +365,6 @@ function Settings() {
   const handleClick = (event, id, active) => {
     setAnchorEl(event.currentTarget);
     handleIDChange(id, active)
-    console.log(id);
   };
   const handleClose = () => {
     setAnchorEl(null);
@@ -386,7 +384,6 @@ function Settings() {
   useEffect(() => {
     setUserID(idHolder);
     setActive(activeHolder);
-    console.log(idHolder);
   }, [idHolder]);
 
   const handleDeactivate = async() => {
@@ -464,7 +461,6 @@ function Settings() {
     try{
       await axios.post(`${port}/registerTemp`, values).then((data) => {
         if(data.status == 200){
-          console.log(data.data.success);
           if(data.data.success == true){
             toast.dismiss()
             toast.success("Clerk Account Created")

@@ -353,7 +353,6 @@ export default function StickyHeadTable() {
     const q = query(userRef, where("UID", "==", uid));
     const data = await getDocs(q);
     setUserInfo(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
-    console.log(userInfo);
     if (type == "add") {
       await addDoc(logcollectionRef, {
         date: dayjs().format("MMM D, YYYY h:mm A").toString(),
@@ -557,12 +556,10 @@ export default function StickyHeadTable() {
   };
   useEffect(() => {
     setCurrentPDF(filePDF[0])
-    console.log(currentPDF);
   }, [filePDF])
 
   useEffect(() => {
     setTabValue(imageList.length != 0 ? '1' : (imageList.length == 0 && filePDF.length != 0) ? '2' : (imageList.length == 0 && filePDF.length == 0 && fileDocx.length != 0) ? '3' : (imageList.length == 0 && filePDF.length == 0 && fileDocx.length == 0 && fileXlsx.length != 0) && '4')
-    console.log(tabValue);
   }, [filePDF, imageList, fileDocx, fileXlsx])
 
   const closeFile = async () => {
@@ -916,8 +913,6 @@ export default function StickyHeadTable() {
     }
  })
 
-
-    console.log(filter10);
     setFilteredOptionsReceive(Array.from(filteredOptionReceive))
     setFilteredOptionsfromDep(Array.from(filteredOptionfromDep))
     setFilteredOptionsDocType(Array.from(filteredOptionDocType))
@@ -1114,7 +1109,6 @@ export default function StickyHeadTable() {
               anchor.target = '_blank';
               anchor.click();
               URL.revokeObjectURL(objectUrl);
-              console.log(true);
             })
             .catch(error => {
               console.error('Error fetching image:', error);

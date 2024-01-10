@@ -511,12 +511,10 @@ export default function StickyHeadTable() {
   };
   useEffect(() => {
     setCurrentPDF(filePDF[0])
-    console.log(currentPDF);
   }, [filePDF])
 
   useEffect(() => {
     setTabValue(imageList.length != 0 ? '1' : (imageList.length == 0 && filePDF.length != 0) ? '2' : (imageList.length == 0 && filePDF.length == 0 && fileDocx.length != 0) ? '3' : (imageList.length == 0 && filePDF.length == 0 && fileDocx.length == 0 && fileXlsx.length != 0) && '4')
-    console.log(tabValue);
   }, [filePDF, imageList, fileDocx, fileXlsx])
 
   const closeFile = async () => {
@@ -1027,17 +1025,18 @@ export default function StickyHeadTable() {
     else if(allFaculty){
       const mainDocumentRef = doc(db, 'documents', actionHolder.id);
       const subcollectionRef = collection(mainDocumentRef, "UserRead");
-      for(const user of users){
+      for(const userd of users){
           try{
-            if(user.role == "Faculty"){
-              const newNotif = {
-                docId: actionHolder.id,
-                userUID: user.uID,
-                isRead: 0,
-                multiple: 1
+            if(userd.role == "Faculty"){
+              if(user.uID != userd.uID){
+                const newNotif = {
+                  docId: actionHolder.id,
+                  userUID: userd.uID,
+                  isRead: 0,
+                  multiple: 1
+                }
+                await axios.post(`${port}/notif`, newNotif)
               }
-              await axios.post(`${port}/notif`, newNotif)
-              
             }
           }catch(error){
               console.log(error.message);
@@ -1062,17 +1061,18 @@ export default function StickyHeadTable() {
     else if(allClerks){
       const mainDocumentRef = doc(db, 'documents', actionHolder.id);
       const subcollectionRef = collection(mainDocumentRef, "UserRead");
-      for(const user of users){
+      for(const userd of users){
           try{
-            if(user.role == "Clerk"){
-              const newNotif = {
-                docId: actionHolder.id,
-                userUID: user.uID,
-                isRead: 0,
-                multiple: 1
+            if(userd.role == "Clerk" || userd.role == "Secretary" || userd.role == "Student Assistant"){
+              if(user.uID != userd.uID){
+                const newNotif = {
+                  docId: actionHolder.id,
+                  userUID: userd.uID,
+                  isRead: 0,
+                  multiple: 1
+                }
+                await axios.post(`${port}/notif`, newNotif)
               }
-              await axios.post(`${port}/notif`, newNotif)
-              
             }
           }catch(error){
               console.log(error.message);
@@ -1080,7 +1080,7 @@ export default function StickyHeadTable() {
       }
       const editDoc = doc(db, "documents", actionHolder.id);
       const updateFields = {
-        forward_To: "Clerk " + user.uID,
+        forward_To: "Clerk Secretary Student Assistant" + user.uID,
         Comment: comment,
         forwarded_By: user.uID,
         uID: actionHolder.id,
@@ -1213,7 +1213,6 @@ export default function StickyHeadTable() {
               anchor.target = '_blank';
               anchor.click();
               URL.revokeObjectURL(objectUrl);
-              console.log(true);
             })
             .catch(error => {
               console.error('Error fetching image:', error);

@@ -83,7 +83,6 @@ export default function PendingCharts() {
             setStatusDone(prev => prev + 1)
           }
           else if(status == "Pending" && docType.includes(whatDoc)){
-            console.log("pending");
             setStatusPending(prev => prev + 1)
           }
           else if(status == "Rejected" && docType.includes(whatDoc)){

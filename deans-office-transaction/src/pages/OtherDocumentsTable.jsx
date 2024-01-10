@@ -666,12 +666,10 @@ export default function StickyHeadTable() {
   };
   useEffect(() => {
     setCurrentPDF(filePDF[0])
-    console.log(currentPDF);
   }, [filePDF])
 
   useEffect(() => {
     setTabValue(imageList.length != 0 ? '1' : (imageList.length == 0 && filePDF.length != 0) ? '2' : (imageList.length == 0 && filePDF.length == 0 && fileDocx.length != 0) ? '3' : (imageList.length == 0 && filePDF.length == 0 && fileDocx.length == 0 && fileXlsx.length != 0) && '4')
-    console.log(tabValue);
   }, [filePDF, imageList, fileDocx, fileXlsx])
 
   const closeFile = async () => {
@@ -763,7 +761,6 @@ export default function StickyHeadTable() {
     tracking
   ) => {
     const imageListRef = await axios.get(`${port}/getFile?id=${uID}`);
-    console.log(imageListRef.data);
     imageListRef.data.forEach(async(item) => {
         const fileName = item.file_Name
         const fileSize = item.size
@@ -989,7 +986,6 @@ export default function StickyHeadTable() {
           console.log(e);
         }
     } else if (imageUpload) {
-      console.log(imageUpload);
       const formData = new FormData();
       imageUpload.forEach((file, index) => {
         formData.append(`files`, file)
@@ -1047,7 +1043,7 @@ export default function StickyHeadTable() {
         }
         await axios.put(`${port}/updateFile?docID=${formID.uID}`, formData)
         setSumbmit(false);
-        setImageUpload([])
+        setImageUpload()
       }catch(e){
         console.log(e);
       }
@@ -1185,8 +1181,6 @@ export default function StickyHeadTable() {
     }
     })
 
-
-    console.log(filter10);
     setFilteredOptionsReceive(Array.from(filteredOptionReceive))
     setFilteredOptionsfromDep(Array.from(filteredOptionfromDep))
     setFilteredOptionsDocType(Array.from(filteredOptionDocType))
@@ -1352,7 +1346,6 @@ export default function StickyHeadTable() {
               anchor.target = '_blank';
               anchor.click();
               URL.revokeObjectURL(objectUrl);
-              console.log(true);
             })
             .catch(error => {
               console.error('Error fetching image:', error);
@@ -2034,7 +2027,7 @@ export default function StickyHeadTable() {
                 <TextField required className="Text-input" id="fromPer" label="Document name" variant="outlined" onChange={(e) => setNewDocumentName(e.target.value)} inputProps={{ maxLength: 50 }}/>
                 <Autocomplete
                 className="auto-complete"
-                onChange={(e, newVlaue) => { console.log(newReceivedBy); setNewReceivedBy(newVlaue ? `(${newVlaue.role}) - ${newVlaue.full_Name}`: '')}}
+                onChange={(e, newVlaue) => {setNewReceivedBy(newVlaue ? `(${newVlaue.role}) - ${newVlaue.full_Name}`: '')}}
                 value={newReceivedBy != null && newReceivedBy != undefined ? users.find(item => item.role == (newReceivedBy.slice(newReceivedBy.indexOf("(") + 1, newReceivedBy.indexOf(")")))  && item.full_Name == (newReceivedBy.slice(newReceivedBy.indexOf(")")).replace(") - ", ""))): ''}
                 id="combo-box-demo"
                 options={users.filter(item => item.role != "Dean" && item.role != "Faculty")}
@@ -2109,7 +2102,7 @@ export default function StickyHeadTable() {
                 <TextField required className="Text-input" id="fromPer" label="Document name" variant="outlined" onChange={(e) => setNewDocumentName(e.target.value)} inputProps={{ maxLength: 50 }}/>
                 <Autocomplete
                 className="auto-complete"
-                onChange={(e, newVlaue) => { console.log(newReceivedBy); setNewReceivedBy(newVlaue ? `(${newVlaue.role}) - ${newVlaue.full_Name}`: '')}}
+                onChange={(e, newVlaue) => {setNewReceivedBy(newVlaue ? `(${newVlaue.role}) - ${newVlaue.full_Name}`: '')}}
                 value={newReceivedBy != null && newReceivedBy != undefined ? users.find(item => item.role == (newReceivedBy.slice(newReceivedBy.indexOf("(") + 1, newReceivedBy.indexOf(")")))  && item.full_Name == (newReceivedBy.slice(newReceivedBy.indexOf(")")).replace(") - ", ""))): ''}
                 id="combo-box-demo"
                 options={users.filter(item => item.role != "Dean" && item.role != "Faculty")}
@@ -2190,7 +2183,7 @@ export default function StickyHeadTable() {
                 <TextField required className="Text-input" id="fromPer" label="Document name" variant="outlined" onChange={(e) => setNewDocumentName(e.target.value)} inputProps={{ maxLength: 50 }}/>
                 <Autocomplete
                 className="auto-complete"
-                onChange={(e, newVlaue) => { console.log(newReceivedBy); setNewReceivedBy(newVlaue ? `(${newVlaue.role}) - ${newVlaue.full_Name}`: '')}}
+                onChange={(e, newVlaue) => {setNewReceivedBy(newVlaue ? `(${newVlaue.role}) - ${newVlaue.full_Name}`: '')}}
                 value={newReceivedBy != null && newReceivedBy != undefined ? users.find(item => item.role == (newReceivedBy.slice(newReceivedBy.indexOf("(") + 1, newReceivedBy.indexOf(")")))  && item.full_Name == (newReceivedBy.slice(newReceivedBy.indexOf(")")).replace(") - ", ""))): ''}
                 id="combo-box-demo"
                 options={users.filter(item => item.role != "Dean" && item.role != "Faculty")}
@@ -2272,7 +2265,7 @@ export default function StickyHeadTable() {
                 <TextField required className="Text-input" id="fromPer" label="Document name" variant="outlined" onChange={(e) => setNewDocumentName(e.target.value)} inputProps={{ maxLength: 50 }}/>
                 <Autocomplete
                 className="auto-complete"
-                onChange={(e, newVlaue) => { console.log(newReceivedBy); setNewReceivedBy(newVlaue ? `(${newVlaue.role}) - ${newVlaue.full_Name}`: '')}}
+                onChange={(e, newVlaue) => {setNewReceivedBy(newVlaue ? `(${newVlaue.role}) - ${newVlaue.full_Name}`: '')}}
                 value={newReceivedBy != null && newReceivedBy != undefined ? users.find(item => item.role == (newReceivedBy.slice(newReceivedBy.indexOf("(") + 1, newReceivedBy.indexOf(")")))  && item.full_Name == (newReceivedBy.slice(newReceivedBy.indexOf(")")).replace(") - ", ""))): ''}
                 id="combo-box-demo"
                 options={users.filter(item => item.role != "Dean" && item.role != "Faculty")}
@@ -2287,7 +2280,7 @@ export default function StickyHeadTable() {
                   options={office}
                   sx={{ width: "100%"}}
                   renderInput={(params) => <TextField required value={newFromDep ? newFromDep : null} className="auto-complete-text" onChange={(e) => setNewFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
-                <TextField className="Text-input" id="fromPer" label="Ratee Name" variant="outlined" onChange={(e) => setNewFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
+                <TextField required className="Text-input" id="fromPer" label="Ratee Name" variant="outlined" onChange={(e) => setNewFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
                 <Autocomplete
                 className="auto-complete"
   
@@ -2354,7 +2347,7 @@ export default function StickyHeadTable() {
                 <TextField required className="Text-input" id="fromPer" label="Document name" variant="outlined" onChange={(e) => setNewDocumentName(e.target.value)} inputProps={{ maxLength: 50 }}/>
                 <Autocomplete
                 className="auto-complete"
-                onChange={(e, newVlaue) => { console.log(newReceivedBy); setNewReceivedBy(newVlaue ? `(${newVlaue.role}) - ${newVlaue.full_Name}`: '')}}
+                onChange={(e, newVlaue) => {setNewReceivedBy(newVlaue ? `(${newVlaue.role}) - ${newVlaue.full_Name}`: '')}}
                 value={newReceivedBy != null && newReceivedBy != undefined ? users.find(item => item.role == (newReceivedBy.slice(newReceivedBy.indexOf("(") + 1, newReceivedBy.indexOf(")")))  && item.full_Name == (newReceivedBy.slice(newReceivedBy.indexOf(")")).replace(") - ", ""))): ''}
                 id="combo-box-demo"
                 options={users.filter(item => item.role != "Dean" && item.role != "Faculty")}
@@ -2369,7 +2362,7 @@ export default function StickyHeadTable() {
                   options={office}
                   sx={{ width: "100%"}}
                 renderInput={(params) => <TextField required value={newFromDep ? newFromDep : null} className="auto-complete-text" onChange={(e) => setNewFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept"/>}/>
-                <TextField className="Text-input" id="fromPer" label="Contact Person" variant="outlined" onChange={(e) => setNewFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
+                <TextField required className="Text-input" id="fromPer" label="Contact Person" variant="outlined" onChange={(e) => setNewFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
                 <TextField required className="Text-input" id="fromPer" label="Short Description" variant="outlined" onChange={(e) => setNewDescription(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                 <TextField className="Text-input" id="fromPer" label="Comment/Note" variant="outlined" onChange={(e) => setNewComment(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                 <Autocomplete
@@ -2427,7 +2420,7 @@ export default function StickyHeadTable() {
                 <TextField required className="Text-input" id="fromPer" label="Document name" variant="outlined" onChange={(e) => setNewDocumentName(e.target.value)} inputProps={{ maxLength: 50 }}/>
                 <Autocomplete
                 className="auto-complete"
-                onChange={(e, newVlaue) => { console.log(newReceivedBy); setNewReceivedBy(newVlaue ? `(${newVlaue.role}) - ${newVlaue.full_Name}`: '')}}
+                onChange={(e, newVlaue) => {setNewReceivedBy(newVlaue ? `(${newVlaue.role}) - ${newVlaue.full_Name}`: '')}}
                 value={newReceivedBy != null && newReceivedBy != undefined ? users.find(item => item.role == (newReceivedBy.slice(newReceivedBy.indexOf("(") + 1, newReceivedBy.indexOf(")")))  && item.full_Name == (newReceivedBy.slice(newReceivedBy.indexOf(")")).replace(") - ", ""))): ''}
                 id="combo-box-demo"
                 options={users.filter(item => item.role != "Dean" && item.role != "Faculty")}
@@ -2506,7 +2499,7 @@ export default function StickyHeadTable() {
                   <TextField required className="Text-input" id="fromPer" label="Document name" variant="outlined" onChange={(e) => setNewDocumentName(e.target.value)} inputProps={{ maxLength: 50 }}/>
                   <Autocomplete
                 className="auto-complete"
-                onChange={(e, newVlaue) => { console.log(newReceivedBy); setNewReceivedBy(newVlaue ? `(${newVlaue.role}) - ${newVlaue.full_Name}`: '')}}
+                onChange={(e, newVlaue) => {setNewReceivedBy(newVlaue ? `(${newVlaue.role}) - ${newVlaue.full_Name}`: '')}}
                 value={newReceivedBy != null && newReceivedBy != undefined ? users.find(item => item.role == (newReceivedBy.slice(newReceivedBy.indexOf("(") + 1, newReceivedBy.indexOf(")")))  && item.full_Name == (newReceivedBy.slice(newReceivedBy.indexOf(")")).replace(") - ", ""))): ''}
                 id="combo-box-demo"
                 options={users.filter(item => item.role != "Dean" && item.role != "Faculty")}
@@ -2907,7 +2900,7 @@ export default function StickyHeadTable() {
                 options={office}
                 sx={{ width: "100%"}}
                 renderInput={(params) => <TextField required value={editFromDep} className="auto-complete-text" onChange={(e) => setEditFromDep(e.target.value)} {...params} placeholder="Office/Dept" label="Office/Dept" inputProps={{ ...params.inputProps,maxLength: 50 }}/>}/>
-                <TextField value={editFromPer} className="Text-input" id="fromPer" label="Contact Person" variant="outlined" onChange={(e) => setEditFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
+                <TextField required value={editFromPer} className="Text-input" id="fromPer" label="Contact Person" variant="outlined" onChange={(e) => setEditFromPer(e.target.value)} inputProps={{ maxLength: 50 }}/>
                 <TextField required value={editDescription} className="Text-input" id="fromPer" label="Short Description" variant="outlined" onChange={(e) => setEditDescription(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                 <TextField value={editComment} className="Text-input" id="fromPer" label="Comment/Note" variant="outlined" onChange={(e) => setEditComment(e.target.value)} inputProps={{ maxLength: 1000 }}/>
                 <Autocomplete

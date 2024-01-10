@@ -74,7 +74,6 @@ function ArchiveMainTable() {
     useEffect(() => {
         setArchiveYears([])
         getArchive()
-        console.log(archiveData);
     }, [])
 
     useEffect(() => {
@@ -164,7 +163,6 @@ function ArchiveMainTable() {
         const q = query(userRef, where("UID", "==", uid));
         const data = await getDocs(q);
         setUserInfo(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
-        console.log(userInfo);
         if (type == "restore") {
           await addDoc(logcollectionRef, {
             date: dayjs().format("MMM D, YYYY h:mm:ss A").toString(),
@@ -286,7 +284,6 @@ function ArchiveMainTable() {
 
       useEffect(() => {
         setTabValue(imageList.length != 0 ? '1' : (imageList.length == 0 && filePDF.length != 0) ? '2' : (imageList.length == 0 && filePDF.length == 0 && fileDocx.length != 0) ? '3' : (imageList.length == 0 && filePDF.length == 0 && fileDocx.length == 0 && fileXlsx.length != 0) && '4')
-        console.log(tabValue);
       }, [filePDF, imageList, fileDocx, fileXlsx])
     
       const closeFile = async () => {
@@ -555,7 +552,6 @@ function ArchiveMainTable() {
               anchor.target = '_blank';
               anchor.click();
               URL.revokeObjectURL(objectUrl);
-              console.log(true);
             })
             .catch(error => {
               console.error('Error fetching image:', error);
@@ -988,7 +984,7 @@ function ArchiveMainTable() {
                                 </Box>
                                 <Box sx={{mt: "20px"}}>
                                     <Typography sx={{fontWeight: "300", fontSize: "0.8rem", color: "#888888"}}>Archived By</Typography>
-                                    <Typography sx={{fontWeight: "300", fontSize: "0.9rem"}}>({users.find(user => user.uID == fileInfo.archived_By)?.role}) - {users.find(user => user.uID == fileInfo.archived_By)?.full_Name}</Typography>
+                                    <Typography sx={{fontWeight: "300", fontSize: "0.9rem"}}>{fileInfo.archived_By == "System" ? fileInfo.archived_By : `(${users.find(user => user.uID == fileInfo.archived_By)?.role}) - ${users.find(user => user.uID == fileInfo.archived_By)?.full_Name}`}</Typography>
                                 </Box>
                                 {fileType != undefined || fileType != null || fileType != "" && (
                                   <Box sx={{mt: "20px"}}>

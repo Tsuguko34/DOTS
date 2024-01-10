@@ -74,7 +74,7 @@ function ArchiveTable() {
         const elementToCheck = {Type : whatDoc, Year : whatYear}
         if(whatDoc){
           if(user.role == "Faculty"){
-            if(doc.forwarded_By == user.uID || doc.forward_To == user.uID || doc.accepted_Rejected_By == user.uID || user.full_Name.includes(doc.fromPer) ){
+            if(doc.forwarded_By == user.uID || doc.forward_To == user.uID || doc.accepted_Rejected_By == user.uID || user.full_Name.includes(doc.fromPer) || doc.forward_To.includes("Faculty") || (doc.forward_To.includes("All") && !doc.forward_To.includes(user.uID))){
               if (buttonSet.size === 0 || ![...buttonSet].some(button => button.Type === whatDoc)) {
                 buttonSet.add({ Type: whatDoc, Year: whatYear });
                 updatedButtonSet.add({ Type: whatDoc, Year: whatYear });
@@ -103,7 +103,6 @@ function ArchiveTable() {
           
         }
       })
-      console.log(updatedButtonSet);
       const buttonArray = Array.from(updatedButtonSet)
       const yearArray = Array.from(yearSet)
       if(buttonArray.length > 0 || yearArray.length > 0){

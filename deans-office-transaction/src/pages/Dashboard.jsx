@@ -270,6 +270,7 @@ function Dashboard() {
       try{
         await axios.get(`${port}/getUser`).then((data) => {
           setUser(data.data[0])
+          getArch()
         })
         await axios.get(`${port}/getUsers`).then((data) => {
           setUsers(data.data)
@@ -287,12 +288,7 @@ function Dashboard() {
   const [filteredDash, setFilteredDash] = useState([])
   
   const [userInfo, setUserInfo] = useState([]);
-  const [archiveDoc, setarchiveDoc] = useState(0);
-  let q = query(
-    dashboardCollectionRef,
-    where("date_Received", "==", dayjs().format("MM/DD/YYYY").toString())
-  );
-  let q2 = query(dashboardCollectionRef, orderBy("date_Received", "desc"));
+  const [archiveDoc, setarchiveDoc] = useState([]);
   const getDashboard = async () => {
     const data = await axios.get(`${port}/requests`)
     setDashboard(data.data);
@@ -347,24 +343,25 @@ function Dashboard() {
         }
       }
     });
-
-    const archiveDocs = await axios.get(`${port}/getArchives`)
-    archiveDocs.data.forEach((doc) => {
-      if(user.role === "Faculty"){
-        if(doc.forward_To.includes("Faculty") || (doc.forward_To.includes("All") && !doc.forward_To.includes(user.uID)) ||  doc.forward_To == user.uID  || doc.forwarded_By == user.uID  || doc.accepted_Rejected_By == user.uID ){
-          setarchiveDoc(prev => prev + 1)
-          
-        }
-      }else if(user.role !== "Faculty"){
-        console.log(user.role);
-        setarchiveDoc(prev => prev + 1)
-      }
-    })
+    
+    
   };
 
   useEffect(() => {
     getMonthYearData();
   }, [dashboard]);
+
+const getArch = async() => {
+  try{
+      const data = await axios.get(`${port}/getArchives`)
+      setarchiveDoc(data.data)
+  }catch(e){
+    console.log(e.message);
+  }
+  
+}
+
+    
 
 
 
@@ -488,7 +485,6 @@ function Dashboard() {
     dashboard.forEach((doc) => {
       const forward = doc.forward_To
       if(user && (forward.includes("All") ||  forward.includes(user.role) || forward == user.uID) && doc.date_Received == dayjs().format('MM/DD/YYYY')){
-        console.log(doc);
         filterDashData.push(doc)
         setEmptyResult(false)
         setLoading(false)
@@ -543,12 +539,10 @@ function Dashboard() {
   };
   useEffect(() => {
     setCurrentPDF(filePDF[0])
-    console.log(currentPDF);
   }, [filePDF])
 
   useEffect(() => {
     setTabValue(imageList.length != 0 ? '1' : (imageList.length == 0 && filePDF.length != 0) ? '2' : (imageList.length == 0 && filePDF.length == 0 && fileDocx.length != 0) ? '3' : (imageList.length == 0 && filePDF.length == 0 && fileDocx.length == 0 && fileXlsx.length != 0) && '4')
-    console.log(tabValue);
   }, [filePDF, imageList, fileDocx, fileXlsx])
 
   const closeFile = async () => {
@@ -640,7 +634,6 @@ function Dashboard() {
               anchor.target = '_blank';
               anchor.click();
               URL.revokeObjectURL(objectUrl);
-              console.log(true);
             })
             .catch(error => {
               console.error('Error fetching image:', error);
@@ -670,7 +663,7 @@ function Dashboard() {
                   </div>
                   <div className="welcome-msg">
                       <Typography variant="h1" className="welcome-hello" sx={{fontSize:windowWidth <= 768 && windowWidth > 425 ? "1.3rem" :windowWidth < 425 ? "1rem" : "1.5rem", display: 'flex', alignItems: 'center', justifyContent: 'start'}}>
-                        Welcome, <Typography sx={{fontSize:windowWidth <= 768 && windowWidth > 425 ? "1.3rem" :windowWidth < 425 ? "1rem" : "1.5rem", color: "#E6E4F0", fontWeight: 'bold'}}> &nbsp;{user.role}</Typography>
+                        Welcome, <Typography sx={{fontSize:windowWidth <= 768 && windowWidth > 425 ? "1.3rem" :windowWidth < 425 ? "1rem" : "1.5rem", color: "#E6E4F0", fontWeight: 'bold'}}> &nbsp;{user.role == "Student Assistant" ? "SA" : user.role}</Typography>
                       </Typography>
                       <Typography variant="div" className="welcome-hello2" sx={{fontSize:windowWidth <= 768 && windowWidth > 425 ? "1.3rem" :windowWidth < 425 ? "1rem" : "1.5rem", fontWeight: 'bold'}}>
                         {user != undefined && user.full_Name}
@@ -687,7 +680,7 @@ function Dashboard() {
                   </div>
                   <div className="dash-total-title">
                     <p>Archived Docs</p>
-                    <h2>{archiveDoc}</h2>
+                    <h2>{user.role === "Faculty" ? archiveDoc.filter(doc => doc.forwarded_By == user.uID || doc.forward_To == user.uID || doc.accepted_Rejected_By == user.uID || user.full_Name.includes(doc.fromPer) || doc.forward_To.includes("Faculty") || (doc.forward_To.includes("All") && !doc.forward_To.includes(user.uID))).length:archiveDoc.length}</h2>
                   </div>
                 </div>
               </Card>
@@ -780,28 +773,29 @@ function Dashboard() {
           </Grid>
           
           <Grid item xs={12} sm={12} md={6} lg={6} xl= {6}>
+          {user != undefined && user.role === "Dean" && (
               <Grid container sx={12} gap={2} wrap="noWrap">
-              <Grid item xs={12}>
-                <Card sx={{width: '100%',height: "50px", display:"flex", justifyContent: "center", alignItems: "center", p: "21.6px", mb: "21.8px", maxHeight: '100px', userSelect: 'none'}} className="dash-gradient">
-                {user != undefined && user.role === "Dean" && (
-                  <div className="welcome-holder2" onClick={openLogs} style={{cursor: "pointer", userSelect: "none"}}>
-                    <div className="logs-img">
-                      <img src={LogsPic}/>
+                <Grid item xs={12}>
+                  <Card sx={{width: '100%',height: "50px", display:"flex", justifyContent: "center", alignItems: "center", p: "21.6px", mb: "21.8px", maxHeight: '100px', userSelect: 'none'}} className="dash-gradient">
+                  
+                    <div className="welcome-holder2" onClick={openLogs} style={{cursor: "pointer", userSelect: "none"}}>
+                      <div className="logs-img">
+                        <img src={LogsPic}/>
+                      </div>
+                      <div className="welcome-msg">
+                          <Typography className="welcome-hello2" sx={{ml: "50px"}}>
+                            <h1>Logs</h1>
+                          </Typography>
+                      </div>
                     </div>
-                    <div className="welcome-msg">
-                        <Typography className="welcome-hello2" sx={{ml: "50px"}}>
-                          <h1>Logs</h1>
-                        </Typography>
-                    </div>
-                  </div>
-                  )}
-                </Card>            
-              </Grid>         
+                    
+                  </Card>            
+                </Grid>         
               </Grid>
-           
+            )}
             <Typography sx={{fontSize: "1.2rem", fontWeight: "bold"}} className="type-title"><Typewriter words={['Schedules']} typeSpeed={40}/></Typography>
             <Grid item xs={12} sm={12}>
-              <Card sx={{height: windowWidth > 768 ? "450px" : "500px",maxHeight: "400px", display:"flex", justifyContent: "center", alignItems: "center", p:windowWidth > 768 ? "21.6px" : 0}} className="dash-cards">
+              <Card sx={{height: windowWidth > 768 ? "470px" : "500px",maxHeight: user != undefined && user.role !== "Dean" ? "470px" : "400px", display:"flex", justifyContent: "center", alignItems: "center", p:windowWidth > 768 ? "21.6px" : 0}} className="dash-cards">
                 <iframe src="https://calendar.google.com/calendar/embed?src=carpio.johnjazpher.dc.3188%40gmail.com&ctz=Asia%2FManila" style={{border: 0}} width={windowWidth > 750 ?'550' : windowWidth > 375 ? '350' : windowWidth > 320 ? "300" : "250"} height="350" frameborder="0" scrolling="no"></iframe>
               </Card>
             </Grid>

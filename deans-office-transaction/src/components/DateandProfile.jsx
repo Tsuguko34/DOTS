@@ -88,7 +88,6 @@ function DateandProfile() {
       if (result.value) {
         await axios.post(`${port}/logout`).then((data) => {
           const success = data.data
-          console.log(success.success);
           if (success.success == true){
             navigate("/pages/Login");
           }

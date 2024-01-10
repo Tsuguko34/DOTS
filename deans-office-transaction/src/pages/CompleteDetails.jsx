@@ -73,7 +73,6 @@ export default function CompleteDetails() {
             await Swal.fire({title: "Successfully Completed. ", text: "Verification Link is sent to the email.", icon: "success", showConfirmButton: false, timer: 2000, allowEscapeKey: false, allowOutsideClick: false})
             await axios.post(`${port}/logout`).then((data) => {
               const success = data.data
-              console.log(success.success);
               if (success.success == true){
                   navigate("/pages/Login");
               }

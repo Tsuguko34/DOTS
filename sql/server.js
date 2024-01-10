@@ -12,6 +12,7 @@ import session from 'express-session';
 import MySQLStoreCreator from 'express-mysql-session';
 import cron from 'node-cron'
 import axios from 'axios'
+import dayjs from 'dayjs'
 
 const MySQLStore = MySQLStoreCreator(session);
 const app = express()
@@ -301,8 +302,6 @@ app.get("/checkResetToken", (req,res) => {
 })
 
 app.put("/completeResetPass", async(req, res) => {
-    console.log(req.body);
-    console.log(req.query);
     const q = "UPDATE users SET `password` = ? WHERE email = ?"
     const hashedPassword = await bcrypt.hash(req.query.password, 10)
     const values = [
@@ -716,7 +715,7 @@ app.put("/updateFile", upload.array('files'),(req, res) => {
             const deleteQuery = `DELETE FROM files WHERE uID = '${req.body.uID}'`;
             db.query(deleteQuery, (deleteErr, deleteData) => {
                 if (deleteErr) {
-                    return console.log(deleteErr.message);
+                    return res.json({success : false});
                 }
             })
 
@@ -998,6 +997,12 @@ cron.schedule('0 0 * * *', async() => {
                 if(docSnap.Status != "Pending"){
                     try{
                         await axios.post(`${port}/archiveFile?id=${docSnap.uID}&user=System`)
+                        const value = {
+                            date: dayjs() .format("MMM D, YYYY h:mm A").toString(),
+                            log: `${docSnap.document_Name} has been archived by the system.`
+                        }
+                        await axios.post(`${port}/createLog`, value)
+                        
                     }catch(e){
                         console.log(e.message);
                     }
@@ -1023,14 +1028,13 @@ cron.schedule('0 0 * * *', async() => {
             const daysPending = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
             if (dateReceived <= threeDaysAgo) {
                 if(docSnap.Status == "Pending"){
-                    console.log("pending");
                     const values = {
                         docId : docSnap.uID,
                         userUID : docSnap.forward_To,
                         isRead : 0,
                         multiple : 0,
                     }
-                    axios.post(`${port}/notif?reminder=remind`, values)
+                    await axios.post(`${port}/notif?reminder=remind`, values)
                     const transporter = nodemailer.createTransport({
                         service: 'gmail',
                         auth: {

@@ -158,7 +158,6 @@ import axios from "axios";
               Swal.showLoading()
               try{
                   await axios.get(`${port}/getUser`).then(  async(data) => {
-                    console.log(data);
                       if(data.status == 200){
                         if(data.data[0].verified == 1){
                           Swal.fire({title: "Logged in", text: "Logged in successfully.", icon: "success", showConfirmButton: false, timer: 1500})
@@ -168,7 +167,6 @@ import axios from "axios";
                           checkAttempts()
                           await axios.post(`${port}/logout`).then((data) => {
                             const success = data.data
-                            console.log(success.success);
                             if (success.success == true){
                                 navigate("/pages/Login");
                             }
@@ -208,7 +206,6 @@ import axios from "axios";
     };
 
     const timeout = (time) => {
-      console.log(true);
       if (loginAttempts >= 2) {
         setIsDisabled(true);
         let remaining = null
@@ -297,7 +294,6 @@ import axios from "axios";
         e.preventDefault()
         try{
           await axios.post(`${port}/resetPassEmail?email=${resetEmail}`).then((data) => {
-            console.log(data.data);
             if(data.data.email == true){
               handleNext()
             }

@@ -13,7 +13,6 @@ import { AuthContextProvider } from './AuthContext';
 import Settings from '../pages/Settings';
 import IncomingMemo from '../pages/IncomingMemo';
 import OutgoingMemo from '../pages/OutgoingMemo';
-import MOA from '../pages/MOA';
 import ArchiveMainTable from '../pages/ArchiveMainTable';
 import PendingLetters from '../pages/PendingLetters';
 import ApprovedLetters from '../pages/ApprovedLetters';
@@ -43,7 +42,6 @@ function Navpages() {
             <Route path='/pages/IncomingMemo' element={<PrivateRoutes><RoleBasedRoutes><IncomingMemo /></RoleBasedRoutes></PrivateRoutes>} />
             <Route path='/pages/OutgoingMemo' element={<PrivateRoutes><RoleBasedRoutes><OutgoingMemo /></RoleBasedRoutes></PrivateRoutes>} />
             <Route path='/pages/Archives/pages/ArchiveMainTable/:documentType/:year' element={<PrivateRoutes><ArchiveMainTable /></PrivateRoutes>} />
-            <Route path='/pages/MOA' element={<PrivateRoutes><MOA /></PrivateRoutes>} />
             <Route path='/pages/PendingLetters' element={<PrivateRoutes><PendingLetters /></PrivateRoutes>} />
             <Route path='/pages/ApprovedLetters' element={<PrivateRoutes><ApprovedLetters /></PrivateRoutes>} />
             <Route path='/pages/RejectedLetters' element={<PrivateRoutes><RejectedLetters /></PrivateRoutes>} />

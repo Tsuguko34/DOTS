@@ -32,7 +32,7 @@ export const AuthContextProvider = ({children}) => {
             }else{
               const emailPattern = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
               const isValidEmail = email.endsWith("@bulsu.edu.ph")
-              if(isValidEmail){
+              if(email){
               Swal.fire({
                 title: 'Please wait',
                 allowEscapeKey: false,

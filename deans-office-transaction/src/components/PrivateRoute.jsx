@@ -14,7 +14,6 @@ const PrivateRoute = ({children}) => {
     useEffect(() => {
         const getToken = async() =>{
             await axios.get(`${port}/getUser`).then((data) => {
-                console.log(data.data[0].temporary);
                 if(data.data[0].temporary == 1){
                     return navigate('/pages/CompleteDetails')
                 }

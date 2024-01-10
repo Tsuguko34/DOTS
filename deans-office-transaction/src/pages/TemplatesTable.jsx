@@ -97,11 +97,6 @@ export default function MediaCard() {
     };
   });
 
-  useEffect(()=> {
-    
-    console.log(fileExt.find(item => item.uid == "60cd02cf-0ec8-4448-8537-b42906883f09"));
-  }, [])
-
   
   const handleClickOpen = () => {
     setOpenAdd(true);
@@ -329,7 +324,6 @@ export default function MediaCard() {
               anchor.target = '_blank';
               anchor.click();
               URL.revokeObjectURL(objectUrl);
-              console.log(true);
             })
             .catch(error => {
               console.error('Error fetching image:', error);
@@ -364,7 +358,7 @@ export default function MediaCard() {
             style={{fontSize:windowWidth <= 320 && "0.8rem", fontWeight: "bold" }}
             onClick={handleClickOpen}
           >
-            ADD NEW DOCUMENT
+            ADD NEW TEMPLATE
           </Button>
           <Typography sx={{display: "flex", justifyContent: "center", alignItems: "center"}}>
             <Tooltip title={<Typography sx={{fontSize: "0.8rem"}}>Refresh</Typography>} arrow>
@@ -380,7 +374,7 @@ export default function MediaCard() {
               variant="outlined"
               onChange={(e) => setSearch(e.target.value)}
               InputProps={{
-                placeholder: "Folder Name",
+                placeholder: "Template Name",
                 startAdornment: (
                   <InputAdornment position="start">
                     <SearchIcon />
