@@ -225,17 +225,7 @@ function Dashboard() {
           fontColor: "#888"
         },
       },
-    },
-    scales: {
-      xAxes: [
-        {
-          ticks: {
-            maxRotation: -90,
-            minRotation: -90,
-          },
-        },
-      ],
-    },
+    }
   };
   const bar_Data = {
     labels: fiveOffice,
@@ -361,33 +351,6 @@ const getArch = async() => {
   
 }
 
-    
-
-
-
-  const [userName, setuserName] = useState("");
-  const [profilePic, setProfilePic] = useState(userpic)
-  const getUserInfo = async () => {
-    setLoginWith(!setLoginWith)
-    if (!user.uID) return;
-    setProfilePic(`${port}/profile_Pictures/${user.profilePic}`)
-    setUserInfo(user);
-    setuserName(user.full_Name)
-  };
-
-  
-
-  const getSignInMethods = () => {
-    if (userHolder) {
-        getUserInfo()
-        setuserName(user.full_Name)
-        setGoogleEmail(user.email)
-    }
-  };
-
-  useEffect(() => {
-    getSignInMethods();
-  }, [userHolder]);
 
   const [date, setDate] = useState("");
   useEffect(() => {
@@ -654,7 +617,7 @@ const getArch = async() => {
           <p>Dean's Office Transaction Dashboard</p>
           <div className="page-desc">Dean's office transaction summary</div>
         </div>
-        <Grid container xs={12} sx={{padding: "21.6px"}} gap={1} flexWrap={windowWidth > 1024 ? "noWrap" : ''} overflow={"hidden"}>
+        <Grid container item xs={12} sx={{padding: "21.6px"}} gap={1} flexWrap={windowWidth > 1024 ? "nowrap" : ''} overflow={"hidden"}>
             <Grid item xs={12} sm={6} md={6} xl={4}>
               <Card className="dash-welcome" sx={{height: "100px",maxHeight: "100px"}}>
                 <div className="welcome-holder">
@@ -725,7 +688,7 @@ const getArch = async() => {
               </Card>
             </Grid>
         </Grid>
-        <Grid container xs={12} sx={{pr: "21.6px", pl: "21.6px", pb: "21.6px", maxWidth: "800px"}} flexWrap={windowWidth >= 1440 ? "nowrap" : ''} overflow={"hidden"}>
+        <Grid container item xs={12} sx={{pr: "21.6px", pl: "21.6px", pb: "21.6px", maxWidth: "800px"}} flexWrap={windowWidth >= 1440 ? "nowrap" : ''} overflow={"hidden"}>
           <Grid item xs={12} sm={12} md={6} lg={6} xl= {6}>
           <Typography sx={{fontSize: "1.2rem", fontWeight: "bold"}} className="type-title"><Typewriter words={['Document Status']} typeSpeed={40}/></Typography>
             <Card sx={{height: "400px", maxHeight: "400px", maxWidth: "1000px", display:"flex", justifyContent: "center", alignItems: "center", p: "11.6px", mr: windowWidth >= 1024 ? '11.6px' : 0}} className="dash-cards">
@@ -749,7 +712,7 @@ const getArch = async() => {
               <>
               <Typography sx={{fontSize: "1.2rem", fontWeight: "bold"}} className="type-title"><Typewriter words={['Schedules']} typeSpeed={40}/></Typography>
               <Card sx={{height: windowWidth > 768 ? "400px" : "100%",maxHeight: "400px", display:"flex", justifyContent: "center", alignItems: "center", p:windowWidth > 768 ? "21.6px" : 0}} className="dash-cards">
-                <iframe src="https://calendar.google.com/calendar/embed?src=carpio.johnjazpher.dc.3188%40gmail.com&ctz=Asia%2FManila" style={{border: 0}} width={windowWidth > 750 ?'550' : windowWidth > 375 ? '350' : windowWidth > 320 ? "300" : "250"} height="350" frameborder="0" scrolling="no"></iframe>
+                <iframe src="https://calendar.google.com/calendar/embed?src=carpio.johnjazpher.dc.3188%40gmail.com&ctz=Asia%2FManila" style={{border: 0}} width={windowWidth > 750 ?'550' : windowWidth > 375 ? '350' : windowWidth > 320 ? "300" : "250"} height="350" frameBorder="0" scrolling="no"></iframe>
               </Card>
               </>
               
@@ -758,7 +721,7 @@ const getArch = async() => {
           </Grid>
         </Grid>
         {user.role !== "Faculty" && (
-          <Grid container xs={12} sx={{pr: "21.6px", pl: "21.6px", pb: "21.6px"}} gap={2} flexWrap={windowWidth >= 1024 ? "noWrap" : ''} overflow={"hidden"}>
+          <Grid container item xs={12} sx={{pr: "21.6px", pl: "21.6px", pb: "21.6px"}} gap={2} flexWrap={windowWidth >= 1024 ? "nowrap" : ''} overflow={"hidden"}>
           <Grid item xs={12} sm={12} md={6} lg={6} xl= {6}>
             <Typography sx={{fontSize: "1.2rem", fontWeight: "bold"}} className="type-title"><Typewriter words={['Documents per Office']} typeSpeed={40}/></Typography>
               <Card sx={{height: "470px", maxHeight: "470px", maxWidth: "1000px", display:"flex", flexDirection: "column", justifyContent: "center", alignItems: "center", p: "21.6px"}} className="dash-cards">
@@ -774,7 +737,7 @@ const getArch = async() => {
           
           <Grid item xs={12} sm={12} md={6} lg={6} xl= {6}>
           {user != undefined && user.role === "Dean" && (
-              <Grid container sx={12} gap={2} wrap="noWrap">
+              <Grid container item xs={12} gap={2} wrap="nowrap">
                 <Grid item xs={12}>
                   <Card sx={{width: '100%',height: "50px", display:"flex", justifyContent: "center", alignItems: "center", p: "21.6px", mb: "21.8px", maxHeight: '100px', userSelect: 'none'}} className="dash-gradient">
                   
@@ -784,7 +747,7 @@ const getArch = async() => {
                       </div>
                       <div className="welcome-msg">
                           <Typography className="welcome-hello2" sx={{ml: "50px"}}>
-                            <h1>Logs</h1>
+                            <span style={{fontWeight: "bold", fontSize: "1.5rem"}}>Logs</span>
                           </Typography>
                       </div>
                     </div>
@@ -796,14 +759,14 @@ const getArch = async() => {
             <Typography sx={{fontSize: "1.2rem", fontWeight: "bold"}} className="type-title"><Typewriter words={['Schedules']} typeSpeed={40}/></Typography>
             <Grid item xs={12} sm={12}>
               <Card sx={{height: windowWidth > 768 ? "470px" : "500px",maxHeight: user != undefined && user.role !== "Dean" ? "470px" : "400px", display:"flex", justifyContent: "center", alignItems: "center", p:windowWidth > 768 ? "21.6px" : 0}} className="dash-cards">
-                <iframe src="https://calendar.google.com/calendar/embed?src=carpio.johnjazpher.dc.3188%40gmail.com&ctz=Asia%2FManila" style={{border: 0}} width={windowWidth > 750 ?'550' : windowWidth > 375 ? '350' : windowWidth > 320 ? "300" : "250"} height="350" frameborder="0" scrolling="no"></iframe>
+                <iframe src="https://calendar.google.com/calendar/embed?src=carpio.johnjazpher.dc.3188%40gmail.com&ctz=Asia%2FManila" style={{border: 0}} width={windowWidth > 750 ?'550' : windowWidth > 375 ? '350' : windowWidth > 320 ? "300" : "250"} height="350" frameBorder="0" scrolling="no"></iframe>
               </Card>
             </Grid>
             </Grid>
         </Grid>
         )}
         {user.role === "Dean" && (
-          <Grid container xs={12} sx={{pr: "21.6px", pl: "21.6px", pb: "21.6px"}} gap={2} flexWrap={windowWidth >= 1024 ? "noWrap" : ''} overflow={"hidden"}>
+          <Grid container item xs={12} sx={{pr: "21.6px", pl: "21.6px", pb: "21.6px"}} gap={2} flexWrap={windowWidth >= 1024 ? "nowrap" : ''} overflow={"hidden"}>
             <Grid item xs={12} sm={12} md={4} lg={4} >
               <Card sx={{width: "100%", height:"250px", p: '21.6px', maxHeight: '300px'}}>
                 <Box sx={{borderBottom: "1px solid #F0EFF6"}}>
@@ -814,14 +777,14 @@ const getArch = async() => {
                   </Box>
                 </Box>
                 <Box sx={{display: 'flex', flexDirection: "column"}}>
-                  {travelOrderData.slice(0,1).map((item) => {return(
-                    <Card sx={{display: 'flex', justifyContent: 'space-between', alignItems: "center", pr: "54.7px", pl: "21.6px", pt: "11.6px", pb: "11.6px", mt: "11.6px", bgcolor: '#fda072'}}>
+                  {travelOrderData.slice(0,1).map((item, index) => {return(
+                    <Card key={index} sx={{display: 'flex', justifyContent: 'space-between', alignItems: "center", pr: "54.7px", pl: "21.6px", pt: "11.6px", pb: "11.6px", mt: "11.6px", bgcolor: '#fda072'}}>
                       <Typography sx={{fontWeight: "700", color: "#fff"}}>{item.name}</Typography>
                       <Typography sx={{fontWeight: "700", color: "#fff"}}>{item.count}</Typography>
                     </Card>
                   )})}
-                  {travelOrderData.slice(1,3).map((item) => {return(
-                    <Card sx={{display: 'flex', justifyContent: 'space-between', alignItems: "center", pr: "54.7px", pl: "21.6px", mt: "11.6px", bgcolor: '#E6E4F0'}}>
+                  {travelOrderData.slice(1,3).map((item, index) => {return(
+                    <Card key={index} sx={{display: 'flex', justifyContent: 'space-between', alignItems: "center", pr: "54.7px", pl: "21.6px", mt: "11.6px", bgcolor: '#E6E4F0'}}>
                       <Typography sx={{fontWeight: "500", color: "#777"}}>{item.name}</Typography>
                       <Typography sx={{fontWeight: "500", color: "#777"}}>{item.count}</Typography>
                     </Card>
@@ -839,14 +802,14 @@ const getArch = async() => {
                     </Box>
                   </Box>
                   <Box sx={{display: 'flex', flexDirection: "column"}}>
-                    {trainingData.slice(0,1).map((item) => {return(
-                      <Card sx={{display: 'flex', justifyContent: 'space-between', alignItems: "center", pr:windowWidth >= 1980 ? "54.7px": "10px", pl: "21.6px", pt: "11.6px", pb: "11.6px", mt: "11.6px", bgcolor: '#fda072'}}>
+                    {trainingData.slice(0,1).map((item, index) => {return(
+                      <Card key={index} sx={{display: 'flex', justifyContent: 'space-between', alignItems: "center", pr:windowWidth >= 1980 ? "54.7px": "10px", pl: "21.6px", pt: "11.6px", pb: "11.6px", mt: "11.6px", bgcolor: '#fda072'}}>
                         <Typography sx={{fontWeight: "700", color: "#fff"}}>{item.name}</Typography>
                         <Typography sx={{fontWeight: "700", color: "#fff"}}>{item.count}</Typography>
                       </Card>
                     )})}
-                    {trainingData.slice(1,3).map((item) => {return(
-                      <Card sx={{display: 'flex', justifyContent: 'space-between', alignItems: "center", pr:windowWidth >= 1980 ? "54.7px": "10px", pl: "21.6px", mt: "11.6px", bgcolor: '#E6E4F0'}}>
+                    {trainingData.slice(1,3).map((item, index) => {return(
+                      <Card key={index} sx={{display: 'flex', justifyContent: 'space-between', alignItems: "center", pr:windowWidth >= 1980 ? "54.7px": "10px", pl: "21.6px", mt: "11.6px", bgcolor: '#E6E4F0'}}>
                         <Typography sx={{fontWeight: "500", color: "#777"}}>{item.name}</Typography>
                         <Typography sx={{fontWeight: "500", color: "#777"}}>{item.count}</Typography>
                       </Card>
@@ -864,14 +827,14 @@ const getArch = async() => {
                     </Box>
                   </Box>
                   <Box sx={{display: 'flex', flexDirection: "column"}}>
-                    {leaveData.slice(0,1).map((item) => {return(
-                      <Card sx={{display: 'flex', justifyContent: 'space-between', alignItems: "center", pr:windowWidth >= 1980 ? "54.7px": "10px", pl: "21.6px", pt: "11.6px", pb: "11.6px", mt: "11.6px", bgcolor: '#fda072'}}>
+                    {leaveData.slice(0,1).map((item, index) => {return(
+                      <Card key={index}sx={{display: 'flex', justifyContent: 'space-between', alignItems: "center", pr:windowWidth >= 1980 ? "54.7px": "10px", pl: "21.6px", pt: "11.6px", pb: "11.6px", mt: "11.6px", bgcolor: '#fda072'}}>
                         <Typography sx={{fontWeight: "700", color: "#fff"}}>{item.name}</Typography>
                         <Typography sx={{fontWeight: "700", color: "#fff"}}>{item.count}</Typography>
                       </Card>
                     )})}
-                    {leaveData.slice(1,3).map((item) => {return(
-                      <Card sx={{display: 'flex', justifyContent: 'space-between', alignItems: "center", pr:windowWidth >= 1980 ? "54.7px": "10px", pl: "21.6px", mt: "11.6px", bgcolor: '#E6E4F0'}}>
+                    {leaveData.slice(1,3).map((item, index) => {return(
+                      <Card key={index} sx={{display: 'flex', justifyContent: 'space-between', alignItems: "center", pr:windowWidth >= 1980 ? "54.7px": "10px", pl: "21.6px", mt: "11.6px", bgcolor: '#E6E4F0'}}>
                         <Typography sx={{fontWeight: "500", color: "#777"}}>{item.name}</Typography>
                         <Typography sx={{fontWeight: "500", color: "#777"}}>{item.count}</Typography>
                       </Card>
@@ -1223,7 +1186,7 @@ const getArch = async() => {
                             </TabList>
                           </Box>
                           <TabPanel value="1">
-                          <Grid container xs={12}>
+                          <Grid container item xs={12}>
                               <Button component="label" onClick={(e) => handleDownload("image")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none", marginBottom: "10px"}}>
                                       Download Image/s
                               </Button>
@@ -1329,7 +1292,7 @@ const getArch = async() => {
                       )
                       :
                       imageList.some(item => item.includes(".jpg") || item.includes(".jpeg") || item.includes(".png")) ?(
-                        <Grid container xs={12}>
+                        <Grid container item xs={12}>
                         <Button component="label" onClick={(e) => handleDownload("image")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none", marginBottom: "10px"}}>
                                   Download Image/s
                         </Button>

@@ -248,28 +248,32 @@ export const ComponentToPrint = React.forwardRef((props, componentRef) => {
       <Typography sx={{width: "100%", display: "flex", justifyContent: "center", fontWeight: 'bold', textDecoration: "underline", textTransform: "uppercase", fontSize: "1rem"}}>{`${props.dataFromParent} Documents Table`}</Typography>
       <div className="print-table">
           <table className="print-wholeTable">
-            <tr>
-              <th>Date</th>
-              <th>Document Name</th>
-              <th>Document Type</th>
-              <th>Received By</th>
-              <th>Office/Dept</th>
-              <th>Contact Person</th>
-              <th>Status</th>
-            </tr>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Document Name</th>
+                <th>Document Type</th>
+                <th>Received By</th>
+                <th>Office/Dept</th>
+                <th>Contact Person</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
               {filteredData.map((print, index) => {
-                return(
-                  <tr key={print.uID}>
-                    <td>{print.date_Received}</td>
-                    <td>{print.document_Name}</td>
-                    <td>{print.Type == undefined || print.Type == "" ? print.document_Type : print.Type}</td>
-                    <td>{print.received_By}</td>
-                    <td>{print.fromDep != undefined && print.fromDep != "" ? print.fromDep : print.fromPer}</td>
-                    <td>{print.fromPer}</td>
-                    <td>{print.Status}</td>
-                  </tr>
-                )
-              })}
+                  return(
+                    <tr key={print.uID}>
+                      <td>{print.date_Received}</td>
+                      <td>{print.document_Name}</td>
+                      <td>{print.Type == undefined || print.Type == "" ? print.document_Type : print.Type}</td>
+                      <td>{print.received_By}</td>
+                      <td>{print.fromDep != undefined && print.fromDep != "" ? print.fromDep : print.fromPer}</td>
+                      <td>{print.fromPer}</td>
+                      <td>{print.Status}</td>
+                    </tr>
+                  )
+                })}
+            </tbody>
           </table>
           
       </div>

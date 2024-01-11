@@ -533,6 +533,7 @@ function Settings() {
                             onChange={(e) => setNewEmail(e.target.value)}
                             disabled={disableForm}
                             type={'email'}
+                            placeholder="New Email"
                             label="New Email"
                             helperText={newEmail != "" && !newEmail.endsWith("@bulsu.edu.ph") && emailPattern.test(newEmail) ? "Email must be a bulsu email." : wrongEmail ? "Cannot use an existing email." : ''}
                           />
@@ -735,7 +736,7 @@ function Settings() {
                     </FormControl>
                   </Stack>
                   <Box sx={{maxHeight: "550px", overflowY: "auto", width: "100%",display: "flex", justifyContent: "center", alignContent: "center"}}>
-                    <Grid container xs={12}>
+                    <Grid container item xs={12}>
                       {userList.filter(item => item.role !== "Dean" && item.temporary != 1).sort((a, b) => {
                         const roleA = a.role.toLowerCase();
                         const roleB = b.role.toLowerCase();

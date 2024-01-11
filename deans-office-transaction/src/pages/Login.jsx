@@ -428,7 +428,7 @@ import axios from "axios";
                       Dean's Office Transaction
                     </Typography>
                     <Typography sx={{fontWeight: 'bold', fontSize: "1.4rem",mb: "20px", display: 'flex', width: "100%", justifyContent: 'start', color: "#555", height: "2rem", alignItems: "center" }}>
-                      Welcome,&nbsp; <Typography sx={{fontWeight: 'bold', fontSize: "1.5rem", color: "#FF9944"}}><Typewriter words={['Dean', 'Clerk', 'Faculty', 'Secretary', 'Student Assistant']} loop typeSpeed={40}/></Typography> 
+                      Welcome,&nbsp; <span style={{fontWeight: 'bold', fontSize: "1.5rem", color: "#FF9944"}}><Typewriter words={['Dean', 'Clerk', 'Faculty', 'Secretary', 'Student Assistant']} loop typeSpeed={40}/></span> 
                     </Typography>
                       <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
                       <Typography sx={{fontWeight: '300', color: "#888", display: 'flex', width: "100%", justifyContent: 'start', fontSize: "0.8rem"}}>

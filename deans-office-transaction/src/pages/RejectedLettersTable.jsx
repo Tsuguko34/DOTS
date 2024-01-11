@@ -1549,7 +1549,7 @@ export default function StickyHeadTable() {
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
               .map((row) => (
                 <>
-                <TableRow hover onClick={() => unread(row.unread, row.uID,  subArrayCol.find(item => item.docID == row.uID && item.userUID == user.uID)?.isRead)} role="checkbox" tabIndex={-1} key={row.uID} sx={{cursor: "pointer", userSelect: "none", height: "50px", background: "#F0EFF6",'& :last-child': {borderBottomRightRadius: "10px", borderTopRightRadius: "10px"} ,'& :first-child':  {borderTopLeftRadius: "10px", borderBottomLeftRadius: "10px"} }}>
+                <TableRow hover onClick={() => unread(row.unread, row.uID,  subArrayCol.find(item => item.docID == row.uID && item.userUID == user.uID)?.isRead)} role="checkbox" tabIndex={-1} key={row.uID} sx={{cursor: "pointer", userSelect: "none", height: "50px", background: "#F0EFF6",'& :last-child': {borderBottomRightRadius: "10px", borderTopRightRadius: "10px"} ,'& :first-of-type':  {borderTopLeftRadius: "10px", borderBottomLeftRadius: "10px"} }}>
                   <TableCell className={user && subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == 0 ? "table-cell unread first" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.document_Name} </TableCell>
                   <TableCell className={user && subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == 0 ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.Type == undefined || row.Type == "" ? row.document_Type : row.Type} </TableCell>
                   <TableCell className={user && subArrayCol.find(item => item.userUID == user.uID && item.docID == row.uID)?.isRead == 0 ? "table-cell unread" : "table-cell"} align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.received_By} </TableCell>
@@ -1678,9 +1678,9 @@ export default function StickyHeadTable() {
                   <Typography className='or' sx={{width: "100%", display: "flex", justifyContent: "center", alignItems: "center"}}>Or</Typography>
                 </Box>
                 <FormGroup>
-                  <FormControlLabel sx={{userSelect: "none"}} control={<Checkbox required={forward == "" && !allFaculty && !allClerks} sx={{userSelect: "none"}} onChange={(e) => setAllUsers(!allUsers)} disabled={allFaculty || allClerks || forward}/>} label="Forward to All" />
-                  <FormControlLabel sx={{userSelect: "none"}} control={<Checkbox required={forward == "" && !allUsers && !allFaculty} sx={{userSelect: "none"}} onChange={(e) => setAllClerks(!allClerks)} disabled={allUsers || forward || allFaculty}/>} label="Forward to All Clerks" />
-                  <FormControlLabel sx={{userSelect: "none"}} control={<Checkbox required={forward == "" && !allUsers && !allClerks} sx={{userSelect: "none"}} onChange={(e) => setAllFaculty(!allFaculty)} disabled={allUsers || forward || allClerks}/>} label="Forward to All Faculty" />
+                  <FormControlLabel sx={{userSelect: "none"}} control={<Checkbox required={forward == "" && !allFaculty && !allClerks} sx={{userSelect: "none"}} onChange={(e) => setAllUsers(!allUsers)} disabled={allFaculty || allClerks || forward === ''}/>} label="Forward to All" />
+                  <FormControlLabel sx={{userSelect: "none"}} control={<Checkbox required={forward == "" && !allUsers && !allFaculty} sx={{userSelect: "none"}} onChange={(e) => setAllClerks(!allClerks)} disabled={allUsers || forward === '' || allFaculty}/>} label="Forward to All Clerks" />
+                  <FormControlLabel sx={{userSelect: "none"}} control={<Checkbox required={forward == "" && !allUsers && !allClerks} sx={{userSelect: "none"}} onChange={(e) => setAllFaculty(!allFaculty)} disabled={allUsers || forward === '' || allClerks}/>} label="Forward to All Faculty" />
                 </FormGroup>
                 <div className="form-bottom">
                 <div className="form-submit-cancel">

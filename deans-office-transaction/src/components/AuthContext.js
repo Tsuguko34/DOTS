@@ -32,7 +32,7 @@ export const AuthContextProvider = ({children}) => {
             }else{
               const emailPattern = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
               const isValidEmail = email.endsWith("@bulsu.edu.ph")
-              if(email){
+              if(isValidEmail){
               Swal.fire({
                 title: 'Please wait',
                 allowEscapeKey: false,
@@ -60,7 +60,9 @@ export const AuthContextProvider = ({children}) => {
                           Swal.close()
                           await Swal.fire({title: "Successfully Registered. ", text: "Verification Link is sent to the email.", icon: "success", showConfirmButton: false, timer: 2000, allowEscapeKey: false, allowOutsideClick: false})
                           navigate('/pages/Login')
-                        })   
+                        }).catch((e) => {
+                          Swal.fire({title: "Error.", text: "An error has occured while trying to register.", icon: "error", showConfirmButton: true, allowEscapeKey: false, allowOutsideClick: false})
+                        }) 
                       }catch(e){
 
                       }

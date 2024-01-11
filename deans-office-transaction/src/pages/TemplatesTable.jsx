@@ -394,7 +394,7 @@ export default function MediaCard() {
                 .filter((template) => template.year == year)
                 .map((template) => {
                 return (
-                  <Grid item xs={12} sm={windowWidth <= 768 ? 6 : 12} md={4} lg={4} justifyContent={'center'}>
+                  <Grid key={template.uID} item xs={12} sm={windowWidth <= 768 ? 6 : 12} md={4} lg={4} justifyContent={'center'}>
                     <Box sx={{m: "10px"}}>
                       <Card
                         className="template-card"

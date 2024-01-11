@@ -149,7 +149,6 @@ async function sendVerificationEmail(email, verificationToken){
         text: 'Email Verification Link',
         html: `Click <a href="${verificationLink}">here</a> to verify your email.`,
     };
-
     await transporter.sendMail(mailOptions)
 }
 

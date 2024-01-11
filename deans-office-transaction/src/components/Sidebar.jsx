@@ -171,17 +171,33 @@ function Sidebar() {
       
       const [requestTab, setRequestTab] = useState(false)
       const [monitoringTab, setMonitoringTab] = useState(false)
+      const [commsTab, setCommsTab] = useState(false)
+      const [memoTab, setMemoTab] = useState(false)
       const handleClassChange = () => {
         if(location.pathname === "/Pages/PendingLetters" ||location.pathname === "/Pages/ApprovedLetters" || location.pathname === "/Pages/RejectedLetters" || location.pathname === "/Pages/RequestHistory"){
             setRequestTab(true)
             setMonitoringTab(false)
-        }else if(location.pathname === "/pages/Incoming" || location.pathname === "/pages/Outgoing" || location.pathname === "/pages/IncomingMemo" || location.pathname === "/pages/OutgoingMemo" || location.pathname === "/pages/OtherDocuments"){
+        }
+        else if(location.pathname === "/pages/Incoming" || location.pathname === "/pages/Outgoing" || location.pathname === "/pages/IncomingMemo" || location.pathname === "/pages/OutgoingMemo" || location.pathname === "/pages/OtherDocuments"){
             setRequestTab(false)
             setMonitoringTab(true)
         }
         else{
             setRequestTab(false)
             setMonitoringTab(false)
+        }
+
+        if(location.pathname === "/pages/Incoming" || location.pathname === "/pages/Outgoing"){
+            setCommsTab(true)
+            setMemoTab(false)
+        }
+        else if(location.pathname === "/pages/IncomingMemo" || location.pathname === "/pages/OutgoingMemo"){
+            setCommsTab(false)
+            setMemoTab(true)
+        }
+        else{
+            setCommsTab(false)
+            setMemoTab(false)
         }
       }
 
@@ -220,7 +236,7 @@ function Sidebar() {
                                 <span>Dashboard</span>
                             </NavLink>
                     </ListItem>
-                    <ListItem disablePadding className='nav-text' onClick={showRequests} end>
+                    <ListItem disablePadding className='nav-text' onClick={showRequests}>
                         <div className={requestTab ? 'nav-monitoring selected':'nav-monitoring'}>
                             <DescriptionIcon size={'25px'}/>
                             <span>Requests</span>
@@ -271,7 +287,7 @@ function Sidebar() {
                     </Collapse>
                     { user != undefined && user.role !== "Faculty" && (
                         <>
-                            <ListItem disablePadding className='nav-text' onClick={showMonitoring} end>
+                            <ListItem disablePadding className='nav-text' onClick={showMonitoring}>
                                 <div className={monitoringTab ? 'nav-monitoring selected':'nav-monitoring'}>
                                     <TableRowsIcon size={'25px'}/>
                                     <span>Monitoring</span>
@@ -280,8 +296,8 @@ function Sidebar() {
                             </ListItem>
                             <Collapse in={monitoring} timeout="auto" unmountOnExit className='collapse-monitoring'>
                                     <div className="monitoring-abholder">
-                                        <ListItem disablePadding className={'nav-letter'} >
-                                            <NavLink onClick={showCommunications}>
+                                        <ListItem disablePadding className={'nav-letter'}>
+                                            <NavLink onClick={showCommunications}  style={{borderRight: commsTab ? "7px solid #fcb49a" : 'none', borderTopRightRadius: "0", borderBottomRightRadius: "0", transition: "all 150ms"}}>
                                                 <span>Communications</span>
                                                 <MdIcons.MdKeyboardArrowLeft size={'25px'} className={communications ? 'monitoring-arrow active' : 'monitoring-arrow'}/>
                                             </NavLink>
@@ -302,7 +318,7 @@ function Sidebar() {
                                             </div>
                                         </Collapse>
                                         <ListItem disablePadding className={'nav-letter'} >
-                                            <NavLink onClick={showMemorandums}>
+                                            <NavLink onClick={showMemorandums} style={{borderRight: memoTab ? "7px solid #fcb49a" : 'none', borderTopRightRadius: "0", borderBottomRightRadius: "0", transition: "all 150ms"}}>
                                                 <span>Memorandums</span>
                                                 <MdIcons.MdKeyboardArrowLeft size={'25px'} className={memorandums ? 'monitoring-arrow active' : 'monitoring-arrow'}/>
                                             </NavLink>

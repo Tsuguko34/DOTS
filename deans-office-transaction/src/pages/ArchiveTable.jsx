@@ -231,7 +231,7 @@ function ArchiveTable() {
           return(
             <>
               <Typography sx={{fontSize:'1.5rem', fontWeight:'bold', color: "#FF9944", borderBottom: "3px solid", borderImage: "linear-gradient(to right, #FF9944 30%, transparent 100%)", borderImageSlice: "1"}}>{year}</Typography>
-              <Grid container xs={12} sx={{width: "100%", padding: "20px", zIndex: "2", position: "relative"}}>
+              <Grid container item xs={12} sx={{width: "100%", padding: "20px", zIndex: "2", position: "relative"}}>
                 {buttonData.filter(item => item.Type.toLowerCase().includes(search.toLowerCase())).filter(item => item.Year == year).map((buttonData) => {
                   return(
                       <Grid item xs={windowWidth >= 375 ? 6 : 12} sm={4} md={3} lg={3} sx={{mt: "20px"}}>

@@ -1567,7 +1567,7 @@ export default function StickyHeadTable() {
                     defaultValue={filter}
                     id="combo-box-demo"
                     onChange={(e) => setFilter(e.target.innerText == undefined ? "" : e.target.innerText)}
-                    options={filteredOptionsName.map((option) => option)}
+                    options={filteredOptionsName}
                     sx={{ width: 300, maxHeight: "100px" }}
                     renderInput={(params) => <TextField onChange={(e) => setFilter(e.target.value == undefined ? "" : e.target.value)} {...params} label="Filter Document Name" />}
                   />
@@ -1612,7 +1612,7 @@ export default function StickyHeadTable() {
                     defaultValue={filter8}
                     id="combo-box-demo"
                     onChange={(e) => setFilter8(e.target.innerText == undefined ? "" : e.target.innerText)}
-                    options={filteredOptionsDocType.map((option) => option)}
+                    options={filteredOptionsDocType}
                     sx={{ width: 300, maxHeight: "100px" }}
                     renderInput={(params) => <TextField onChange={(e) => setFilter8(e.target.value == undefined ? "" : e.target.value)} {...params} label="Filter Document Type" />}
                   />
@@ -1657,7 +1657,7 @@ export default function StickyHeadTable() {
                     defaultValue={filter2}
                     id="combo-box-demo"
                     onChange={(e) => setFilter2(e.target.innerText == undefined ? "" : e.target.innerText)}
-                    options={filteredOptionsReceive.map((option) => option)}
+                    options={filteredOptionsReceive}
                     sx={{ width: 300, maxHeight: "100px" }}
                     renderInput={(params) => <TextField onChange={(e) => setFilter2(e.target.value == undefined ? "" : e.target.value)} {...params} label="Filter Received By" />}
                   />
@@ -1702,7 +1702,7 @@ export default function StickyHeadTable() {
                     defaultValue={filter2}
                     id="combo-box-demo"
                     onChange={(e) => setFilter9(e.target.innerText == undefined ? "" : e.target.innerText)}
-                    options={filteredOptionsfromDep.map((option) => option)}
+                    options={filteredOptionsfromDep}
                     sx={{ width: 300, maxHeight: "100px" }}
                     renderInput={(params) => <TextField onChange={(e) => setFilter9(e.target.value == undefined ? "" : e.target.value)} {...params} label="Filter Office/Dept" />}
                   />
@@ -1792,7 +1792,7 @@ export default function StickyHeadTable() {
                     defaultValue={filter3}
                     id="combo-box-demo"
                     onChange={(e) => setFilter3(e.target.innerText == undefined ? "" : e.target.innerText)}
-                    options={filteredOptionsStatus.map((option) => option)}
+                    options={filteredOptionsStatus}
                     sx={{ width: 300, maxHeight: "100px" }}
                     renderInput={(params) => <TextField onChange={(e) => setFilter3(e.target.value == undefined ? "" : e.target.value)} {...params} label="Filter Status" />}
                   />
@@ -1826,7 +1826,7 @@ export default function StickyHeadTable() {
                 const daysDifference = Math.ceil((endDate - currentDate) / (1000 * 60 * 60 * 24));
                 return(
                 <>
-                <TableRow hover role="checkbox" tabIndex={-1} key={row.uID} sx={{ cursor: "pointer", userSelect: "none", height: "70px", background: "#F0EFF6",'& :last-child': {borderBottomRightRadius: "10px", borderTopRightRadius: "10px"} ,'& :first-child':  {borderTopLeftRadius: "10px", borderBottomLeftRadius: "10px"} }}>
+                <TableRow hover role="checkbox" tabIndex={-1} key={row.uID} sx={{ cursor: "pointer", userSelect: "none", height: "70px", background: "#F0EFF6",'& :last-child': {borderBottomRightRadius: "10px", borderTopRightRadius: "10px"} ,'& :first-of-type':  {borderTopLeftRadius: "10px", borderBottomLeftRadius: "10px"} }}>
                   <TableCell className="table-cell" align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.document_Name} </TableCell>
                   <TableCell className="table-cell" align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.Type == undefined ? row.document_Type : row.Type} </TableCell>
                   <TableCell className="table-cell" align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.received_By} </TableCell>
@@ -1922,7 +1922,7 @@ export default function StickyHeadTable() {
                                 <Typography sx={{fontWeight: "300", fontSize: "0.8rem", color: "#888888"}}>Tracking</Typography>
                                 <Box sx={{fontWeight: "300", fontSize: "1rem",overflowX: "auto", maxWidth: "1140px", whiteSpace: "nowrap", display: "flex", marginTop: "10px", '&::-webkit-scrollbar': {height: '10px'}, '&::-webkit-scrollbar-thumb': {backgroundColor: "#aeaeae", borderRadius: '6px',},'&::-webkit-scrollbar-track': {backgroundColor:  "#F0EFF6", borderRadius: '6px',},}}>
                                   {(row.tracking != null || row.tracking != undefined) && row.tracking.split(',').map((part, partIndex, partsArray) => (
-                                      <Box sx={{display: "flex", justifyContent: "space-between", alignItems: "center"}}>
+                                      <Box key={partIndex} sx={{display: "flex", justifyContent: "space-between", alignItems: "center"}}>
                                           <Box component={"div"} sx={{display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
                                             {signatures.find(item => (item.signature_For == part.trim() && item.docID == row.uID)) ? (<img height={"30px"} src={`${port}/signature/${signatures.find(item => (item.signature_For == part.trim() && item.docID == row.uID))?.signature_Name}`}/>) : (<Typography sx={{fontSize: "0.85rem", color: "#8899ac", height: "30px",textDecoration: "underline", cursor: "pointer", zIndex: "100", position: "relative"}} onClick={(e) => handleSigOpen(row.uID, part.trim())}>Add Signature</Typography>)}
                                             <Typography sx={{minWidth: "100px", display: "flex", alignItems: "center", justifyContent: "center", color: partIndex !== partsArray.length - 1 ? '#FF9944' : '#212121',}}>

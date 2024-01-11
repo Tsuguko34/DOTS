@@ -576,7 +576,7 @@ function ArchiveMainTable() {
               <div className="table-holder">
               </div>
             </div>
-            <Grid container xs={12} sx={{padding: "20px", height: "100%"}} gap={2} flexWrap={windowWidth >= 1024 ? "noWrap" : ''}>  
+            <Grid container item xs={12} sx={{padding: "20px", height: "100%"}} gap={2} flexWrap={windowWidth >= 1024 ? "noWrap" : ''}>  
                 <Grid item xs={12} md={8} lg={9} xl={9}>
                 <Card sx={{padding: "20px", mb: "20px", height: "100%",maxHeight: "740px"}} className='dash-cards'>
                     <Box sx={{width: "100%", display: "flex", justifyContent: "start", alignItems: "center", pl: "20px"}}>
@@ -853,7 +853,7 @@ function ArchiveMainTable() {
                                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                                     .map((row) => (
                                       <>
-                                      <TableRow role="checkbox" tabIndex={-1} key={row.uID} sx={{ cursor: "pointer", userSelect: "none", height: "50px", background: "#F0EFF6",'& :last-child': {borderBottomRightRadius: "10px", borderTopRightRadius: "10px"} ,'& :first-child':  {borderTopLeftRadius: "10px", borderBottomLeftRadius: "10px"} }} onClick={() => displayFileInfo(row.Type == undefined ? row.document_Type: row.Type, row.date_Received, row.received_By, row.fromDep, row.fromPer, row.Description, archiveImage.find(item => item.uID == row.uID)?.file_Name, row.uID, row.id, row.archived_By)}>
+                                      <TableRow role="checkbox" tabIndex={-1} key={row.uID} sx={{ cursor: "pointer", userSelect: "none", height: "50px", background: "#F0EFF6",'& :last-child': {borderBottomRightRadius: "10px", borderTopRightRadius: "10px"} ,'& :first-of-type':  {borderTopLeftRadius: "10px", borderBottomLeftRadius: "10px"} }} onClick={() => displayFileInfo(row.Type == undefined ? row.document_Type: row.Type, row.date_Received, row.received_By, row.fromDep, row.fromPer, row.Description, archiveImage.find(item => item.uID == row.uID)?.file_Name, row.uID, row.id, row.archived_By)}>
                                         <TableCell className={fileInfo.uID == row.uID ? 'table-cell active' : 'table-cell'} align="left"> {row.document_Name} </TableCell>
                                         <TableCell className={fileInfo.uID == row.uID ? 'table-cell active' : 'table-cell'} align="left"> {row.Type == undefined || row.Type == "" ? row.document_Type : row.Type} </TableCell>
                                         <TableCell className={fileInfo.uID == row.uID ? 'table-cell active' : 'table-cell'} align="left"> {row.fromDep == undefined ? row.fromPer : row.fromDep} </TableCell>
@@ -1094,7 +1094,7 @@ function ArchiveMainTable() {
                             </TabList>
                           </Box>
                           <TabPanel value="1">
-                          <Grid container xs={12}>
+                          <Grid container item xs={12}>
                               <Button component="label" onClick={(e) => handleDownload("image")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none", marginBottom: "10px"}}>
                                       Download Image/s
                               </Button>
@@ -1200,7 +1200,7 @@ function ArchiveMainTable() {
                       )
                       :
                       imageList.some(item => item.includes(".jpg") || item.includes(".jpeg") || item.includes(".png")) ?(
-                        <Grid container xs={12}>
+                        <Grid container item xs={12}>
                         <Button component="label" onClick={(e) => handleDownload("image")} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none", marginBottom: "10px"}}>
                                   Download Image/s
                         </Button>
