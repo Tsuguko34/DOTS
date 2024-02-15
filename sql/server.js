@@ -13,6 +13,8 @@ import MySQLStoreCreator from 'express-mysql-session';
 import cron from 'node-cron'
 import axios from 'axios'
 import dayjs from 'dayjs'
+import { Server } from 'socket.io'
+import http from 'http'
 
 const MySQLStore = MySQLStoreCreator(session);
 const app = express()
@@ -23,14 +25,18 @@ const db = mysql.createConnection({
     password:"DeansOffice2023",
     database:"dots"
 })
+const server = http.createServer(app)
 
-db.connect(function(err){
-    if(err){
-        console.log('DB ERROR');
-        throw err;
-        return false;
-    }
+const io = new Server(server, {
+    cors: {
+        origin: 'http://localhost:3000',
+        methods: ['GET', 'POST', 'PUT'],
+        credentials: true,
+    },
 })
+
+
+
 
 const sessionStore = new MySQLStore({
     expiration: (1825 * 86400 * 1000),
@@ -48,11 +54,31 @@ app.use(session({
         httpOnly: false
     }
 }))
+
 app.use(cors({
-    origin: 'http://localhost:3000',
+    origin: true,
     credentials: true,
 }))
+app.use(express.urlencoded({ extended: false }))
 app.use(express.json())
+
+
+db.connect(function(err){
+    if(err){
+        console.log('DB ERROR');
+        throw err;
+        return false;
+    }
+    console.log('connected');
+})
+
+io.on('connection', (socket) => {
+    console.log(`user connected`);
+
+    socket.on('notification', (notification) => {
+        socket.broadcast.emit('notification', notification)
+    })
+})
 
 
 //Users
@@ -143,7 +169,7 @@ async function sendVerificationEmail(email, verificationToken){
 
     const verificationLink = `http://localhost:3000/verify/${verificationToken}`;
     const mailOptions = {
-        from: 'wp3deansofficetransaction@gmail.com',
+        from: "Dean's Office Transaction",
         to: email,
         subject: 'Verify Your Email',
         text: 'Email Verification Link',
@@ -267,7 +293,7 @@ app.post("/resetPassEmail", async(req,res) => {
             })
             const verificationLink = `http://localhost:3000/resetPass/${req.query.email}/${resetToken}`;
             const mailOptions = {
-                from: 'wp3deansofficetransaction@gmail.com',
+                from: "Dean's Office Transaction",
                 to: req.query.email,
                 subject: 'Reset Your Password',
                 text: 'Password Reset Link',
@@ -984,7 +1010,7 @@ app.post("/notif",(req, res) => {
    
 })
 
-cron.schedule('0 0 * * *', async() => {
+cron.schedule('* * * * *', async() => {
     try{
         const snapshot = await axios.get(`${port}/getRequests`);
         snapshot.data.forEach(async(docSnap) => {
@@ -1044,7 +1070,7 @@ cron.schedule('0 0 * * *', async() => {
                 
                     const verificationLink = `http://localhost:3000/Pages/PendingLetters`;
                     const mailOptions = {
-                        from: 'wp3deansofficetransaction@gmail.com',
+                        from: "Dean's Office Transaction",
                         to: userList.find(user => user.uID == docSnap.forward_To)?.email,
                         subject: 'Pending Document',
                         html: `A ${docSnap.document_Type} document (${docSnap.document_Name}) from ${docSnap.fromPer} has been pending for the last ${daysPending} days. Click <a href="${verificationLink}">here</a> to view the document`,
@@ -1061,6 +1087,6 @@ cron.schedule('0 0 * * *', async() => {
 })
 
 
-app.listen(3001, () => { 
+server.listen(3001, () => { 
     
 })

@@ -3,6 +3,9 @@ import "./App.css";
 import Navpages from "./components/Navpages";
 import { Box, Typography } from "@mui/material";
 import noInternet from './Images/noInternet.png'
+import io from 'socket.io-client'
+
+const socket = io.connect('http://localhost:3001')
 
 
 function App() {

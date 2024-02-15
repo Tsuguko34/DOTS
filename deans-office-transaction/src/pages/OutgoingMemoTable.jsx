@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import "./Pages.css";
 import Paper from "@mui/material/Paper";
 import Table from "@mui/material/Table";
@@ -1414,8 +1414,8 @@ export default function StickyHeadTable() {
                 const currentDate = new Date();
                 const daysDifference = Math.ceil((endDate - currentDate) / (1000 * 60 * 60 * 24));
                 return(
-                <>
-                <TableRow hover role="checkbox" tabIndex={-1} key={row.uID} sx={{ cursor: "pointer", userSelect: "none", height: "50px", background: "#F0EFF6",'& :last-child': {borderBottomRightRadius: "10px", borderTopRightRadius: "10px"} ,'& :first-of-type':  {borderTopLeftRadius: "10px", borderBottomLeftRadius: "10px"} }}>
+                <React.Fragment key={row.uID}>
+                <TableRow hover role="checkbox" tabIndex={-1} sx={{ cursor: "pointer", userSelect: "none", height: "50px", background: "#F0EFF6",'& :last-child': {borderBottomRightRadius: "10px", borderTopRightRadius: "10px"} ,'& :first-of-type':  {borderTopLeftRadius: "10px", borderBottomLeftRadius: "10px"} }}>
                   <TableCell className="table-cell" align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.document_Name} </TableCell>
                   <TableCell className="table-cell" align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.received_By} </TableCell>
                   <TableCell className="table-cell" align="left" onClick={() => setOpenRows((prevState => ({...prevState, [row.id]: !prevState[row.id]})))}> {row.fromDep} </TableCell>
@@ -1525,7 +1525,7 @@ export default function StickyHeadTable() {
                       </Collapse>
                     </TableCell>
                 </TableRow>
-                </>
+                </React.Fragment>
               )})}
           </TableBody>
         </Table>
@@ -1651,7 +1651,7 @@ export default function StickyHeadTable() {
                     {
                       imageDis.map((url) => {
                         return(
-                          <Card sx={{ backgroundColor: '#F0EFF6',display: 'flex', maxWidth: windowWidth <= 320 ? "200px" : windowWidth <= 576 ? "250px" : "350px", alignItems: "center", mb: "1vh", height: "70px", maxHeight: "100px", width: '100%', zIndex: "11"}}>
+                          <Card key={url} sx={{ backgroundColor: '#F0EFF6',display: 'flex', maxWidth: windowWidth <= 320 ? "200px" : windowWidth <= 576 ? "250px" : "350px", alignItems: "center", mb: "1vh", height: "70px", maxHeight: "100px", width: '100%', zIndex: "11"}}>
                             <CardMedia
                                 component="img"
                                 sx={{width: "100px", height: "70px", maxWidth: "100px", p: "5px",  maxHeight: "100px", objectFit: "contain", display: "flex", justifyContent: "center" }}
@@ -1788,7 +1788,7 @@ export default function StickyHeadTable() {
                       {
                         editImageHolder.map((url) => {
                           return(
-                            <Card sx={{ backgroundColor: '#F0EFF6',display: 'flex', maxWidth: windowWidth <= 320 ? "200px" : windowWidth <= 576 ? "250px" : "350px", alignItems: "center", mb: "1vh", height: "70px", maxHeight: "100px", width: '100%', zIndex: "11"}}>
+                            <Card key={url} sx={{ backgroundColor: '#F0EFF6',display: 'flex', maxWidth: windowWidth <= 320 ? "200px" : windowWidth <= 576 ? "250px" : "350px", alignItems: "center", mb: "1vh", height: "70px", maxHeight: "100px", width: '100%', zIndex: "11"}}>
                               <CardMedia
                                   component="img"
                                   sx={{width: "100px", height: "70px", maxWidth: "100px", p: "5px",  maxHeight: "100px", objectFit: "contain", display: "flex", justifyContent: "center" }}
@@ -1825,7 +1825,7 @@ export default function StickyHeadTable() {
                     {
                       imageDis.map((url) => {
                         return(
-                          <Card sx={{ backgroundColor: '#F0EFF6',display: 'flex', maxWidth:windowWidth <= 320 ? "200px" : windowWidth <= 576 ? "250px" : "350px", alignItems: "center", mb: "1vh", height: "70px", maxHeight: "100px", width: '100%', zIndex: "11"}}>
+                          <Card key={url} sx={{ backgroundColor: '#F0EFF6',display: 'flex', maxWidth:windowWidth <= 320 ? "200px" : windowWidth <= 576 ? "250px" : "350px", alignItems: "center", mb: "1vh", height: "70px", maxHeight: "100px", width: '100%', zIndex: "11"}}>
                             <CardMedia
                                 component="img"
                                 sx={{width: "100px", height: "70px", maxWidth: "100px", p: "5px",  maxHeight: "100px", objectFit: "contain", display: "flex", justifyContent: "center" }}
@@ -1912,7 +1912,7 @@ export default function StickyHeadTable() {
             <section className="monitoring2">
               {displayFile.map((displayFile) => {
                 return (
-                  <div className="view-container">
+                  <div className="view-container" key={displayFile.uID}>
                     <div className="view-details-container">
                       <div className="view-details">
                         <div className="details">
@@ -1982,7 +1982,7 @@ export default function StickyHeadTable() {
                                     <TabList onChange={handlePDFChange} aria-label="lab API tabs example" variant="scrollable">
                                       {filePDF.map((pdf) => {
                                         return(
-                                          <Tab sx={{textTransform: "none", fontSize: "1rem"}} label={pdf.file_Name.substring(37)} value={pdf}/>
+                                          <Tab key={pdf.file_Name} sx={{textTransform: "none", fontSize: "1rem"}} label={pdf.file_Name.substring(37)} value={pdf}/>
                                         )
                                       })}
                                     </TabList>
@@ -2003,13 +2003,13 @@ export default function StickyHeadTable() {
                                   <Box sx={{width: "100%", height: '100%', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
                                   {filePDF.map((file) => {
                                     return(
-                                        <>
+                                        <React.Fragment key={file.file_Name}>
                                           <img src={pdfIcon} style={{width: "150px", height: '150px'}}></img>
                                           <Typography sx={{mt: "5vh"}}>{file.file_Name.substring(37)}</Typography>
                                           <Button component="label" onClick={(e) => handleDownload("docx", file.file_Name)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#ff3232", textTransform: "none", marginBottom: "20px"}}>
                                             Download .pdf File
                                           </Button>
-                                        </>
+                                        </React.Fragment>
                                     )
                                         
                                   })}
@@ -2025,13 +2025,13 @@ export default function StickyHeadTable() {
                                 <Box sx={{width: "100%", height: '100%', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
                                   {fileDocx.map((file) => {
                                     return(
-                                        <>
+                                        <React.Fragment key={file.file_Name}>
                                           <img src={docxViewIcon} style={{width: "150px", height: '150px'}}></img>
                                           <Typography sx={{mt: "5vh"}}>{file.file_Name.substring(37)}</Typography>
                                           <Button component="label" onClick={(e) => handleDownload("docx", file.file_Name)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none", marginBottom: "20px"}}>
                                             Download .docx File
                                           </Button>
-                                        </>
+                                        </React.Fragment>
                                     )
                                         
                                   })}
@@ -2045,13 +2045,13 @@ export default function StickyHeadTable() {
                                 <Box sx={{width: "100%", height: '100%', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
                                   {fileXlsx.map((file) => {
                                     return(
-                                        <>
+                                        <React.Fragment key={file.file_Name}>
                                           <img src={xlsxViewIcon} style={{width: "150px", height: '150px'}}></img>
                                           <Typography sx={{mt: "5vh"}}>{file.file_Name.substring(37)}</Typography>
                                           <Button component="label" onClick={(e) => handleDownload("xlsx", file.file_Name)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "hsl(126, 49%, 36%)", textTransform: "none", marginBottom: "20px"}}>
                                             Download .xlsx File
                                           </Button>
-                                        </>
+                                        </React.Fragment>
                                     )
                                         
                                   })}
@@ -2087,7 +2087,7 @@ export default function StickyHeadTable() {
                                     <TabList onChange={handlePDFChange} aria-label="lab API tabs example" variant="scrollable">
                                       {filePDF.map((pdf) => {
                                         return(
-                                          <Tab sx={{textTransform: "none", fontSize: "1rem"}} label={pdf.file_Name.substring(37)} value={pdf}/>
+                                          <Tab key={pdf.file_Name} sx={{textTransform: "none", fontSize: "1rem"}} label={pdf.file_Name.substring(37)} value={pdf}/>
                                         )
                                       })}
                                     </TabList>
@@ -2108,13 +2108,13 @@ export default function StickyHeadTable() {
                                   <Box sx={{width: "100%", height: '100%', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
                                   {filePDF.map((file) => {
                                     return(
-                                        <>
+                                        <React.Fragment key={file.file_Name}>
                                           <img src={pdfIcon} style={{width: "150px", height: '150px'}}></img>
                                           <Typography sx={{mt: "5vh"}}>{file.file_Name.substring(37)}</Typography>
                                           <Button component="label" onClick={(e) => handleDownload("docx", file.file_Name)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#ff3232", textTransform: "none", marginBottom: "20px"}}>
                                             Download .pdf File
                                           </Button>
-                                        </>
+                                        </React.Fragment>
                                     )
                                         
                                   })}
@@ -2126,13 +2126,13 @@ export default function StickyHeadTable() {
                         <Box sx={{width: "100%", height: '100%', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
                           {fileDocx.map((file) => {
                             return(
-                                <>
+                                <React.Fragment key={file.file_Name}>
                                   <img src={docxViewIcon} style={{width: "150px", height: '150px'}}></img>
                                   <Typography sx={{mt: "5vh"}}>{file.file_Name.substring(37)}</Typography>
                                   <Button component="label" onClick={(e) => handleDownload("docx", file.file_Name)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "#296da9", textTransform: "none", marginBottom: "20px"}}>
                                     Download .docx File
                                   </Button>
-                                </>
+                                </React.Fragment>
                             )
                                 
                           })}
@@ -2141,13 +2141,13 @@ export default function StickyHeadTable() {
                           <Box sx={{width: "100%", height: '100%', display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
                             {fileXlsx.map((file) => {
                               return(
-                                  <>
+                                  <React.Fragment key={file.file_Name}>
                                     <img src={xlsxViewIcon} style={{width: "150px", height: '150px'}}></img>
                                     <Typography sx={{mt: "5vh"}}>{file.file_Name.substring(37)}</Typography>
                                     <Button component="label" onClick={(e) => handleDownload("xlsx", file.file_Name)} variant="contained" startIcon={<CloudDownload />} sx={{backgroundColor: "hsl(126, 49%, 36%)", textTransform: "none", marginBottom: "20px"}}>
                                       Download .xlsx File
                                     </Button>
-                                  </>
+                                  </React.Fragment>
                               )
                                   
                             })}

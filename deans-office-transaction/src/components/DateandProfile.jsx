@@ -31,6 +31,7 @@ import axios from "axios";
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import TuneIcon from '@mui/icons-material/Tune';
 import RadioButtonCheckedIcon from "@mui/icons-material/RadioButtonChecked";
+import { io } from "socket.io-client";
 
 function DateandProfile() {
   const port = "http://localhost:3001"
@@ -43,6 +44,20 @@ function DateandProfile() {
   const [date, setDate] = useState("");
   const [loginWith, setLoginWith] = useState(true)
   const [profilePic, setProfilePic] = useState(userPic)
+  const [notif, setNotif] = useState([])
+
+  useEffect(() => {
+    const socket = io(port)
+
+    socket.on('notification', (notif) => {
+        setNotif(notif)
+    })
+
+    return () => {
+      socket.close()
+    }
+  }, [])
+
   useEffect(() => {
     setDate(dayjs().format("MMMM D, YYYY h:mm A").toString());
     setInterval(() => {
@@ -121,7 +136,6 @@ function DateandProfile() {
     handleCloseMenu();
   };
 
-  const [notif, setNotif] = useState([])
   useEffect(() => {
     const fetchDataInterval = setInterval( async() => {
         try{
@@ -130,48 +144,6 @@ function DateandProfile() {
             const notifArr = []
             data.data.forEach((doc) => {
               const forward = doc.forward_To
-              const role = user.role
-              // if((forward.includes(role) || forward.includes("All")) && !forward.includes(user.uID)){
-              //     if(notifData.data.find(item => item.userUID == user.uID && item.docID == doc.uID && item.multiple == 1)?.isRead == 0 && notifData.data.find(item => item.userUID == user.uID && item.docID == doc.uID && item.multiple == 1)?.reminder != 1){
-              //         AllArr.push(doc)
-              //         if(doc.Status === "Pending"){
-              //             pendingArr.push(doc)
-              //         }
-              //         else if(doc.Status === "Completed"){
-              //             console.log(true);
-              //             approvedArr.push(doc)
-              //         }
-              //         else if(doc.Status === "Rejected" || doc.Status === "Cancelled"){
-              //             rejectedArr.push(doc)
-              //         }
-              //     }
-              // }
-              // else if(forward == user.uID){
-              //     if(notifData.data.find(item => item.userUID == user.uID && item.docID == doc.uID && item.multiple == 0)?.isRead == 0 && notifData.data.find(item => item.userUID == user.uID && item.docID == doc.uID && item.multiple == 1)?.reminder != 1){
-              //         AllArr.push(doc)
-              //         if(doc.Status === "Pending"){
-              //             pendingArr.push(doc)
-              //         }
-              //         else if(doc.Status === "Completed"){
-              //             approvedArr.push(doc)
-              //         }
-              //         else if(doc.Status === "Rejected" || doc.Status === "Cancelled"){
-              //             rejectedArr.push(doc)
-              //         }
-              //     }
-              //     else if(doc.unread == 1){
-              //         AllArr.push(doc)
-              //         if(doc.Status === "Pending"){
-              //             pendingArr.push(doc)
-              //         }
-              //         else if(doc.Status === "Completed"){
-              //             approvedArr.push(doc)
-              //         }
-              //         else if(doc.Status === "Rejected" || doc.Status === "Cancelled"){
-              //             rejectedArr.push(doc)
-              //         }
-              //     }
-              // }
               if(doc.Status == "Pending"){
                 if(forward == user.uID){
                   if(notifData.data.find(item => item.userUID == user.uID && item.docID == doc.uID && item.multiple == 0)?.isRead == 0 && notifData.data.find(item => item.userUID == user.uID && item.docID == doc.uID && item.multiple == 0)?.reminder == 1){
