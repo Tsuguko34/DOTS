@@ -19,11 +19,19 @@ import http from 'http'
 const MySQLStore = MySQLStoreCreator(session);
 const app = express()
 const port = "http://localhost:3001";
+// const db = mysql.createPool({
+//     host:"127.0.0.1",
+//     port:"21",
+//     user:"u673355866_capgthree",
+//     password:"A*3d9f*_JFK24$2",
+//     database:"u673355866_capgthree"
+// })
 const db = mysql.createConnection({
-    host:"localhost",
-    user:"root",
-    password:"DeansOffice2023",
-    database:"dots"
+    host:"127.0.0.1",
+    port:"3306",
+    user:"u673355866_capgthree",
+    password:"A*3d9f*_JFK24$2",
+    database:"u673355866_capgthree",
 })
 const server = http.createServer(app)
 
@@ -67,10 +75,17 @@ db.connect(function(err){
     if(err){
         console.log('DB ERROR');
         throw err;
-        return false;
     }
     console.log('connected');
 })
+// db.getConnection(function(err){
+//     if(err){
+//         console.log('DB ERROR');
+//         throw err;
+//     }
+//     console.log('connected');
+// })
+
 
 io.on('connection', (socket) => {
     console.log(`user connected`);
